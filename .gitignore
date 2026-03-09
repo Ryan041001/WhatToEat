@@ -43,3 +43,10 @@ yarn-error.log*
 # 微信小程序
 miniprogram_npm/
 .miniprogram/
+
+# 本地 Claude Code 指南
+CLAUDE.md
+.claude/
+
+# 本地作业目录
+weekly-homework/
