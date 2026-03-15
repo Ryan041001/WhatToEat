@@ -15,3 +15,6 @@
 - **前端:** 微信小程序 (使用原生框架或主流 UI 组件库开发前端界面与交互)
 - **后端:** Spring Boot (提供 RESTful API 接口与业务逻辑处理)
 - **数据库:** MySQL (存储用户、餐厅库、评价标签等核心数据)
+
+## figma链接
+https://www.figma.com/make/O3ROt1nNk2TfEyq6cJ2D2g/%E5%B9%B2%E9%A5%AD%E9%98%B2%E7%BA%A0%E7%BB%93%E5%B0%8F%E7%A8%8B%E5%BA%8F?p=f&t=ICiEQPjXqTttrzhE-0
