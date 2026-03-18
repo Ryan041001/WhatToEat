@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { Shuffle, Layers, Zap, Plus, Star, MapPin, TrendingUp } from 'lucide-react';
+import { Star, MapPin, TrendingUp, Plus } from 'lucide-react';
 import { useRestaurants } from '../context/RestaurantContext';
 
 function ShakeButton({ onResult }: { onResult: (name: string) => void }) {
@@ -22,17 +22,23 @@ function ShakeButton({ onResult }: { onResult: (name: string) => void }) {
 
   return (
     <motion.button
-      animate={shaking ? {
-        rotate: [0, -15, 15, -12, 12, -8, 8, -4, 4, 0],
-        scale: [1, 1.1, 1.1, 1.1, 1.1, 1.05, 1.05, 1.02, 1.02, 1],
-      } : {}}
+      animate={
+        shaking
+          ? {
+              rotate: [0, -15, 15, -12, 12, -8, 8, -4, 4, 0],
+              scale: [1, 1.1, 1.1, 1.1, 1.1, 1.05, 1.05, 1.02, 1.02, 1],
+            }
+          : {}
+      }
       transition={{ duration: 0.8 }}
       onClick={handleShake}
-      className="flex flex-col items-center gap-2 p-4 rounded-2xl cursor-pointer select-none active:scale-95"
-      style={{ background: 'linear-gradient(135deg, #FF6B35, #FF4757)', flex: 1 }}
+      className="glass-panel glass-blur-sm click-hover-lift flex flex-1 cursor-pointer flex-col items-center gap-2 rounded-2xl p-4 active:scale-95"
+      style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--primary) 88%, var(--accent)), var(--primary))' }}
     >
-      <span style={{ fontSize: '28px' }}>📱</span>
-      <span style={{ color: '#fff', fontSize: '12px', fontWeight: 600 }}>摇一摇</span>
+      <span className="text-[28px]">📱</span>
+      <span className="text-[12px] font-semibold" style={{ color: 'var(--primary-foreground)' }}>
+        摇一摇
+      </span>
     </motion.button>
   );
 }
@@ -45,144 +51,113 @@ export function Home() {
   const topRated = [...actives].sort((a, b) => b.rating - a.rating).slice(0, 3);
 
   return (
-    <div className="flex flex-col" style={{ minHeight: '100%' }}>
-      {/* Header */}
+    <div className="flex min-h-full flex-col pb-5">
       <div
-        className="relative overflow-hidden px-5 pt-4 pb-6"
-        style={{
-          background: 'linear-gradient(135deg, #FF4757 0%, #FF6B35 50%, #FFA502 100%)',
-        }}
+        className="relative overflow-hidden px-5 pb-6 pt-4"
+        style={{ background: 'linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 62%, var(--accent)) 100%)' }}
       >
-        {/* Decorative blobs */}
-        <div style={{ position: 'absolute', top: -20, right: -20, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
-        <div style={{ position: 'absolute', bottom: -30, left: 60, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+        <div className="absolute -right-5 -top-5 h-24 w-24 rounded-full" style={{ background: 'color-mix(in srgb, var(--glass-surface-strong) 34%, transparent)' }} />
+        <div className="absolute -bottom-7 left-16 h-20 w-20 rounded-full" style={{ background: 'color-mix(in srgb, var(--glass-surface-light) 40%, transparent)' }} />
 
         <div className="relative">
-          <div className="flex items-center justify-between mb-3">
+          <div className="mb-3 flex items-center justify-between">
             <div>
-              <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '12px' }}>今天吃什么？</p>
-              <h1 style={{ color: '#fff', fontSize: '22px', fontWeight: 700, lineHeight: 1.2 }}>
-                干饭防纠结 🍚
-              </h1>
+              <p className="text-[12px]" style={{ color: 'color-mix(in srgb, var(--glass-text-inverse) 82%, transparent)' }}>今天吃什么？</p>
+              <h1 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--glass-text-inverse)' }}>干饭防纠结 🍚</h1>
             </div>
-            <div
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full"
-              style={{ background: 'rgba(255,255,255,0.2)' }}
-            >
-              <span style={{ color: '#fff', fontSize: '11px' }}>{actives.length} 家可选</span>
+            <div className="glass-chip glass-blur-sm flex items-center gap-1 px-3 py-1.5" style={{ background: 'var(--glass-surface-strong)', border: '1px solid var(--glass-border-medium)' }}>
+              <span className="text-[11px] font-medium" style={{ color: 'var(--glass-text-inverse)' }}>{actives.length} 家可选</span>
             </div>
           </div>
 
-          {/* Today's pick button */}
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={() => navigate('/spin')}
-            className="w-full flex items-center justify-between px-4 py-3 rounded-2xl"
-            style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.3)' }}
+            className="glass-overlay glass-blur-sm click-hover-lift w-full rounded-2xl px-4 py-3"
+            style={{ background: 'var(--glass-surface-strong)', border: '1px solid var(--glass-border-medium)' }}
           >
-            <div className="flex items-center gap-3">
-              <span style={{ fontSize: '24px' }}>🎰</span>
-              <div className="text-left">
-                <p style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}>随机替我选一个！</p>
-                <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '11px' }}>告别选择困难症</p>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="text-[24px]">🎰</span>
+                <div className="text-left">
+                  <p className="text-[14px] font-semibold" style={{ color: 'var(--glass-text-inverse)' }}>随机替我选一个！</p>
+                  <p className="text-[11px]" style={{ color: 'var(--glass-text-muted-transparent)' }}>告别选择困难症</p>
+                </div>
               </div>
-            </div>
-            <div className="rounded-full px-3 py-1" style={{ background: '#fff' }}>
-              <span style={{ color: '#FF4757', fontSize: '12px', fontWeight: 700 }}>开始</span>
+              <div className="glass-chip glass-blur-sm px-3 py-1" style={{ background: 'var(--glass-surface-strong)', border: '1px solid var(--glass-border-medium)' }}>
+                <span className="text-[12px] font-bold" style={{ color: 'var(--primary)' }}>
+                  开始
+                </span>
+              </div>
             </div>
           </motion.button>
         </div>
       </div>
 
-      {/* Quick actions */}
-      <div className="px-4 -mt-2">
-        <div
-          className="flex gap-3 p-4 rounded-2xl"
-          style={{ background: '#fff', boxShadow: '0 4px 16px rgba(0,0,0,0.06)' }}
-        >
-          {/* Spin wheel */}
+      <div className="-mt-2 px-4">
+        <div className="glass-panel glass-blur-sm grid grid-cols-3 gap-3 p-4" style={{ background: 'var(--glass-surface-strong)', border: '1px solid var(--glass-border-medium)' }}>
           <motion.button
             whileTap={{ scale: 0.93 }}
             onClick={() => navigate('/spin')}
-            className="flex flex-col items-center gap-2 p-4 rounded-2xl cursor-pointer"
-            style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)', flex: 1 }}
+            className="glass-panel glass-blur-sm click-hover-lift flex cursor-pointer flex-col items-center gap-2 rounded-2xl p-4"
+            style={{ background: 'linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 54%, var(--accent)))' }}
           >
-            <span style={{ fontSize: '28px' }}>🎡</span>
-            <span style={{ color: '#fff', fontSize: '12px', fontWeight: 600 }}>大转盘</span>
+            <span className="text-[28px]">🎡</span>
+            <span className="text-[12px] font-semibold" style={{ color: 'var(--glass-text-inverse)' }}>大转盘</span>
           </motion.button>
-
-          {/* Shake */}
           <ShakeButton onResult={setShakeResult} />
-
-          {/* Card swipe */}
           <motion.button
             whileTap={{ scale: 0.93 }}
             onClick={() => navigate('/swipe')}
-            className="flex flex-col items-center gap-2 p-4 rounded-2xl cursor-pointer"
-            style={{ background: 'linear-gradient(135deg, #11998e, #38ef7d)', flex: 1 }}
+            className="glass-panel click-hover-lift flex cursor-pointer flex-col items-center gap-2 rounded-2xl p-4"
+            style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent) 72%, var(--primary)), color-mix(in srgb, var(--color-success) 76%, var(--accent)))' }}
           >
-            <span style={{ fontSize: '28px' }}>💘</span>
-            <span style={{ color: '#fff', fontSize: '12px', fontWeight: 600 }}>卡片滑</span>
+            <span className="text-[28px]">💘</span>
+            <span className="text-[12px] font-semibold" style={{ color: 'var(--glass-text-inverse)' }}>卡片滑</span>
           </motion.button>
         </div>
       </div>
 
-      {/* Shake result popup */}
       <AnimatePresence>
         {shakeResult && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
-            className="fixed inset-0 flex items-center justify-center z-50"
-            style={{ pointerEvents: 'none' }}
+            className="glass-overlay fixed inset-0 z-50 flex items-center justify-center"
+            onClick={() => setShakeResult(null)}
           >
-            <div
-              className="px-8 py-6 rounded-3xl text-center"
-              style={{
-                background: 'linear-gradient(135deg, #FF4757, #FF6B35)',
-                boxShadow: '0 20px 60px rgba(255,71,87,0.5)',
-                pointerEvents: 'all',
-                maxWidth: '280px',
-              }}
-              onClick={() => setShakeResult(null)}
-            >
-              <div style={{ fontSize: '48px', marginBottom: '8px' }}>🎉</div>
-              <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '14px' }}>摇到了！就吃</p>
-              <p style={{ color: '#fff', fontSize: '22px', fontWeight: 700, margin: '4px 0' }}>{shakeResult}</p>
-              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>点击关闭</p>
+            <div className="glass-overlay glass-blur-sm max-w-[280px] rounded-3xl px-8 py-6 text-center" style={{ background: 'var(--glass-surface-strong)', border: '1px solid var(--glass-border-medium)' }}>
+              <div className="mb-2 text-[48px]">🎉</div>
+              <p className="text-[14px]" style={{ color: 'color-mix(in srgb, var(--glass-text-inverse) 85%, transparent)' }}>摇到了！就吃</p>
+              <p className="my-1 text-[22px] font-bold" style={{ color: 'var(--glass-text-inverse)' }}>{shakeResult}</p>
+              <p className="text-[12px]" style={{ color: 'color-mix(in srgb, var(--glass-text-inverse) 70%, transparent)' }}>点击关闭</p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Stats row */}
-      <div className="px-4 mt-3 grid grid-cols-3 gap-2">
+      <div className="mt-3 grid grid-cols-3 gap-2 px-4">
         {[
           { icon: '🍽️', value: restaurants.length, label: '总餐厅' },
           { icon: '✅', value: actives.length, label: '可选择' },
           { icon: '🚫', value: restaurants.length - actives.length, label: '已拉黑' },
         ].map(({ icon, value, label }) => (
-          <div
-            key={label}
-            className="flex flex-col items-center py-3 rounded-xl"
-            style={{ background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
-          >
-            <span style={{ fontSize: '18px' }}>{icon}</span>
-            <span style={{ fontSize: '18px', fontWeight: 700, color: '#1a1a1a', lineHeight: 1.2 }}>{value}</span>
-            <span style={{ fontSize: '10px', color: '#999' }}>{label}</span>
+          <div key={label} className="glass-panel glass-blur-sm flex flex-col items-center rounded-xl py-3" style={{ background: 'var(--glass-surface-strong)', border: '1px solid var(--glass-border-medium)' }}>
+            <span className="text-[18px]">{icon}</span>
+            <span className="text-[18px] font-bold leading-tight text-foreground">{value}</span>
+            <span className="text-[10px] text-muted-foreground">{label}</span>
           </div>
         ))}
       </div>
 
-      {/* Hot picks */}
-      <div className="px-4 mt-4 mb-4">
-        <div className="flex items-center justify-between mb-3">
+      <div className="mb-4 mt-4 px-4">
+        <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <TrendingUp size={14} color="#FF4757" />
-            <span style={{ fontSize: '14px', fontWeight: 700, color: '#1a1a1a' }}>热门推荐</span>
+            <TrendingUp size={14} color="var(--primary)" />
+            <span className="text-[14px] font-bold text-foreground">热门推荐</span>
           </div>
-          <button onClick={() => navigate('/restaurants')} style={{ fontSize: '12px', color: '#FF4757' }}>
+          <button onClick={() => navigate('/restaurants')} className="text-[12px] font-medium" style={{ color: 'var(--primary)' }}>
             查看全部 →
           </button>
         </div>
@@ -194,51 +169,34 @@ export function Home() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.08 }}
-              className="flex items-center gap-3 p-3 rounded-xl"
-              style={{ background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
+              className="glass-panel glass-blur-sm flex items-center gap-3 rounded-xl p-3"
+              style={{ background: 'var(--glass-surface-strong)', border: '1px solid var(--glass-border-medium)' }}
             >
-              <div style={{ position: 'relative', flexShrink: 0 }}>
-                <img
-                  src={r.image}
-                  alt={r.name}
-                  style={{ width: 56, height: 56, borderRadius: '12px', objectFit: 'cover' }}
-                />
+              <div className="relative shrink-0">
+                <img src={r.image} alt={r.name} className="h-14 w-14 rounded-xl object-cover" />
                 <div
-                  style={{
-                    position: 'absolute', top: -4, left: -4,
-                    width: 18, height: 18, borderRadius: '50%',
-                    background: idx === 0 ? '#FF4757' : idx === 1 ? '#FFA502' : '#a0a0a0',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '9px', fontWeight: 700, color: '#fff',
-                  }}
+                  className="absolute -left-1 -top-1 flex h-[18px] w-[18px] items-center justify-center rounded-full text-[9px] font-bold"
+                  style={{ color: 'var(--primary-foreground)', background: idx === 0 ? 'var(--primary)' : idx === 1 ? 'var(--warning)' : 'var(--muted-foreground)' }}
                 >
                   {idx + 1}
                 </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a' }}>{r.name}</p>
-                <div className="flex items-center gap-2 mt-0.5">
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-semibold text-foreground">{r.name}</p>
+                <div className="mt-0.5 flex items-center gap-2">
                   <div className="flex items-center gap-0.5">
-                    <Star size={10} fill="#FFA502" color="#FFA502" />
-                    <span style={{ fontSize: '11px', color: '#FFA502', fontWeight: 600 }}>{r.rating}</span>
+                    <Star size={10} fill="var(--warning)" color="var(--warning)" />
+                    <span className="text-[11px] font-semibold" style={{ color: 'var(--warning)' }}>{r.rating}</span>
                   </div>
                   <div className="flex items-center gap-0.5">
-                    <MapPin size={9} color="#999" />
-                    <span style={{ fontSize: '10px', color: '#999' }}>{r.distance}</span>
+                    <MapPin size={9} color="var(--muted-foreground)" />
+                    <span className="text-[10px] text-muted-foreground">{r.distance}</span>
                   </div>
-                  <span style={{ fontSize: '10px', color: '#999' }}>
-                    {'¥'.repeat(r.priceLevel)}
-                  </span>
+                  <span className="text-[10px] text-muted-foreground">{'¥'.repeat(r.priceLevel)}</span>
                 </div>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {r.tags.slice(0, 3).map(t => (
-                    <span
-                      key={t}
-                      style={{
-                        fontSize: '9px', color: '#FF6B35',
-                        background: '#FFF0ED', borderRadius: '4px', padding: '1px 5px',
-                      }}
-                    >
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {r.tags.slice(0, 3).map((t) => (
+                    <span key={t} className="glass-chip glass-blur-sm px-1.5 py-0.5 text-[9px]" style={{ background: 'var(--glass-surface-strong)', border: '1px solid var(--glass-border-medium)', color: 'var(--primary)' }}>
                       {t}
                     </span>
                   ))}
@@ -249,20 +207,17 @@ export function Home() {
         </div>
       </div>
 
-      {/* Add restaurant button */}
-      <div className="px-4 mb-6">
+      <div className="mb-6 px-4">
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={() => navigate('/mine')}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl"
-          style={{
-            background: 'transparent',
-            border: '2px dashed #FF4757',
-            color: '#FF4757',
-          }}
+          className="glass-panel glass-blur-sm click-hover-lift w-full rounded-2xl border-2 border-dashed py-3"
+          style={{ borderColor: 'var(--primary)', color: 'var(--primary)', background: 'var(--glass-surface-strong)' }}
         >
-          <Plus size={16} />
-          <span style={{ fontSize: '13px', fontWeight: 600 }}>添加新餐厅</span>
+          <div className="flex items-center justify-center gap-2">
+            <Plus size={16} />
+            <span className="text-[13px] font-semibold">添加新餐厅</span>
+          </div>
         </motion.button>
       </div>
     </div>

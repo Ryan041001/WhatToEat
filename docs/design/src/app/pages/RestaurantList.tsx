@@ -24,11 +24,11 @@ function RestaurantCard({ restaurant }: { restaurant: Restaurant }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="rounded-2xl overflow-hidden"
+      className="glass-panel glass-blur-sm enhanced-neumorph-card neumorph-strong click-hover-lift overflow-hidden rounded-2xl"
       style={{
-        background: restaurant.isBlacklisted ? '#f9f9f9' : '#fff',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-        opacity: restaurant.isBlacklisted ? 0.7 : 1,
+        background: restaurant.isBlacklisted ? 'var(--glass-surface-light)' : 'var(--glass-surface-medium)',
+        boxShadow: 'var(--glass-shadow-ambient)',
+        opacity: restaurant.isBlacklisted ? 0.75 : 1,
       }}
     >
       <div style={{ position: 'relative' }}>
@@ -41,70 +41,84 @@ function RestaurantCard({ restaurant }: { restaurant: Restaurant }) {
           <div
             style={{
               position: 'absolute', inset: 0,
-              background: 'rgba(0,0,0,0.5)',
+              background: 'color-mix(in srgb, var(--foreground) 50%, transparent)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
             <div className="flex flex-col items-center gap-1">
-              <Ban size={28} color="#fff" />
-              <span style={{ color: '#fff', fontSize: '12px', fontWeight: 700 }}>已拉黑</span>
+              <Ban size={28} color="var(--primary-foreground)" />
+              <span style={{ color: 'var(--primary-foreground)', fontSize: '12px', fontWeight: 700 }}>已拉黑</span>
             </div>
           </div>
         )}
         {/* Category */}
         <div
+          className="glass-chip glass-blur-sm"
           style={{
             position: 'absolute', top: 8, left: 8,
-            background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
-            borderRadius: '12px', padding: '3px 8px',
+            background: 'var(--glass-surface-strong)',
+            border: '1px solid var(--glass-border-medium)',
+            borderRadius: '12px', padding: '4px 10px',
           }}
         >
-          <span style={{ color: '#fff', fontSize: '10px', fontWeight: 600 }}>{restaurant.category}</span>
+          <span style={{ color: 'var(--foreground)', fontSize: '11px', fontWeight: 700 }}>{restaurant.category}</span>
         </div>
         {restaurant.isUserAdded && (
           <div
+            className="glass-chip glass-blur-sm"
             style={{
               position: 'absolute', top: 8, right: 8,
-              background: '#FFA502', borderRadius: '12px', padding: '3px 8px',
+              background: 'var(--glass-surface-strong)',
+              border: '1px solid var(--glass-border-medium)',
+              borderRadius: '12px', padding: '4px 10px',
             }}
           >
-            <span style={{ color: '#fff', fontSize: '9px', fontWeight: 700 }}>我添加的</span>
+            <span style={{ color: 'var(--warning)', fontSize: '10px', fontWeight: 700 }}>我添加的</span>
           </div>
         )}
         {/* More button */}
         <button
           onClick={() => setShowMenu(!showMenu)}
+          className="glass-chip glass-blur-sm"
           style={{
-            position: 'absolute', bottom: 8, right: 8,
-            background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)',
-            borderRadius: '50%', width: 28, height: 28,
+            position: 'absolute', bottom: 10, right: 10,
+            background: 'var(--glass-surface-strong)',
+            border: '1px solid var(--glass-border-medium)',
+            borderRadius: '50%', width: 36, height: 36,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            border: '1px solid rgba(255,255,255,0.4)',
           }}
         >
-          <ChevronDown size={14} color="#fff" />
+          <ChevronDown size={16} color="var(--foreground)" />
         </button>
       </div>
 
-      <div className="px-3 py-3">
+      <div
+        className="glass-panel glass-blur-md px-3 py-3"
+        style={{
+          background: 'var(--glass-surface-light)',
+          borderTop: '1px solid var(--glass-border-soft)',
+          backdropFilter: 'blur(14px)',
+          WebkitBackdropFilter: 'blur(14px)',
+        }}
+      >
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#1a1a1a' }}>{restaurant.name}</h3>
+            <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--foreground)' }}>{restaurant.name}</h3>
             <div className="flex items-center gap-2 mt-0.5">
               <div className="flex items-center gap-0.5">
-                <Star size={11} fill="#FFA502" color="#FFA502" />
-                <span style={{ fontSize: '11px', color: '#FFA502', fontWeight: 600 }}>{restaurant.rating}</span>
+                <Star size={11} fill="var(--color-warning)" color="var(--color-warning)" />
+                <span style={{ fontSize: '11px', color: 'var(--color-warning)', fontWeight: 600 }}>{restaurant.rating}</span>
               </div>
-              <span style={{ fontSize: '11px', color: '#999' }}>{'¥'.repeat(restaurant.priceLevel)}</span>
+              <span style={{ fontSize: '11px', color: 'var(--muted-foreground)' }}>{'¥'.repeat(restaurant.priceLevel)}</span>
               <div className="flex items-center gap-0.5">
-                <MapPin size={9} color="#999" />
-                <span style={{ fontSize: '10px', color: '#999' }}>{restaurant.distance}</span>
+                <MapPin size={9} color="var(--muted-foreground)" />
+                <span style={{ fontSize: '10px', color: 'var(--muted-foreground)' }}>{restaurant.distance}</span>
               </div>
             </div>
           </div>
         </div>
 
-        <p style={{ fontSize: '11px', color: '#888', marginTop: '4px', lineHeight: 1.4 }}>
+        <p style={{ fontSize: '11px', color: 'var(--glass-text-muted-transparent)', marginTop: '4px', lineHeight: 1.4 }}>
           {restaurant.description}
         </p>
 
@@ -113,9 +127,10 @@ function RestaurantCard({ restaurant }: { restaurant: Restaurant }) {
           {restaurant.tags.map(t => (
             <span
               key={t}
+              className="glass-chip glass-blur-sm"
               style={{
-                fontSize: '10px', color: '#FF6B35',
-                background: '#FFF0ED', borderRadius: '4px', padding: '1px 6px',
+                fontSize: '10px', color: 'var(--warning)',
+                background: 'color-mix(in srgb, var(--glass-surface-light) 86%, transparent)', borderRadius: '4px', padding: '1px 6px',
               }}
             >
               #{t}
@@ -124,25 +139,25 @@ function RestaurantCard({ restaurant }: { restaurant: Restaurant }) {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-between mt-3 pt-2" style={{ borderTop: '1px solid #f0f0f0' }}>
+        <div className="flex items-center justify-between mt-3 pt-2" style={{ borderTop: '1px solid var(--glass-border-soft)' }}>
           <div className="flex items-center gap-3">
             <button
               onClick={() => handleVote('up')}
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 click-hover-lift"
               style={{ opacity: voted === 'down' ? 0.4 : 1 }}
             >
-              <ThumbsUp size={13} color={voted === 'up' ? '#2ed573' : '#999'} fill={voted === 'up' ? '#2ed573' : 'none'} />
-              <span style={{ fontSize: '11px', color: voted === 'up' ? '#2ed573' : '#999' }}>
+              <ThumbsUp size={13} color={voted === 'up' ? 'var(--warning)' : 'var(--muted-foreground)'} fill={voted === 'up' ? 'var(--warning)' : 'none'} />
+              <span style={{ fontSize: '11px', color: voted === 'up' ? 'var(--warning)' : 'var(--muted-foreground)' }}>
                 {restaurant.votes.up}
               </span>
             </button>
             <button
               onClick={() => handleVote('down')}
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 click-hover-lift"
               style={{ opacity: voted === 'up' ? 0.4 : 1 }}
             >
-              <ThumbsDown size={13} color={voted === 'down' ? '#FF4757' : '#999'} fill={voted === 'down' ? '#FF4757' : 'none'} />
-              <span style={{ fontSize: '11px', color: voted === 'down' ? '#FF4757' : '#999' }}>
+              <ThumbsDown size={13} color={voted === 'down' ? 'var(--primary)' : 'var(--muted-foreground)'} fill={voted === 'down' ? 'var(--primary)' : 'none'} />
+              <span style={{ fontSize: '11px', color: voted === 'down' ? 'var(--primary)' : 'var(--muted-foreground)' }}>
                 {restaurant.votes.down}
               </span>
             </button>
@@ -151,10 +166,10 @@ function RestaurantCard({ restaurant }: { restaurant: Restaurant }) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => toggleBlacklist(restaurant.id)}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg click-hover-lift"
               style={{
-                background: restaurant.isBlacklisted ? '#FFE8EA' : '#f5f5f5',
-                color: restaurant.isBlacklisted ? '#FF4757' : '#999',
+                background: restaurant.isBlacklisted ? 'var(--glass-surface-light)' : 'var(--glass-surface-medium)',
+                color: restaurant.isBlacklisted ? 'var(--primary)' : 'var(--muted-foreground)',
               }}
             >
               <Ban size={11} />
@@ -176,14 +191,14 @@ function RestaurantCard({ restaurant }: { restaurant: Restaurant }) {
             >
               <div
                 className="flex items-center justify-between mt-2 pt-2"
-                style={{ borderTop: '1px dashed #f0f0f0' }}
+                style={{ borderTop: '1px dashed var(--glass-border-soft)' }}
               >
-                <span style={{ fontSize: '11px', color: '#bbb' }}>{restaurant.address}</span>
+                <span style={{ fontSize: '11px', color: 'var(--glass-text-muted-transparent)' }}>{restaurant.address}</span>
                 {restaurant.isUserAdded && (
                   <button
                     onClick={() => deleteRestaurant(restaurant.id)}
-                    className="flex items-center gap-1 px-2 py-1 rounded-lg"
-                    style={{ background: '#FFE8EA', color: '#FF4757' }}
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg click-hover-lift"
+                    style={{ background: 'var(--glass-surface-light)', color: 'var(--primary)' }}
                   >
                     <Trash2 size={11} />
                     <span style={{ fontSize: '10px', fontWeight: 600 }}>删除</span>
@@ -229,25 +244,25 @@ export function RestaurantList() {
   const blacklistCount = restaurants.filter(r => r.isBlacklisted).length;
 
   return (
-    <div className="flex flex-col" style={{ minHeight: '100%', background: '#F7F8FA' }}>
+    <div className="flex flex-col" style={{ minHeight: '100%', background: 'var(--color-background)' }}>
       {/* Header */}
-      <div style={{ background: 'linear-gradient(135deg, #FF4757, #FF6B35)', padding: '12px 16px 16px' }}>
+      <div className="unified-topbar" style={{ background: 'linear-gradient(135deg, var(--primary), var(--warning))', padding: '12px 16px 16px' }}>
         <div className="flex items-center gap-2 mb-3">
           <button onClick={() => navigate('/')}>
-            <ChevronLeft size={22} color="#fff" />
+            <ChevronLeft size={22} color="var(--primary-foreground)" />
           </button>
-          <h2 style={{ color: '#fff', fontSize: '16px', fontWeight: 700 }}>食堂总览</h2>
+          <h2 style={{ color: 'var(--primary-foreground)', fontSize: '16px', fontWeight: 700 }}>食堂总览</h2>
           <div className="ml-auto flex items-center gap-2">
             <span
-              className="px-2 py-0.5 rounded-full"
-              style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', fontSize: '11px' }}
+              className="glass-chip glass-blur-sm px-2 py-0.5 rounded-full"
+              style={{ background: 'color-mix(in srgb, var(--glass-surface-strong) 20%, transparent)', color: 'var(--primary-foreground)', fontSize: '11px' }}
             >
               {activeCount} 可选
             </span>
             {blacklistCount > 0 && (
               <span
-                className="px-2 py-0.5 rounded-full"
-                style={{ background: 'rgba(0,0,0,0.2)', color: 'rgba(255,255,255,0.8)', fontSize: '11px' }}
+                className="glass-chip glass-blur-sm px-2 py-0.5 rounded-full"
+                style={{ background: 'color-mix(in srgb, var(--foreground) 20%, transparent)', color: 'color-mix(in srgb, var(--glass-text-inverse) 80%, transparent)', fontSize: '11px' }}
               >
                 {blacklistCount} 拉黑
               </span>
@@ -257,10 +272,10 @@ export function RestaurantList() {
 
         {/* Search bar */}
         <div
-          className="flex items-center gap-2 px-3 py-2 rounded-xl"
-          style={{ background: 'rgba(255,255,255,0.95)' }}
+          className="glass-overlay glass-blur-sm flex items-center gap-2 px-3 py-2 rounded-xl"
+          style={{ background: 'color-mix(in srgb, var(--glass-surface-strong) 94%, transparent)' }}
         >
-          <Search size={14} color="#999" />
+          <Search size={14} color="var(--muted-foreground)" />
           <input
             type="text"
             value={search}
@@ -268,7 +283,7 @@ export function RestaurantList() {
             placeholder="搜餐厅名、口味、标签..."
             style={{
               flex: 1, background: 'transparent', border: 'none', outline: 'none',
-              fontSize: '13px', color: '#333',
+              fontSize: '13px', color: 'var(--foreground)',
             }}
           />
         </div>
@@ -277,16 +292,16 @@ export function RestaurantList() {
       {/* Category pills */}
       <div
         className="flex gap-2 px-3 py-3 overflow-x-auto"
-        style={{ background: '#fff', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}
+        style={{ background: 'var(--primary-foreground)', borderBottom: '1px solid var(--glass-border-soft)', flexShrink: 0 }}
       >
         {CATEGORIES.map(cat => (
           <button
             key={cat}
             onClick={() => setActiveCategory(cat)}
-            className="flex-shrink-0 px-3 py-1.5 rounded-full"
+            className="glass-chip glass-blur-sm flex-shrink-0 px-3 py-1.5 rounded-full click-hover-lift"
             style={{
-              background: activeCategory === cat ? '#FF4757' : '#f5f5f5',
-              color: activeCategory === cat ? '#fff' : '#666',
+              background: activeCategory === cat ? 'var(--primary)' : 'var(--glass-surface-medium)',
+              color: activeCategory === cat ? 'var(--primary-foreground)' : 'var(--muted-foreground)',
               fontSize: '12px',
               fontWeight: activeCategory === cat ? 600 : 400,
               transition: 'all 0.2s',
@@ -300,9 +315,9 @@ export function RestaurantList() {
       {/* Filter row */}
       <div
         className="flex items-center gap-2 px-3 py-2"
-        style={{ background: '#fff', borderBottom: '1px solid #f0f0f0' }}
+        style={{ background: 'var(--primary-foreground)', borderBottom: '1px solid var(--glass-border-soft)' }}
       >
-        <Filter size={12} color="#999" />
+        <Filter size={12} color="var(--muted-foreground)" />
         <div className="flex gap-1.5">
           {PRICE_FILTERS.map(p => (
             <button
@@ -310,8 +325,8 @@ export function RestaurantList() {
               onClick={() => setActivePriceFilter(p)}
               className="px-2.5 py-1 rounded-lg"
               style={{
-                background: activePriceFilter === p ? '#FFF0ED' : '#f8f8f8',
-                color: activePriceFilter === p ? '#FF4757' : '#999',
+                background: activePriceFilter === p ? 'var(--glass-surface-light)' : 'var(--glass-surface-medium)',
+                color: activePriceFilter === p ? 'var(--primary)' : 'var(--muted-foreground)',
                 fontSize: '11px',
                 fontWeight: activePriceFilter === p ? 600 : 400,
               }}
@@ -324,8 +339,8 @@ export function RestaurantList() {
           onClick={() => setShowBlacklisted(!showBlacklisted)}
           className="ml-auto px-2.5 py-1 rounded-lg"
           style={{
-            background: showBlacklisted ? '#FFE8EA' : '#f8f8f8',
-            color: showBlacklisted ? '#FF4757' : '#999',
+            background: showBlacklisted ? 'var(--glass-surface-light)' : 'var(--glass-surface-medium)',
+            color: showBlacklisted ? 'var(--primary)' : 'var(--muted-foreground)',
             fontSize: '11px',
           }}
         >
@@ -338,7 +353,7 @@ export function RestaurantList() {
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-16">
             <span style={{ fontSize: '48px' }}>🔍</span>
-            <p style={{ fontSize: '14px', color: '#999' }}>没找到符合条件的餐厅</p>
+            <p style={{ fontSize: '14px', color: 'var(--muted-foreground)' }}>没找到符合条件的餐厅</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">

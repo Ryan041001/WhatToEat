@@ -39,6 +39,15 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# 构建产物
+dist/
+build/
+out/
+*.tsbuildinfo
 
 # 微信小程序
 miniprogram_npm/
