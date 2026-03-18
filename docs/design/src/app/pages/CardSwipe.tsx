@@ -54,10 +54,11 @@ function SwipeCard({
       whileDrag={{ cursor: 'grabbing', scale: 1.02 }}
     >
       <div
-        className="rounded-3xl overflow-hidden"
+        className="glass-panel glass-blur-sm rounded-3xl overflow-hidden"
         style={{
-          background: '#fff',
-          boxShadow: '0 10px 40px rgba(0,0,0,0.14)',
+          boxShadow: 'var(--glass-shadow-ambient)',
+          background: 'var(--glass-surface-strong)',
+          border: '1px solid var(--glass-border-medium)',
         }}
       >
         {/* Image area */}
@@ -73,7 +74,7 @@ function SwipeCard({
           <div
             style={{
               position: 'absolute', inset: 0,
-              background: 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0) 55%)',
+              background: 'linear-gradient(to top, color-mix(in srgb, var(--foreground) 72%, transparent) 0%, color-mix(in srgb, var(--foreground) 0%, transparent) 55%)',
             }}
           />
 
@@ -83,12 +84,12 @@ function SwipeCard({
               style={{
                 opacity: likeOpacity,
                 position: 'absolute', top: 20, left: 18,
-                border: '3px solid #2ed573', borderRadius: '10px',
+                border: '3px solid var(--color-success)', borderRadius: '10px',
                 padding: '4px 14px',
                 transform: 'rotate(-12deg)',
               }}
             >
-              <span style={{ color: '#2ed573', fontSize: '20px', fontWeight: 900, letterSpacing: 1 }}>WANT!</span>
+              <span style={{ color: 'var(--color-success)', fontSize: '20px', fontWeight: 900, letterSpacing: 1 }}>WANT!</span>
             </motion.div>
           )}
 
@@ -98,40 +99,41 @@ function SwipeCard({
               style={{
                 opacity: nopeOpacity,
                 position: 'absolute', top: 20, right: 18,
-                border: '3px solid #FF4757', borderRadius: '10px',
+                border: '3px solid var(--primary)', borderRadius: '10px',
                 padding: '4px 14px',
                 transform: 'rotate(12deg)',
               }}
             >
-              <span style={{ color: '#FF4757', fontSize: '20px', fontWeight: 900, letterSpacing: 1 }}>NOPE</span>
+              <span style={{ color: 'var(--primary)', fontSize: '20px', fontWeight: 900, letterSpacing: 1 }}>NOPE</span>
             </motion.div>
           )}
 
           {/* Category badge */}
           <div
+            className="glass-chip glass-blur-sm"
             style={{
               position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)',
-              background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)',
+              background: 'var(--glass-surface-strong)',
               borderRadius: '20px', padding: '4px 14px',
-              border: '1px solid rgba(255,255,255,0.2)',
+              border: '1px solid var(--glass-border-medium)',
             }}
           >
-            <span style={{ color: '#fff', fontSize: '12px', fontWeight: 600 }}>{restaurant.category}</span>
+            <span style={{ color: 'var(--primary-foreground)', fontSize: '12px', fontWeight: 600 }}>{restaurant.category}</span>
           </div>
 
           {/* Bottom info on image */}
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '14px 16px' }}>
-            <h3 style={{ color: '#fff', fontSize: '20px', fontWeight: 800 }}>{restaurant.name}</h3>
+            <h3 style={{ color: 'var(--primary-foreground)', fontSize: '20px', fontWeight: 800 }}>{restaurant.name}</h3>
             <div className="flex items-center gap-3 mt-1">
               <div className="flex items-center gap-1">
-                <Star size={12} fill="#FFA502" color="#FFA502" />
-                <span style={{ color: '#FFA502', fontSize: '12px', fontWeight: 700 }}>{restaurant.rating}</span>
+                <Star size={12} fill="var(--color-warning)" color="var(--color-warning)" />
+                <span style={{ color: 'var(--color-warning)', fontSize: '12px', fontWeight: 700 }}>{restaurant.rating}</span>
               </div>
               <div className="flex items-center gap-1">
-                <MapPin size={10} color="rgba(255,255,255,0.75)" />
-                <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: '11px' }}>{restaurant.distance}</span>
+                <MapPin size={10} color="color-mix(in srgb, var(--glass-text-inverse) 75%, transparent)" />
+                <span style={{ color: 'color-mix(in srgb, var(--glass-text-inverse) 75%, transparent)', fontSize: '11px' }}>{restaurant.distance}</span>
               </div>
-              <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: '11px' }}>
+              <span style={{ color: 'color-mix(in srgb, var(--glass-text-inverse) 75%, transparent)', fontSize: '11px' }}>
                 {'¥'.repeat(restaurant.priceLevel)}
               </span>
             </div>
@@ -140,27 +142,27 @@ function SwipeCard({
 
         {/* Card body */}
         <div className="px-4 py-3">
-          <p style={{ color: '#666', fontSize: '12px', lineHeight: 1.5 }}>{restaurant.description}</p>
+          <p style={{ color: 'var(--muted-foreground)', fontSize: '12px', lineHeight: 1.5 }}>{restaurant.description}</p>
           <div className="flex items-center gap-1 mt-1.5">
-            <MapPin size={10} color="#bbb" />
-            <span style={{ color: '#bbb', fontSize: '10px' }}>{restaurant.address}</span>
+            <MapPin size={10} color="var(--muted-foreground)" />
+            <span style={{ color: 'var(--muted-foreground)', fontSize: '10px' }}>{restaurant.address}</span>
           </div>
           <div className="flex flex-wrap gap-1.5 mt-2">
             {restaurant.tags.slice(0, 4).map(t => (
               <span
                 key={t}
                 style={{
-                  fontSize: '10px', color: '#FF6B35',
-                  background: '#FFF0ED', borderRadius: '6px', padding: '2px 7px',
+                  fontSize: '10px', color: 'var(--primary)',
+                  background: 'color-mix(in srgb, var(--primary) 12%, transparent)', borderRadius: '6px', padding: '2px 7px',
                 }}
               >
                 #{t}
               </span>
             ))}
           </div>
-          <div className="flex items-center gap-3 mt-2 pt-2" style={{ borderTop: '1px solid #f5f5f5' }}>
-            <span style={{ fontSize: '11px', color: '#2ed573' }}>👍 {restaurant.votes.up}</span>
-            <span style={{ fontSize: '11px', color: '#FF4757' }}>👎 {restaurant.votes.down}</span>
+          <div className="flex items-center gap-3 mt-2 pt-2" style={{ borderTop: '1px solid var(--glass-border-soft)' }}>
+            <span style={{ fontSize: '11px', color: 'var(--color-success)' }}>👍 {restaurant.votes.up}</span>
+            <span style={{ fontSize: '11px', color: 'var(--primary)' }}>👎 {restaurant.votes.down}</span>
           </div>
         </div>
       </div>
@@ -218,59 +220,72 @@ export function CardSwipe() {
   };
 
   return (
-    <div className="flex flex-col" style={{ minHeight: '100%', background: '#F7F8FA' }}>
+    <div className="flex flex-col" style={{ minHeight: '100%', background: 'var(--color-background)' }}>
       {/* Header */}
       <div
         className="flex items-center justify-between px-4 pt-3 pb-4"
-        style={{ background: 'linear-gradient(135deg, #11998e, #38ef7d)' }}
+        style={{ background: 'linear-gradient(135deg, var(--accent), var(--color-success))' }}
       >
         <div className="flex items-center gap-2">
           <button onClick={() => navigate('/')}>
-            <ChevronLeft size={22} color="#fff" />
+            <ChevronLeft size={22} color="var(--primary-foreground)" />
           </button>
           <div>
-            <h2 style={{ color: '#fff', fontSize: '16px', fontWeight: 700 }}>卡片滑选</h2>
+            <h2 style={{ color: 'var(--primary-foreground)', fontSize: '16px', fontWeight: 700 }}>卡片滑选</h2>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '12px', fontWeight: 600 }}>
+          <span style={{ color: 'color-mix(in srgb, var(--primary-foreground) 90%, transparent)', fontSize: '12px', fontWeight: 600 }}>
             ❤️ {liked.length} 家
           </span>
           <button
             onClick={handleReset}
-            className="flex items-center gap-1 px-2 py-1 rounded-full"
-            style={{ background: 'rgba(255,255,255,0.2)' }}
+            className="glass-chip glass-blur-sm click-hover-lift flex items-center gap-1 px-2 py-1 rounded-full"
+            style={{
+              background: 'var(--glass-surface-strong)',
+              border: '1px solid var(--glass-border-medium)',
+            }}
           >
-            <RotateCcw size={14} color="#fff" />
-            <span style={{ color: '#fff', fontSize: '11px' }}>重置</span>
+            <RotateCcw size={14} color="var(--primary-foreground)" />
+            <span style={{ color: 'var(--primary-foreground)', fontSize: '11px' }}>重置</span>
           </button>
         </div>
       </div>
 
       {/* Swipe direction hint */}
       <div
-        className="flex justify-between px-6 py-2.5"
-        style={{ background: '#fff', borderBottom: '1px solid #f0f0f0' }}
+        className="glass-blur-sm flex justify-between px-6 py-2.5"
+        style={{ background: 'var(--glass-surface-strong)', borderBottom: '1px solid var(--glass-border-medium)' }}
       >
         <div className="flex items-center gap-1.5">
           <div
-            className="flex items-center justify-center rounded-full"
-            style={{ width: 24, height: 24, background: '#FFE8EA' }}
+            className="glass-chip glass-blur-sm flex items-center justify-center rounded-full"
+            style={{
+              width: 24,
+              height: 24,
+              background: 'var(--glass-surface-strong)',
+              border: '1px solid var(--glass-border-medium)',
+            }}
           >
-            <X size={12} color="#FF4757" />
+            <X size={12} color="var(--primary)" />
           </div>
-          <span style={{ fontSize: '11px', color: '#FF4757', fontWeight: 600 }}>左滑不想吃</span>
+          <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 600 }}>左滑不想吃</span>
         </div>
         <div className="flex items-center gap-0.5">
-          <span style={{ fontSize: '11px', color: '#999' }}>拖动卡片选择</span>
+          <span style={{ fontSize: '11px', color: 'var(--glass-text-muted-transparent)' }}>拖动卡片选择</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span style={{ fontSize: '11px', color: '#2ed573', fontWeight: 600 }}>右滑想吃！</span>
+          <span style={{ fontSize: '11px', color: 'var(--color-success)', fontWeight: 600 }}>右滑想吃！</span>
           <div
-            className="flex items-center justify-center rounded-full"
-            style={{ width: 24, height: 24, background: '#E8FBF0' }}
+            className="glass-chip glass-blur-sm flex items-center justify-center rounded-full"
+            style={{
+              width: 24,
+              height: 24,
+              background: 'var(--glass-surface-strong)',
+              border: '1px solid var(--glass-border-medium)',
+            }}
           >
-            <Heart size={12} color="#2ed573" />
+            <Heart size={12} color="var(--color-success)" />
           </div>
         </div>
       </div>
@@ -288,11 +303,11 @@ export function CardSwipe() {
             >
               🎊
             </motion.div>
-            <p style={{ fontSize: '18px', fontWeight: 800, color: '#1a1a1a' }}>全部滑完啦！</p>
+            <p style={{ fontSize: '18px', fontWeight: 800, color: 'var(--foreground)' }}>全部滑完啦！</p>
 
             {liked.length > 0 ? (
               <>
-                <p style={{ fontSize: '13px', color: '#888' }}>你喜欢的 {liked.length} 家餐厅 👇</p>
+                <p style={{ fontSize: '13px', color: 'var(--glass-text-muted-transparent)' }}>你喜欢的 {liked.length} 家餐厅 👇</p>
                 <div className="flex flex-col gap-2 w-full">
                   {liked.map((r, i) => (
                     <motion.div
@@ -300,21 +315,21 @@ export function CardSwipe() {
                       initial={{ opacity: 0, x: 30 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.07 }}
-                      className="flex items-center gap-3 p-3 rounded-2xl"
-                      style={{ background: '#fff', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}
+                      className="glass-blur-sm flex items-center gap-3 p-3 rounded-2xl"
+                      style={{ background: 'var(--glass-surface-strong)', border: '1px solid var(--glass-border-medium)', boxShadow: 'var(--glass-shadow-ambient)' }}
                     >
                       <img src={r.image} alt={r.name} style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover' }} />
                       <div className="flex-1 min-w-0">
-                        <p style={{ fontSize: '13px', fontWeight: 700, color: '#1a1a1a' }}>{r.name}</p>
-                        <p style={{ fontSize: '11px', color: '#999' }}>{r.category} · {r.distance}</p>
+                        <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--foreground)' }}>{r.name}</p>
+                        <p style={{ fontSize: '11px', color: 'var(--muted-foreground)' }}>{r.category} · {r.distance}</p>
                       </div>
-                      <Heart size={16} color="#FF4757" fill="#FF4757" />
+                      <Heart size={16} color="var(--primary)" fill="var(--primary)" />
                     </motion.div>
                   ))}
                 </div>
               </>
             ) : (
-              <p style={{ fontSize: '14px', color: '#999' }}>哇，一家都不喜欢？也太难伺候了吧 😅</p>
+              <p style={{ fontSize: '14px', color: 'var(--glass-text-muted-transparent)' }}>哇，一家都不喜欢？也太难伺候了吧 😅</p>
             )}
 
             <motion.button
@@ -322,9 +337,9 @@ export function CardSwipe() {
               onClick={handleReset}
               className="mt-2 px-10 py-3.5 rounded-full"
               style={{
-                background: 'linear-gradient(135deg, #11998e, #38ef7d)',
-                color: '#fff', fontSize: '15px', fontWeight: 700,
-                boxShadow: '0 6px 20px rgba(17,153,142,0.3)',
+                background: 'linear-gradient(135deg, var(--accent), var(--color-success))',
+                color: 'var(--primary-foreground)', fontSize: '15px', fontWeight: 700,
+                boxShadow: 'var(--glass-shadow-glow)',
               }}
             >
               重新来一遍
@@ -363,60 +378,63 @@ export function CardSwipe() {
             <motion.button
               whileTap={{ scale: 0.85 }}
               onClick={() => handleSwipe('left')}
-              className="flex items-center justify-center rounded-full"
+              className="glass-chip glass-blur-sm click-hover-lift flex items-center justify-center rounded-full"
               style={{
-                width: 60, height: 60,
-                background: '#fff',
-                boxShadow: '0 4px 20px rgba(255,71,87,0.25)',
-                border: '2.5px solid #FF4757',
+                width: 60,
+                height: 60,
+                background: 'var(--glass-surface-strong)',
+                boxShadow: 'var(--neumorph-shadow-soft)',
+                border: '1px solid var(--glass-border-medium)',
               }}
             >
-              <X size={26} color="#FF4757" strokeWidth={2.5} />
+              <X size={26} color="var(--primary)" strokeWidth={2.5} />
             </motion.button>
 
             {history.length > 0 && (
               <motion.button
                 whileTap={{ scale: 0.85 }}
                 onClick={handleUndo}
-                className="flex items-center justify-center rounded-full"
+                className="glass-chip glass-blur-sm click-hover-lift flex items-center justify-center rounded-full"
                 style={{
-                  width: 40, height: 40,
-                  background: '#fff',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-                  border: '1.5px solid #ddd',
+                  width: 40,
+                  height: 40,
+                  background: 'var(--glass-surface-strong)',
+                  boxShadow: 'var(--neumorph-shadow-soft)',
+                  border: '1px solid var(--glass-border-medium)',
                 }}
               >
-                <RotateCcw size={16} color="#aaa" />
+                <RotateCcw size={16} color="var(--muted-foreground)" />
               </motion.button>
             )}
 
             <motion.button
               whileTap={{ scale: 0.85 }}
               onClick={() => handleSwipe('right')}
-              className="flex items-center justify-center rounded-full"
+              className="glass-chip glass-blur-sm click-hover-lift flex items-center justify-center rounded-full"
               style={{
-                width: 60, height: 60,
-                background: '#fff',
-                boxShadow: '0 4px 20px rgba(46,213,115,0.3)',
-                border: '2.5px solid #2ed573',
+                width: 60,
+                height: 60,
+                background: 'var(--glass-surface-strong)',
+                boxShadow: 'var(--neumorph-shadow-soft)',
+                border: '1px solid var(--glass-border-medium)',
               }}
             >
-              <Heart size={26} color="#2ed573" strokeWidth={2.5} />
+              <Heart size={26} color="var(--color-success)" strokeWidth={2.5} />
             </motion.button>
           </div>
 
           {/* Progress bar */}
           <div className="px-6 pb-3">
             <div className="flex justify-between mb-1">
-              <span style={{ fontSize: '10px', color: '#bbb' }}>还剩 {cardQueue.length} 家</span>
-              <span style={{ fontSize: '10px', color: '#bbb' }}>已看 {history.length} 家</span>
+              <span style={{ fontSize: '10px', color: 'var(--muted-foreground)' }}>还剩 {cardQueue.length} 家</span>
+              <span style={{ fontSize: '10px', color: 'var(--muted-foreground)' }}>已看 {history.length} 家</span>
             </div>
-            <div style={{ height: 3, background: '#eee', borderRadius: 2 }}>
+            <div className="glass-blur-sm" style={{ height: 3, background: 'var(--glass-surface-strong)', border: '1px solid var(--glass-border-medium)', borderRadius: 2 }}>
               <div
                 style={{
                   height: '100%',
                   width: `${(history.length / (history.length + cardQueue.length)) * 100}%`,
-                  background: 'linear-gradient(135deg, #11998e, #38ef7d)',
+                  background: 'linear-gradient(135deg, var(--accent), var(--color-success))',
                   borderRadius: 2,
                   transition: 'width 0.3s ease',
                 }}
@@ -445,14 +463,14 @@ export function CardSwipe() {
             <div
               className="px-7 py-5 rounded-3xl text-center"
               style={{
-                background: 'linear-gradient(135deg, #11998e, #38ef7d)',
-                boxShadow: '0 20px 60px rgba(17,153,142,0.5)',
+                background: 'linear-gradient(135deg, var(--accent), var(--color-success))',
+                boxShadow: 'var(--glass-shadow-glow)',
                 minWidth: '180px',
               }}
             >
               <div style={{ fontSize: '36px' }}>💚</div>
-              <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '11px', marginTop: 4 }}>右滑了！</p>
-              <p style={{ color: '#fff', fontSize: '17px', fontWeight: 800 }}>{showMatch.name}</p>
+              <p style={{ color: 'color-mix(in srgb, var(--primary-foreground) 85%, transparent)', fontSize: '11px', marginTop: 4 }}>右滑了！</p>
+              <p style={{ color: 'var(--primary-foreground)', fontSize: '17px', fontWeight: 800 }}>{showMatch.name}</p>
             </div>
           </motion.div>
         )}

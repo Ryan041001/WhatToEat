@@ -80,17 +80,26 @@ function AddRestaurantForm({ onClose, onSuccess }: { onClose: () => void; onSucc
     <div className="flex flex-col" style={{ minHeight: '100%' }}>
       {/* Header */}
       <div
-        className="flex items-center gap-3 px-4 py-4"
-        style={{ background: 'linear-gradient(135deg, #FFA502, #FF6B35)' }}
+        className="unified-topbar flex items-center gap-3 px-4 py-4"
+        style={{
+          background: 'linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 62%, var(--color-warning)))',
+          boxShadow: 'var(--glass-shadow-glow)',
+        }}
       >
         <button onClick={onClose}>
-          <X size={22} color="#fff" />
+          <X size={22} color="var(--color-primary-foreground)" />
         </button>
-        <h2 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, flex: 1 }}>添加新餐厅</h2>
+        <h2 style={{ color: 'var(--color-primary-foreground)', fontSize: '16px', fontWeight: 700, flex: 1 }}>添加新餐厅</h2>
         <button
           onClick={handleSubmit}
-          className="px-4 py-1.5 rounded-full"
-          style={{ background: '#fff', color: '#FF6B35', fontSize: '13px', fontWeight: 700 }}
+          className="glass-chip glass-blur-sm px-4 py-1.5 rounded-full"
+          style={{
+            background: 'var(--glass-surface-strong)',
+            color: 'var(--color-primary)',
+            fontSize: '13px',
+            fontWeight: 700,
+            border: '1px solid var(--glass-border-medium)',
+          }}
         >
           发布
         </button>
@@ -99,7 +108,7 @@ function AddRestaurantForm({ onClose, onSuccess }: { onClose: () => void; onSucc
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {/* Image picker */}
         <div className="mb-4">
-          <p style={{ fontSize: '12px', color: '#999', marginBottom: '8px' }}>选择封面图</p>
+          <p style={{ fontSize: '12px', color: 'var(--color-muted-foreground)', marginBottom: '8px' }}>选择封面图</p>
           <div className="flex gap-2 overflow-x-auto pb-1">
             {DEFAULT_IMAGES.map((img, idx) => (
               <button
@@ -109,7 +118,7 @@ function AddRestaurantForm({ onClose, onSuccess }: { onClose: () => void; onSucc
                   flexShrink: 0, position: 'relative',
                   width: 64, height: 64, borderRadius: 12,
                   overflow: 'hidden',
-                  border: `3px solid ${selectedImage === img ? '#FF4757' : 'transparent'}`,
+                  border: `3px solid ${selectedImage === img ? 'var(--primary)' : 'transparent'}`,
                   transition: 'border-color 0.2s',
                 }}
               >
@@ -118,11 +127,11 @@ function AddRestaurantForm({ onClose, onSuccess }: { onClose: () => void; onSucc
                   <div
                     style={{
                       position: 'absolute', inset: 0,
-                      background: 'rgba(255,71,87,0.3)',
+                      background: 'color-mix(in srgb, var(--primary) 34%, transparent)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}
                   >
-                    <CheckCircle2 size={20} color="#fff" />
+                    <CheckCircle2 size={20} color="var(--primary-foreground)" />
                   </div>
                 )}
               </button>
@@ -132,8 +141,8 @@ function AddRestaurantForm({ onClose, onSuccess }: { onClose: () => void; onSucc
 
         {/* Name */}
         <div className="mb-4">
-          <label style={{ fontSize: '13px', fontWeight: 600, color: '#333', display: 'block', marginBottom: '6px' }}>
-            餐厅名称 <span style={{ color: '#FF4757' }}>*</span>
+          <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-foreground)', display: 'block', marginBottom: '6px' }}>
+            餐厅名称 <span style={{ color: 'var(--primary)' }}>*</span>
           </label>
           <input
             value={name}
@@ -141,18 +150,18 @@ function AddRestaurantForm({ onClose, onSuccess }: { onClose: () => void; onSucc
             placeholder="e.g. 老妈蹄花火锅"
             style={{
               width: '100%', padding: '10px 12px',
-              borderRadius: '12px', border: `1px solid ${errors.name ? '#FF4757' : '#e5e5e5'}`,
-              fontSize: '14px', color: '#333', background: '#fff',
+              borderRadius: '12px', border: `1px solid ${errors.name ? 'var(--primary)' : 'var(--glass-border-medium)'}`,
+              fontSize: '14px', color: 'var(--color-foreground)', background: 'var(--glass-surface-strong)',
               outline: 'none', boxSizing: 'border-box',
             }}
           />
-          {errors.name && <p style={{ color: '#FF4757', fontSize: '11px', marginTop: '3px' }}>{errors.name}</p>}
+          {errors.name && <p style={{ color: 'var(--primary)', fontSize: '11px', marginTop: '3px' }}>{errors.name}</p>}
         </div>
 
         {/* Category */}
         <div className="mb-4">
-          <label style={{ fontSize: '13px', fontWeight: 600, color: '#333', display: 'block', marginBottom: '6px' }}>
-            口味分类 <span style={{ color: '#FF4757' }}>*</span>
+          <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-foreground)', display: 'block', marginBottom: '6px' }}>
+            口味分类 <span style={{ color: 'var(--primary)' }}>*</span>
           </label>
           <div className="flex flex-wrap gap-2">
             {CATEGORY_OPTIONS.map(cat => (
@@ -161,10 +170,10 @@ function AddRestaurantForm({ onClose, onSuccess }: { onClose: () => void; onSucc
                 onClick={() => { setCategory(cat); setErrors(p => ({ ...p, category: '' })); }}
                 style={{
                   padding: '6px 14px', borderRadius: '20px', fontSize: '12px',
-                  background: category === cat ? '#FF4757' : '#f5f5f5',
-                  color: category === cat ? '#fff' : '#666',
+                  background: category === cat ? 'var(--primary)' : 'var(--glass-surface-light)',
+                  color: category === cat ? 'var(--primary-foreground)' : 'var(--color-muted-foreground)',
                   fontWeight: category === cat ? 600 : 400,
-                  border: `1px solid ${category === cat ? '#FF4757' : '#e5e5e5'}`,
+                  border: `1px solid ${category === cat ? 'var(--primary)' : 'var(--glass-border-medium)'}`,
                   transition: 'all 0.2s',
                 }}
               >
@@ -172,12 +181,12 @@ function AddRestaurantForm({ onClose, onSuccess }: { onClose: () => void; onSucc
               </button>
             ))}
           </div>
-          {errors.category && <p style={{ color: '#FF4757', fontSize: '11px', marginTop: '3px' }}>{errors.category}</p>}
+          {errors.category && <p style={{ color: 'var(--primary)', fontSize: '11px', marginTop: '3px' }}>{errors.category}</p>}
         </div>
 
         {/* Price level */}
         <div className="mb-4">
-          <label style={{ fontSize: '13px', fontWeight: 600, color: '#333', display: 'block', marginBottom: '6px' }}>人均消费</label>
+          <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-foreground)', display: 'block', marginBottom: '6px' }}>人均消费</label>
           <div className="flex gap-2">
             {PRICE_OPTIONS.map(opt => (
               <button
@@ -185,11 +194,11 @@ function AddRestaurantForm({ onClose, onSuccess }: { onClose: () => void; onSucc
                 onClick={() => setPriceLevel(opt.value)}
                 className="flex-1 py-2 rounded-xl"
                 style={{
-                  background: priceLevel === opt.value ? '#FFF0ED' : '#f5f5f5',
-                  color: priceLevel === opt.value ? '#FF6B35' : '#888',
+                  background: priceLevel === opt.value ? 'color-mix(in srgb, var(--warning) 18%, var(--glass-surface-light))' : 'var(--glass-surface-light)',
+                  color: priceLevel === opt.value ? 'var(--warning)' : 'var(--color-muted-foreground)',
                   fontSize: '11px',
                   fontWeight: priceLevel === opt.value ? 700 : 400,
-                  border: `1px solid ${priceLevel === opt.value ? '#FF6B35' : '#e5e5e5'}`,
+                  border: `1px solid ${priceLevel === opt.value ? 'var(--warning)' : 'var(--glass-border-medium)'}`,
                 }}
               >
                 {opt.label}
@@ -200,7 +209,7 @@ function AddRestaurantForm({ onClose, onSuccess }: { onClose: () => void; onSucc
 
         {/* Rating */}
         <div className="mb-4">
-          <label style={{ fontSize: '13px', fontWeight: 600, color: '#333', display: 'block', marginBottom: '6px' }}>
+          <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-foreground)', display: 'block', marginBottom: '6px' }}>
             给个评分：{rating.toFixed(1)} ⭐
           </label>
           <div className="flex items-center gap-2">
@@ -218,7 +227,7 @@ function AddRestaurantForm({ onClose, onSuccess }: { onClose: () => void; onSucc
 
         {/* Tags */}
         <div className="mb-4">
-          <label style={{ fontSize: '13px', fontWeight: 600, color: '#333', display: 'block', marginBottom: '6px' }}>
+          <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-foreground)', display: 'block', marginBottom: '6px' }}>
             标签（最多8个）
           </label>
           <div className="flex flex-wrap gap-2 mb-2">
@@ -228,9 +237,9 @@ function AddRestaurantForm({ onClose, onSuccess }: { onClose: () => void; onSucc
                 onClick={() => toggleTag(tag)}
                 style={{
                   padding: '4px 12px', borderRadius: '16px', fontSize: '12px',
-                  background: selectedTags.includes(tag) ? '#FF6B35' : '#f5f5f5',
-                  color: selectedTags.includes(tag) ? '#fff' : '#666',
-                  border: `1px solid ${selectedTags.includes(tag) ? '#FF6B35' : '#e5e5e5'}`,
+                  background: selectedTags.includes(tag) ? 'var(--warning)' : 'var(--glass-surface-light)',
+                  color: selectedTags.includes(tag) ? 'var(--primary-foreground)' : 'var(--color-muted-foreground)',
+                  border: `1px solid ${selectedTags.includes(tag) ? 'var(--warning)' : 'var(--glass-border-medium)'}`,
                   transition: 'all 0.15s',
                 }}
               >
@@ -247,13 +256,13 @@ function AddRestaurantForm({ onClose, onSuccess }: { onClose: () => void; onSucc
               placeholder="自定义标签..."
               style={{
                 flex: 1, padding: '8px 12px', borderRadius: '10px',
-                border: '1px solid #e5e5e5', fontSize: '12px', outline: 'none',
+                border: '1px solid var(--glass-border-medium)', fontSize: '12px', outline: 'none',
               }}
             />
             <button
               onClick={addCustomTag}
               className="px-3 py-2 rounded-xl"
-              style={{ background: '#FF6B35', color: '#fff', fontSize: '12px', fontWeight: 600 }}
+              style={{ background: 'var(--warning)', color: 'var(--color-primary-foreground)', fontSize: '12px', fontWeight: 600 }}
             >
               添加
             </button>
@@ -265,7 +274,7 @@ function AddRestaurantForm({ onClose, onSuccess }: { onClose: () => void; onSucc
                 <span
                   key={t}
                   className="flex items-center gap-1 px-2 py-0.5 rounded-full"
-                  style={{ background: '#FFF0ED', color: '#FF6B35', fontSize: '11px' }}
+                  style={{ background: 'color-mix(in srgb, var(--warning) 16%, var(--glass-surface-light))', color: 'var(--warning)', fontSize: '11px' }}
                 >
                   #{t}
                   <button onClick={() => toggleTag(t)}>
@@ -279,8 +288,8 @@ function AddRestaurantForm({ onClose, onSuccess }: { onClose: () => void; onSucc
 
         {/* Address */}
         <div className="mb-4">
-          <label style={{ fontSize: '13px', fontWeight: 600, color: '#333', display: 'block', marginBottom: '6px' }}>
-            地址 <span style={{ color: '#FF4757' }}>*</span>
+          <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-foreground)', display: 'block', marginBottom: '6px' }}>
+            地址 <span style={{ color: 'var(--primary)' }}>*</span>
           </label>
           <input
             value={address}
@@ -288,31 +297,31 @@ function AddRestaurantForm({ onClose, onSuccess }: { onClose: () => void; onSucc
             placeholder="e.g. 学生街18号"
             style={{
               width: '100%', padding: '10px 12px', borderRadius: '12px',
-              border: `1px solid ${errors.address ? '#FF4757' : '#e5e5e5'}`,
-              fontSize: '14px', color: '#333', outline: 'none', boxSizing: 'border-box',
+              border: `1px solid ${errors.address ? 'var(--primary)' : 'var(--glass-border-medium)'}`,
+              fontSize: '14px', color: 'var(--color-foreground)', outline: 'none', boxSizing: 'border-box',
             }}
           />
-          {errors.address && <p style={{ color: '#FF4757', fontSize: '11px', marginTop: '3px' }}>{errors.address}</p>}
+          {errors.address && <p style={{ color: 'var(--primary)', fontSize: '11px', marginTop: '3px' }}>{errors.address}</p>}
         </div>
 
         {/* Distance */}
         <div className="mb-4">
-          <label style={{ fontSize: '13px', fontWeight: 600, color: '#333', display: 'block', marginBottom: '6px' }}>距离（选填）</label>
+          <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-foreground)', display: 'block', marginBottom: '6px' }}>距离（选填）</label>
           <input
             value={distance}
             onChange={e => setDistance(e.target.value)}
             placeholder="e.g. 300m / 10分钟路程"
             style={{
               width: '100%', padding: '10px 12px', borderRadius: '12px',
-              border: '1px solid #e5e5e5',
-              fontSize: '14px', color: '#333', outline: 'none', boxSizing: 'border-box',
+              border: '1px solid var(--glass-border-medium)',
+              fontSize: '14px', color: 'var(--color-foreground)', outline: 'none', boxSizing: 'border-box',
             }}
           />
         </div>
 
         {/* Description */}
         <div className="mb-6">
-          <label style={{ fontSize: '13px', fontWeight: 600, color: '#333', display: 'block', marginBottom: '6px' }}>种草一句话（选填）</label>
+          <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-foreground)', display: 'block', marginBottom: '6px' }}>种草一句话（选填）</label>
           <textarea
             value={description}
             onChange={e => setDescription(e.target.value)}
@@ -320,7 +329,7 @@ function AddRestaurantForm({ onClose, onSuccess }: { onClose: () => void; onSucc
             rows={3}
             style={{
               width: '100%', padding: '10px 12px', borderRadius: '12px',
-              border: '1px solid #e5e5e5', fontSize: '13px', color: '#333',
+              border: '1px solid var(--glass-border-medium)', fontSize: '13px', color: 'var(--color-foreground)',
               outline: 'none', resize: 'none', lineHeight: 1.5, boxSizing: 'border-box',
             }}
           />
@@ -332,9 +341,9 @@ function AddRestaurantForm({ onClose, onSuccess }: { onClose: () => void; onSucc
           onClick={handleSubmit}
           className="w-full py-4 rounded-2xl mb-6"
           style={{
-            background: 'linear-gradient(135deg, #FF4757, #FF6B35)',
-            color: '#fff', fontSize: '15px', fontWeight: 700,
-            boxShadow: '0 6px 20px rgba(255,71,87,0.35)',
+            background: 'linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 62%, var(--warning)))',
+            color: 'var(--color-primary-foreground)', fontSize: '15px', fontWeight: 700,
+            boxShadow: 'var(--glass-shadow-glow)',
           }}
         >
           🍽️ 发布到食堂
@@ -360,7 +369,7 @@ export function Mine() {
   };
 
   return (
-    <div className="flex flex-col" style={{ minHeight: '100%', background: '#F7F8FA' }}>
+    <div className="flex flex-col" style={{ minHeight: '100%', background: 'var(--color-background)' }}>
       <AnimatePresence mode="wait">
         {showAddForm ? (
           <motion.div
@@ -369,7 +378,7 @@ export function Mine() {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            style={{ position: 'absolute', inset: 0, zIndex: 20, background: '#F7F8FA', overflowY: 'auto' }}
+            style={{ position: 'absolute', inset: 0, zIndex: 20, background: 'var(--color-background)', overflowY: 'auto' }}
           >
             <AddRestaurantForm onClose={() => setShowAddForm(false)} onSuccess={handleSuccess} />
           </motion.div>
@@ -384,20 +393,20 @@ export function Mine() {
           >
             {/* Header */}
             <div
-              className="relative px-4 pt-4 pb-8 overflow-hidden"
-              style={{ background: 'linear-gradient(135deg, #FF4757, #FF6B35)' }}
+              className="unified-topbar relative px-4 pt-4 pb-8 overflow-hidden"
+              style={{ background: 'linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 60%, var(--color-warning)))' }}
             >
-              <div style={{ position: 'absolute', top: -20, right: -20, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+              <div style={{ position: 'absolute', top: -20, right: -20, width: 120, height: 120, borderRadius: '50%', background: 'color-mix(in srgb, var(--glass-surface-strong) 34%, transparent)' }} />
               <div className="flex items-center gap-3">
                 <div
                   className="flex items-center justify-center rounded-full"
-                  style={{ width: 56, height: 56, background: 'rgba(255,255,255,0.2)' }}
+                  style={{ width: 56, height: 56, background: 'color-mix(in srgb, var(--glass-surface-strong) 62%, transparent)' }}
                 >
                   <span style={{ fontSize: '28px' }}>🍚</span>
                 </div>
                 <div>
-                  <p style={{ color: '#fff', fontSize: '16px', fontWeight: 700 }}>干饭达人</p>
-                  <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '12px' }}>每天不纠结，干饭好时光</p>
+                  <p style={{ color: 'var(--color-primary-foreground)', fontSize: '16px', fontWeight: 700 }}>干饭达人</p>
+                  <p style={{ color: 'color-mix(in srgb, var(--glass-text-inverse) 78%, transparent)', fontSize: '12px' }}>每天不纠结，干饭好时光</p>
                 </div>
               </div>
             </div>
@@ -405,18 +414,18 @@ export function Mine() {
             {/* Stats */}
             <div className="px-4 -mt-4">
               <div
-                className="grid grid-cols-3 rounded-2xl overflow-hidden"
-                style={{ background: '#fff', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}
+                className="foreground-glass-card glass-panel glass-blur-md enhanced-neumorph-card neumorph-strong grid grid-cols-3 rounded-2xl overflow-hidden"
+                style={{ boxShadow: 'var(--glass-shadow-glow)' }}
               >
                 {[
                   { label: '收录餐厅', value: restaurants.length, emoji: '🍽️' },
                   { label: '我添加的', value: userAdded.length, emoji: '✍️' },
                   { label: '当前可选', value: actives.length, emoji: '✅' },
-                ].map(({ label, value, emoji }) => (
-                  <div key={label} className="flex flex-col items-center py-4" style={{ borderRight: '1px solid #f5f5f5' }}>
+                ].map(({ label, value, emoji }, idx) => (
+                  <div key={label} className="flex flex-col items-center py-4" style={{ borderRight: idx < 2 ? '1px solid var(--glass-border-soft)' : 'none' }}>
                     <span style={{ fontSize: '20px' }}>{emoji}</span>
-                    <span style={{ fontSize: '20px', fontWeight: 700, color: '#FF4757', lineHeight: 1.2 }}>{value}</span>
-                    <span style={{ fontSize: '10px', color: '#999', marginTop: '2px' }}>{label}</span>
+                    <span style={{ fontSize: '20px', fontWeight: 700, color: 'var(--primary)', lineHeight: 1.2 }}>{value}</span>
+                    <span style={{ fontSize: '10px', color: 'var(--color-muted-foreground)', marginTop: '2px' }}>{label}</span>
                   </div>
                 ))}
               </div>
@@ -427,23 +436,24 @@ export function Mine() {
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setShowAddForm(true)}
-                className="w-full flex items-center gap-4 p-4 rounded-2xl"
+                className="glass-panel glass-blur-md enhanced-neumorph-card neumorph-strong w-full flex items-center gap-4 p-4 rounded-2xl"
                 style={{
-                  background: 'linear-gradient(135deg, #FFA502, #FF6B35)',
-                  boxShadow: '0 6px 20px rgba(255,107,53,0.3)',
+                  background: 'color-mix(in srgb, var(--warning) 18%, var(--glass-surface-strong))',
+                  boxShadow: 'var(--glass-shadow-glow)',
+                  border: '1px solid color-mix(in srgb, var(--warning) 28%, var(--glass-border-medium))',
                 }}
               >
                 <div
                   className="flex items-center justify-center rounded-2xl"
-                  style={{ width: 48, height: 48, background: 'rgba(255,255,255,0.2)' }}
+                  style={{ width: 48, height: 48, background: 'color-mix(in srgb, var(--warning) 20%, var(--glass-surface-light))' }}
                 >
-                  <Plus size={24} color="#fff" />
+                  <Plus size={24} color="var(--primary)" />
                 </div>
                 <div className="text-left">
-                  <p style={{ color: '#fff', fontSize: '15px', fontWeight: 700 }}>添加新餐厅</p>
-                  <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '12px' }}>分享你发现的美食宝藏</p>
+                  <p style={{ color: 'var(--foreground)', fontSize: '15px', fontWeight: 700 }}>添加新餐厅</p>
+                  <p style={{ color: 'var(--glass-text-muted-transparent)', fontSize: '12px' }}>分享你发现的美食宝藏</p>
                 </div>
-                <div style={{ marginLeft: 'auto', color: '#fff', fontSize: '18px' }}>→</div>
+                <div style={{ marginLeft: 'auto', color: 'var(--primary)', fontSize: '18px' }}>→</div>
               </motion.button>
             </div>
 
@@ -451,24 +461,30 @@ export function Mine() {
             {userAdded.length > 0 && (
               <div className="px-4 mt-4">
                 <div className="flex items-center justify-between mb-3">
-                  <p style={{ fontSize: '14px', fontWeight: 700, color: '#1a1a1a' }}>我添加的餐厅</p>
-                  <button onClick={() => navigate('/restaurants')} style={{ fontSize: '12px', color: '#FF4757' }}>管理 →</button>
+                  <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--foreground)' }}>我添加的餐厅</p>
+                  <button
+                    onClick={() => navigate('/restaurants')}
+                    className="glass-chip glass-blur-sm px-2.5 py-1 rounded-full"
+                    style={{ fontSize: '12px', color: 'var(--primary)' }}
+                  >
+                    管理 →
+                  </button>
                 </div>
                 <div className="flex flex-col gap-2">
                   {userAdded.map(r => (
                     <div
                       key={r.id}
-                      className="flex items-center gap-3 p-3 rounded-xl"
-                      style={{ background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
+                      className="foreground-glass-card glass-panel glass-blur-md enhanced-neumorph-card neumorph-strong flex items-center gap-3 p-3 rounded-xl"
+                      style={{ boxShadow: 'var(--glass-shadow-ambient)' }}
                     >
                       <img src={r.image} alt={r.name} style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover' }} />
                       <div className="flex-1 min-w-0">
-                        <p style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a' }}>{r.name}</p>
-                        <p style={{ fontSize: '11px', color: '#999' }}>{r.category} · {r.distance}</p>
+                        <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--foreground)' }}>{r.name}</p>
+                        <p style={{ fontSize: '11px', color: 'var(--color-muted-foreground)' }}>{r.category} · {r.distance}</p>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Star size={11} fill="#FFA502" color="#FFA502" />
-                        <span style={{ fontSize: '11px', color: '#FFA502', fontWeight: 600 }}>{r.rating}</span>
+                        <Star size={11} fill="var(--warning)" color="var(--warning)" />
+                        <span style={{ fontSize: '11px', color: 'var(--warning)', fontWeight: 600 }}>{r.rating}</span>
                       </div>
                     </div>
                   ))}
@@ -479,10 +495,14 @@ export function Mine() {
             {/* Tips section */}
             <div className="px-4 mt-4 mb-6">
               <div
-                className="p-4 rounded-2xl"
-                style={{ background: '#FFF8F0', border: '1px solid #FFE4CC' }}
+                className="glass-panel glass-blur-md enhanced-neumorph-card neumorph-strong p-4 rounded-2xl"
+                style={{
+                  background: 'color-mix(in srgb, var(--warning) 10%, var(--glass-surface-strong))',
+                  border: '1px solid color-mix(in srgb, var(--warning) 24%, var(--glass-border-soft))',
+                  boxShadow: 'var(--glass-shadow-ambient)',
+                }}
               >
-                <p style={{ fontSize: '12px', fontWeight: 700, color: '#FF6B35', marginBottom: '8px' }}>
+                <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--warning)', marginBottom: '8px' }}>
                   💡 使用小贴士
                 </p>
                 {[
@@ -491,7 +511,7 @@ export function Mine() {
                   '🚫 拉黑功能：不想看到的餐厅直接排雷',
                   '✍️ UGC录入：发现宝藏小店随时添加',
                 ].map(tip => (
-                  <p key={tip} style={{ fontSize: '11px', color: '#888', lineHeight: 1.8 }}>{tip}</p>
+                  <p key={tip} style={{ fontSize: '11px', color: 'var(--glass-text-muted-transparent)', lineHeight: 1.8 }}>{tip}</p>
                 ))}
               </div>
             </div>
@@ -518,12 +538,12 @@ export function Mine() {
             <div
               className="flex items-center gap-2 px-4 py-3 rounded-2xl"
               style={{
-                background: '#1a1a1a',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+                background: 'var(--foreground)',
+                boxShadow: 'var(--glass-shadow-ambient)',
               }}
             >
               <span style={{ fontSize: '16px' }}>🎉</span>
-              <span style={{ color: '#fff', fontSize: '13px', fontWeight: 600 }}>发布成功！已加入食堂</span>
+              <span style={{ color: 'var(--color-primary-foreground)', fontSize: '13px', fontWeight: 600 }}>发布成功！已加入食堂</span>
             </div>
           </motion.div>
         )}

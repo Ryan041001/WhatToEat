@@ -1,3 +1,219 @@
 @import './fonts.css';
 @import './tailwind.css';
 @import './theme.css';
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background:
+    radial-gradient(circle at 12% -4%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 38%),
+    radial-gradient(circle at 88% 4%, color-mix(in srgb, var(--primary) 24%, transparent), transparent 42%),
+    linear-gradient(165deg, color-mix(in srgb, var(--background) 92%, white), var(--background));
+}
+
+.glass-atmosphere {
+  position: relative;
+  isolation: isolate;
+}
+
+.glass-atmosphere::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 15% 5%, color-mix(in srgb, var(--primary) 28%, transparent), transparent 45%),
+    radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--accent) 25%, transparent), transparent 38%);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.glass-panel,
+.glass-nav,
+.glass-chip,
+.glass-overlay {
+  border: 1px solid var(--glass-border-medium);
+  background: var(--glass-surface-medium);
+  box-shadow: var(--glass-shadow-ambient);
+}
+
+.glass-panel {
+  border-radius: 1rem;
+}
+
+.glass-nav {
+  border-radius: 1.125rem;
+  border-color: var(--glass-border-strong);
+  background: color-mix(in srgb, var(--glass-surface-strong) 88%, transparent);
+}
+
+.glass-chip {
+  border-radius: 999px;
+  background: var(--glass-surface-light);
+  border-color: var(--glass-border-soft);
+}
+
+.glass-overlay {
+  background: var(--glass-surface-strong);
+  border-color: var(--glass-border-strong);
+  box-shadow: var(--glass-shadow-glow);
+}
+
+.click-hover-lift {
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .click-hover-lift:hover {
+    transform: var(--hover-lift-translate);
+    box-shadow: var(--hover-lift-shadow);
+  }
+}
+
+.click-hover-lift:active {
+  transform: translateY(0);
+  box-shadow: var(--glass-shadow-ambient);
+}
+
+.enhanced-neumorph-card {
+  box-shadow: var(--neumorph-shadow-soft);
+}
+
+.enhanced-neumorph-card.neumorph-strong {
+  box-shadow: var(--neumorph-shadow-strong);
+}
+
+.foreground-glass-card {
+  background: color-mix(in srgb, var(--glass-surface-strong) 72%, var(--glass-surface-light));
+  border: 1px solid var(--glass-border-strong);
+  box-shadow: var(--glass-shadow-glow);
+  --glass-blur-tier: calc(var(--glass-blur-strong) + 4px);
+  --glass-saturate-tier: 152%;
+}
+
+.unified-topbar {
+  background: var(--topbar-bg);
+  border-color: var(--topbar-border-color);
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--topbar-border-color) 65%, transparent);
+  transition: var(--topbar-transition);
+}
+
+.glass-blur-sm {
+  --glass-blur-tier: var(--glass-blur-light);
+  --glass-saturate-tier: 122%;
+}
+
+.glass-blur-md {
+  --glass-blur-tier: var(--glass-blur-medium);
+  --glass-saturate-tier: 132%;
+}
+
+.glass-blur-lg {
+  --glass-blur-tier: var(--glass-blur-strong);
+  --glass-saturate-tier: 142%;
+}
+
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .glass-panel,
+  .glass-nav,
+  .glass-chip,
+  .glass-overlay {
+    -webkit-backdrop-filter: saturate(var(--glass-saturate-tier, 130%)) blur(var(--glass-blur-tier, var(--glass-blur-medium)));
+    backdrop-filter: saturate(var(--glass-saturate-tier, 130%)) blur(var(--glass-blur-tier, var(--glass-blur-medium)));
+  }
+}
+
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .glass-panel,
+  .glass-nav,
+  .glass-chip,
+  .glass-overlay {
+    background: color-mix(in srgb, var(--color-card) 94%, var(--background));
+    border-color: color-mix(in srgb, var(--glass-border-medium) 74%, var(--border));
+  }
+
+  .glass-nav {
+    background: color-mix(in srgb, var(--color-card) 96%, var(--background));
+  }
+
+  .glass-overlay {
+    background: color-mix(in srgb, var(--color-card) 97%, var(--background));
+  }
+
+  .glass-chip {
+    background: color-mix(in srgb, var(--color-card) 90%, var(--background));
+  }
+}
+
+button,
+a,
+input,
+textarea,
+[role='button'] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+@media (pointer: coarse) {
+  button,
+  a,
+  input,
+  textarea,
+  [role='button'] {
+    min-height: 46px;
+  }
+}
+
+button,
+a,
+input,
+textarea,
+[role='button'] {
+  transition:
+    background-color var(--motion-duration-normal) var(--motion-ease-standard),
+    border-color var(--motion-duration-normal) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-normal) var(--motion-ease-standard),
+    color var(--motion-duration-normal) var(--motion-ease-standard),
+    transform var(--motion-duration-fast) var(--motion-ease-standard),
+    opacity var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+button:hover,
+a:hover,
+[role='button']:hover {
+  background-color: var(--glass-interaction-hover);
+}
+
+button:active,
+a:active,
+[role='button']:active {
+  background-color: var(--glass-interaction-active);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: 2px;
+  box-shadow: var(--focus-ring-shadow);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+[role='button']:focus-visible {
+  outline-width: 3px;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
