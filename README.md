@@ -11,20 +11,14 @@
 
 此外,项目当前阶段以高德 POI 作为餐厅主数据来源,并由后端统一封装地图与位置服务接口。应用仍支持用户提交偏好数据（如拉黑与备注）来做个性化过滤。项目旨在通过轻量级的移动端交互,结合稳定高可用的后端服务,快速解决大众就餐的选择困难症。
 
-<<<<<<< HEAD
-## 技术栈(初步规划)
-- **前端:** 微信小程序 (使用原生框架或主流 UI 组件库开发前端界面与交互)
-- **后端:** Spring Boot (提供 RESTful API 接口与业务逻辑处理)
-- **数据库:** MySQL (存储用户、餐厅库、评价标签等核心数据)
+## 技术栈(当前方案)
+- **前端:** 微信小程序原生开发
+- **后端:** Spring Boot (RESTful API) + Spring Data JPA
+- **地图与位置服务:** 高德 Web 服务 API（由后端调用并封装）
+- **数据库:** MySQL（主要存储用户侧数据，如黑名单、备注、选择历史）
 
 ## figma链接
 https://www.figma.com/make/O3ROt1nNk2TfEyq6cJ2D2g/%E5%B9%B2%E9%A5%AD%E9%98%B2%E7%BA%A0%E7%BB%93%E5%B0%8F%E7%A8%8B%E5%BA%8F?p=f&t=ICiEQPjXqTttrzhE-0
-=======
-## 技术栈(当前方案)
-- **前端:** 微信小程序原生开发
-- **后端:** Spring Boot (RESTful API)
-- **地图与位置服务:** 高德 Web 服务 API（由后端调用并封装）
-- **数据库:** MySQL（主要存储用户侧数据，如黑名单、备注、选择历史）
 
 ## 仓库结构
 ```text
@@ -34,4 +28,3 @@ WhatToEat/
 ├── docs/       # 文档（frontend.md / backend.md / api.md）
 └── README.md
 ```
->>>>>>> origin/develop
