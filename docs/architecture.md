@@ -282,3 +282,40 @@ JAVA_HOME=$(/usr/libexec/java_home -v 17) ./mvnw test
 - 本文档：系统边界与模块职责
 
 三者共同作为后端实现与联调的基线。
+
+---
+
+## 10. 前端架构
+
+### 10.1 页面与组件结构
+
+```mermaid
+graph TD
+    subgraph "微信小程序 (WhatToEat Frontend)"
+        direction LR
+        A[app.js / app.json] --> B((页面))
+        B --> P_Home[pages/home<br>首页]
+        B --> P_Restaurants[pages/restaurants<br>餐厅列表]
+        B --> P_Spin[pages/spin<br>转盘决定]
+        B --> P_Swipe[pages/swipe<br>卡片决定]
+        B --> P_Mine[pages/mine<br>我的]
+    end
+
+    subgraph "可复用组件 (Components)"
+        C_Nav[components/navigation-bar<br>自定义导航栏]
+    end
+
+    P_Home --> C_Nav
+    P_Restaurants --> C_Nav
+    P_Spin --> C_Nav
+    P_Swipe --> C_Nav
+    P_Mine --> C_Nav
+
+    style P_Home fill:#D6EAF8
+    style P_Restaurants fill:#D6EAF8
+    style P_Spin fill:#D6EAF8
+    style P_Swipe fill:#D6EAF8
+    style P_Mine fill:#D6EAF8
+    style C_Nav fill:#D5F5E3
+```
+

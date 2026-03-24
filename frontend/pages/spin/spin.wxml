@@ -1,0 +1,59 @@
+<!--pages/spin/spin.wxml-->
+<view class="container">
+  <!-- Header -->
+  <view class="header">
+    <text class="header-title">🎡 大转盘抽取</text>
+    <text class="header-subtitle">随机决定，告别纠结</text>
+  </view>
+
+  <!-- Canvas Wheel -->
+  <view class="wheel-wrapper">
+    <canvas canvas-id="wheelCanvas" class="wheel-canvas" disable-scroll="true"></canvas>
+    <view class="wheel-pointer">▼</view>
+  </view>
+
+  <!-- Spin Button -->
+  <view class="spin-btn-wrapper">
+    <button 
+      class="spin-btn {{isSpinning ? 'spinning' : ''}}" 
+      bindtap="handleSpin"
+      disabled="{{isSpinning}}"
+    >
+      <text class="spin-btn-text">{{isSpinning ? '正在转...' : '开始抽取'}}</text>
+    </button>
+  </view>
+
+  <!-- Result Card -->
+  <view class="result-overlay {{showResult ? 'show' : ''}}">
+    <view class="result-card">
+      <text class="result-emoji">🎉</text>
+      <text class="result-label">恭喜抽中</text>
+      <view class="result-info" wx:if="{{result}}">
+        <image class="result-image" src="{{result.image}}" mode="aspectFill"></image>
+        <text class="result-name">{{result.name}}</text>
+        <view class="result-meta">
+          <text class="result-category">{{result.category}}</text>
+          <text class="result-distance">📍 {{result.distance}}</text>
+        </view>
+        <view class="result-tags">
+          <text class="tag" wx:for="{{result.tags}}" wx:key="*this">{{item}}</text>
+        </view>
+      </view>
+      <view class="result-actions">
+        <button class="result-btn result-btn-secondary" bindtap="handleSpinAgain">
+          <text>再转一次</text>
+        </button>
+        <button class="result-btn result-btn-primary" bindtap="closeResult">
+          <text>就这家了</text>
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- Empty State -->
+  <view class="empty-state" wx:if="{{restaurants.length === 0}}">
+    <text class="empty-emoji">😕</text>
+    <text class="empty-text">还没有可选餐厅</text>
+    <text class="empty-tip">快去添加一些餐厅吧~</text>
+  </view>
+</view>
