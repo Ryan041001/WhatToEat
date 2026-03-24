@@ -54,8 +54,13 @@ miniprogram_npm/
 .miniprogram/
 
 # 本地 Claude Code 指南
-CLAUDE.md
 .claude/
+
+# 本地辅助过程文件
+docs/superpowers/
+
+# 本地 Obsidian 笔记
+.obsidian/
 
 # 本地作业目录
 weekly-homework/

@@ -208,3 +208,39 @@
 3. `POST /api/v1/users/{userId}/blacklist/{poiId}`
 4. `GET /api/v1/recommendations/cards`
 5. `POST /api/v1/users/{userId}/notes/{poiId}`
+
+---
+
+## 9. 错误码与错误语义（补充）
+
+建议在 `code != 0` 时采用分层错误码：
+
+- `1001`：参数校验失败（缺失/格式错误）
+- `1002`：用户不存在或不可用
+- `2001`：重复拉黑（`userId + poiId` 已存在）
+- `2002`：备注内容非法（为空或超长）
+- `3001`：高德上游请求失败
+- `3002`：高德上游请求超时
+- `9000`：系统内部异常
+
+示例：
+
+```json
+{
+  "code": 3001,
+  "message": "amap service unavailable",
+  "data": null
+}
+```
+
+---
+
+## 10. 接口一致性约定（补充）
+
+1. 分页参数统一为 `page`、`size`，缺省值由后端统一处理。
+2. 所有坐标参数统一按 **GCJ-02** 解释。
+3. 用户偏好数据遵循 `(user_id, poi_id)` 唯一语义：
+   - 黑名单：同一用户同一 POI 不可重复新增；
+   - 备注：同一用户同一 POI 建议采用“覆盖更新”。
+4. 推荐接口在返回前必须执行黑名单过滤；可选结合 `user_choice_history` 做短期去重。
+
