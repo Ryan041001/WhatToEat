@@ -58,6 +58,7 @@ miniprogram_npm/
 
 # 本地辅助过程文件
 docs/superpowers/
+.worktrees/
 
 # 本地 Obsidian 笔记
 .obsidian/
