@@ -5,7 +5,7 @@ info:
   description: |
     今天吃什么（WhatToEat）后端 API 文档。
 
-    本文档覆盖当前已经实现的资源：认证、餐厅查询、推荐接口、黑名单新增。
+    本文档覆盖当前已经实现的资源：认证、餐厅查询、推荐接口、黑名单新增、删除与分页查询。
 servers:
   - url: http://localhost:8080
     description: Local development
@@ -17,7 +17,7 @@ tags:
   - name: Recommendations
     description: 餐厅推荐
   - name: Blacklist
-    description: 用户黑名单新增
+    description: 用户黑名单管理
 paths:
   /api/v1/auth/wechat-login:
     post:
@@ -240,6 +240,57 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '409':
           $ref: '#/components/responses/Conflict'
+    get:
+      tags: [Blacklist]
+      summary: 分页查询黑名单
+      operationId: listBlacklist
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/BlacklistPageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/users/{userId}/blacklist/{poiId}:
+    delete:
+      tags: [Blacklist]
+      summary: 移除黑名单
+      operationId: deleteBlacklist
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/BlacklistPoiId'
+      responses:
+        '200':
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 components:
   securitySchemes:
     bearerAuth:
@@ -264,6 +315,14 @@ components:
         format: int64
         minimum: 1
       description: 可选；传入后会按该用户黑名单过滤结果。必须为正整数且对应用户必须存在。
+    BlacklistPoiId:
+      name: poiId
+      in: path
+      required: true
+      schema:
+        type: string
+        maxLength: 64
+      description: 黑名单中的餐厅 POI ID。
     Longitude:
       name: longitude
       in: query
@@ -481,6 +540,35 @@ components:
           maxLength: 64
           example: B0FF123456
       required: [poiId]
+    BlacklistItem:
+      type: object
+      properties:
+        poiId:
+          type: string
+          example: B0FF123456
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-03-26T10:00:00'
+      required: [poiId, createdAt]
+    BlacklistPageResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BlacklistItem'
+        page:
+          type: integer
+          example: 1
+        size:
+          type: integer
+          example: 10
+        total:
+          type: integer
+          format: int64
+          example: 35
+      required: [items, page, size, total]
     RestaurantPageResponse:
       type: object
       properties:

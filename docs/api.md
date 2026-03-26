@@ -15,7 +15,7 @@
 - `auth`：登录、登出、当前用户
 - `restaurants`：餐厅查询
 - `recommendations`：随机推荐与卡片候选列表
-- `users/{userId}/blacklist`：用户黑名单新增
+- `users/{userId}/blacklist`：用户黑名单新增、删除、分页查询
 
 ---
 
@@ -79,6 +79,8 @@ Authorization: Bearer <token>
 - `POST /api/v1/auth/logout`
 - `GET /api/v1/auth/me`
 - `POST /api/v1/users/{userId}/blacklist`
+- `DELETE /api/v1/users/{userId}/blacklist/{poiId}`
+- `GET /api/v1/users/{userId}/blacklist`
 
 说明：当前 blacklist 创建接口仍以 `userId` 作为资源定位参数，但服务端会校验 Bearer Token 对应用户与路径参数一致；后续如收敛到“当前用户上下文”，可在不改变资源语义的前提下进一步演进。
 
@@ -317,6 +319,63 @@ Authorization: Bearer <token>
 
 成功返回 `201 Created`。
 
+### 9.2 移除黑名单
+
+- 方法：`DELETE`
+- 路径：`/api/v1/users/{userId}/blacklist/{poiId}`
+
+路径参数：
+
+- `userId`：用户 ID，必填
+- `poiId`：餐厅 POI ID，必填，长度不超过 `64`
+
+成功返回 `200 OK`。
+
+错误语义：
+
+- 未登录、token 无效或 token 对应用户与路径 `userId` 不一致时，返回 `401 Unauthorized` / `1003`
+- 目标黑名单记录不存在时，返回 `404 Not Found` / `2002`
+
+### 9.3 分页查询黑名单
+
+- 方法：`GET`
+- 路径：`/api/v1/users/{userId}/blacklist`
+
+查询参数：
+
+- `page`：页码，默认 `1`
+- `size`：每页条数，默认 `10`，最大 `100`
+
+返回结构：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "items": [
+      {
+        "poiId": "B0FF123456",
+        "createdAt": "2026-03-26T10:00:00"
+      }
+    ],
+    "page": 1,
+    "size": 10,
+    "total": 1
+  }
+}
+```
+
+字段说明：
+
+- `items[].poiId`：被拉黑的餐厅 POI ID
+- `items[].createdAt`：加入黑名单时间，ISO-8601 本地日期时间字符串
+
+错误语义：
+
+- 未登录、token 无效或 token 对应用户与路径 `userId` 不一致时，返回 `401 Unauthorized` / `1003`
+- 参数校验失败时，返回 `400 Bad Request` / `1001`
+
 ---
 
 ## 10. OpenAPI 导入说明
@@ -346,8 +405,8 @@ docs/api.yaml
 
 - 当前认证实现为 mock 微信登录，接口形状贴近真实小程序登录流程
 - 餐厅主数据来源于高德，不在本地维护完整餐厅主表
-- 当前已实现的用户侧写接口包括推荐查询与黑名单新增
-- 黑名单查询/删除、备注 CRUD 仍在后续迭代中，未纳入本文档当前契约
+- 当前已实现的用户侧写接口包括推荐查询与黑名单新增、删除、分页查询
+- 备注 CRUD 仍在后续迭代中，未纳入本文档当前契约
 
 ---
 
