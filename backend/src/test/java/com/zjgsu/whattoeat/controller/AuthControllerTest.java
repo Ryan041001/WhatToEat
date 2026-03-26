@@ -101,6 +101,14 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.code").value(1003));
     }
 
+    @Test
+    void logoutShouldReturn401WhenTokenInvalid() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/logout")
+                        .header("Authorization", "Bearer fake-token"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(1003));
+    }
+
     private String extractToken(String responseBody) {
         Matcher matcher = TOKEN_PATTERN.matcher(responseBody);
         if (!matcher.find()) {

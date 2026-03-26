@@ -45,6 +45,9 @@ public class AuthApplicationService {
     }
 
     public void logout(String token) {
+        if (sessionStore.getUserId(token) == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
         sessionStore.remove(token);
     }
 

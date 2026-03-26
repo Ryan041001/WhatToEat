@@ -2,7 +2,7 @@
 
 ## 1. 文档范围
 
-本文档描述 WhatToEat / 今天吃什么 项目当前 API 契约，供课程作业提交、后端实现对齐，以及后续前端联调用。
+本文档描述 WhatToEat / 今天吃什么 项目当前已经实现的 API 契约，供课程作业提交、后端实现对齐，以及后续前端联调用。
 
 接口统一前缀：
 
@@ -10,13 +10,11 @@
 /api/v1
 ```
 
-当前覆盖五组资源：
+当前已实现三组资源：
 
 - `auth`：登录、登出、当前用户
 - `restaurants`：餐厅查询
-- `recommendations`：推荐结果
-- `users/{userId}/blacklist`：用户黑名单
-- `users/{userId}/notes`：用户备注 CRUD
+- `users/{userId}/blacklist`：用户黑名单新增
 
 ---
 
@@ -79,8 +77,9 @@ Authorization: Bearer <token>
 
 - `POST /api/v1/auth/logout`
 - `GET /api/v1/auth/me`
+- `POST /api/v1/users/{userId}/blacklist`
 
-说明：当前 blacklist / notes / recommendations 文档仍以 `userId` 作为资源定位参数；后续如收敛到“当前用户上下文”，可在不改变资源语义的前提下进一步演进。
+说明：当前 blacklist 创建接口仍以 `userId` 作为资源定位参数，但服务端会校验 Bearer Token 对应用户与路径参数一致；后续如收敛到“当前用户上下文”，可在不改变资源语义的前提下进一步演进。
 
 ---
 
@@ -151,7 +150,7 @@ Authorization: Bearer <token>
 
 ---
 
-## 7. 餐厅查询与推荐接口
+## 7. 餐厅查询接口
 
 ### 7.1 查询附近餐厅
 
@@ -212,64 +211,11 @@ Authorization: Bearer <token>
 - 当 `total == 0` 时，返回 `404 Not Found`，业务码 `3003`（高德无结果）
 - 当 `total > 0` 且当前页 `items` 为空时，返回 `200 OK`，`items: []`
 
-### 7.3 获取随机推荐结果
-
-- 方法：`GET`
-- 路径：`/api/v1/recommendations/random`
-
-查询参数：
-
-- `userId`：用户 ID，必填
-- `longitude`：经度，必填
-- `latitude`：纬度，必填
-- `radius`：搜索半径，默认 `1000`
-
-返回示例：
-
-```json
-{
-  "code": 0,
-  "message": "success",
-  "data": {
-    "poiId": "B0FF123456",
-    "name": "老地方盖浇饭",
-    "address": "学林街xx号",
-    "longitude": 120.3502,
-    "latitude": 30.3154,
-    "distance": 180,
-    "reason": "符合筛选条件的随机结果"
-  }
-}
-```
-
-### 7.4 获取推荐候选卡片
-
-- 方法：`GET`
-- 路径：`/api/v1/recommendations/cards`
-
-查询参数：
-
-- `userId`：用户 ID，必填
-- `longitude`：经度，必填
-- `latitude`：纬度，必填
-- `radius`：搜索半径，默认 `1000`
-- `size`：候选数量，默认 `10`
-
 ---
 
 ## 8. 黑名单接口
 
-### 8.1 查询黑名单列表
-
-- 方法：`GET`
-- 路径：`/api/v1/users/{userId}/blacklist`
-
-查询参数：
-
-- `page`
-- `size`
-
-### 8.2 加入黑名单
+### 8.1 加入黑名单
 
 - 方法：`POST`
 - 路径：`/api/v1/users/{userId}/blacklist`
@@ -286,93 +232,9 @@ Authorization: Bearer <token>
 
 成功返回 `201 Created`。
 
-### 8.3 删除黑名单项
-
-- 方法：`DELETE`
-- 路径：`/api/v1/users/{userId}/blacklist/{poiId}`
-
-成功返回：
-
-```json
-{
-  "code": 0,
-  "message": "success",
-  "data": null
-}
-```
-
 ---
 
-## 9. 备注 CRUD 接口
-
-### 9.1 创建备注
-
-- 方法：`POST`
-- 路径：`/api/v1/users/{userId}/notes`
-
-请求体：
-
-```json
-{
-  "poiId": "B0FF123456",
-  "content": "中午排队久，但味道不错"
-}
-```
-
-### 9.2 查询备注列表
-
-- 方法：`GET`
-- 路径：`/api/v1/users/{userId}/notes`
-
-查询参数：
-
-- `page`
-- `size`
-- `keyword`：按备注内容模糊筛选
-
-### 9.3 查询备注详情
-
-- 方法：`GET`
-- 路径：`/api/v1/users/{userId}/notes/{noteId}`
-
-### 9.4 更新备注
-
-- 方法：`PUT`
-- 路径：`/api/v1/users/{userId}/notes/{noteId}`
-
-请求体：
-
-```json
-{
-  "content": "晚高峰排队久，建议错峰"
-}
-```
-
-### 9.5 删除备注
-
-- 方法：`DELETE`
-- 路径：`/api/v1/users/{userId}/notes/{noteId}`
-
-备注详情示例：
-
-```json
-{
-  "code": 0,
-  "message": "success",
-  "data": {
-    "id": 10,
-    "userId": 1,
-    "poiId": "B0FF123456",
-    "content": "晚高峰排队久，建议错峰",
-    "createdAt": "2026-03-26T18:00:00",
-    "updatedAt": "2026-03-26T18:10:00"
-  }
-}
-```
-
----
-
-## 10. OpenAPI 导入说明
+## 9. OpenAPI 导入说明
 
 OpenAPI 主契约文件位于：
 
@@ -395,21 +257,21 @@ docs/api.yaml
 
 ---
 
-## 11. 实现说明
+## 10. 实现说明
 
 - 当前认证实现为 mock 微信登录，接口形状贴近真实小程序登录流程
 - 餐厅主数据来源于高德，不在本地维护完整餐厅主表
-- 黑名单与备注属于用户侧业务数据，由本地数据库持久化
-- 推荐结果在返回前应执行黑名单过滤
+- 当前已实现的用户侧写接口为黑名单新增，数据持久化到本地数据库
+- 推荐、黑名单查询/删除、备注 CRUD 仍在后续迭代中，未纳入本文档当前契约
 
 ---
 
-## 12. 与旧版文档的差异
+## 11. 与旧版文档的差异
 
 本版相较于早期草稿，做了以下收敛：
 
 1. 将黑名单新增接口从路径参数式 `POST /blacklist/{poiId}` 调整为更 RESTful 的 body 创建式 `POST /blacklist`
-2. 将备注接口扩展为完整 CRUD，而不是仅提交备注
-3. 补充认证资源 `auth`
-4. 补充分页结构、错误码、Bearer Token 说明
+2. 补充认证资源 `auth`
+3. 补充分页结构、错误码、Bearer Token 说明
+4. 当前文档只保留已落地接口，未实现资源不再作为现行契约发布
 5. 以 `docs/api.yaml` 作为后续实现与联调的主契约

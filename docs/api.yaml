@@ -5,7 +5,7 @@ info:
   description: |
     今天吃什么（WhatToEat）后端 API 文档。
 
-    本文档覆盖本周 API 作业要求的核心资源：认证、餐厅查询、推荐、黑名单、备注 CRUD。
+    本文档覆盖当前已经实现的资源：认证、餐厅查询、黑名单新增。
 servers:
   - url: http://localhost:8080
     description: Local development
@@ -14,12 +14,8 @@ tags:
     description: 认证与会话
   - name: Restaurants
     description: 餐厅查询
-  - name: Recommendations
-    description: 推荐结果
   - name: Blacklist
-    description: 用户黑名单
-  - name: Notes
-    description: 用户餐厅备注
+    description: 用户黑名单新增
 paths:
   /api/v1/auth/wechat-login:
     post:
@@ -151,106 +147,13 @@ paths:
           $ref: '#/components/responses/AmapUpstreamError'
         '504':
           $ref: '#/components/responses/AmapUpstreamTimeout'
-  /api/v1/recommendations/random:
-    get:
-      tags: [Recommendations]
-      summary: 获取随机推荐结果
-      operationId: randomRecommendation
-      parameters:
-        - name: userId
-          in: query
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - $ref: '#/components/parameters/Longitude'
-        - $ref: '#/components/parameters/Latitude'
-        - $ref: '#/components/parameters/Radius'
-      responses:
-        '200':
-          description: 推荐成功
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/RecommendationResult'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '502':
-          $ref: '#/components/responses/AmapUpstreamError'
-        '504':
-          $ref: '#/components/responses/AmapUpstreamTimeout'
-  /api/v1/recommendations/cards:
-    get:
-      tags: [Recommendations]
-      summary: 获取推荐候选卡片列表
-      operationId: recommendationCards
-      parameters:
-        - name: userId
-          in: query
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - $ref: '#/components/parameters/Longitude'
-        - $ref: '#/components/parameters/Latitude'
-        - $ref: '#/components/parameters/Radius'
-        - $ref: '#/components/parameters/Size'
-      responses:
-        '200':
-          description: 查询成功
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/RestaurantItem'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '502':
-          $ref: '#/components/responses/AmapUpstreamError'
-        '504':
-          $ref: '#/components/responses/AmapUpstreamTimeout'
   /api/v1/users/{userId}/blacklist:
-    get:
-      tags: [Blacklist]
-      summary: 查询用户黑名单
-      operationId: listBlacklist
-      parameters:
-        - $ref: '#/components/parameters/UserId'
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Size'
-      responses:
-        '200':
-          description: 查询成功
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/BlacklistPageResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
     post:
       tags: [Blacklist]
       summary: 加入黑名单
       operationId: createBlacklist
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/UserId'
       requestBody:
@@ -268,157 +171,10 @@ paths:
                 $ref: '#/components/schemas/ApiResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '409':
           $ref: '#/components/responses/Conflict'
-  /api/v1/users/{userId}/blacklist/{poiId}:
-    delete:
-      tags: [Blacklist]
-      summary: 删除黑名单项
-      operationId: deleteBlacklist
-      parameters:
-        - $ref: '#/components/parameters/UserId'
-        - name: poiId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: 删除成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
-  /api/v1/users/{userId}/notes:
-    get:
-      tags: [Notes]
-      summary: 查询备注列表
-      operationId: listNotes
-      parameters:
-        - $ref: '#/components/parameters/UserId'
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Size'
-        - name: keyword
-          in: query
-          required: false
-          schema:
-            type: string
-          description: 按备注内容关键字筛选
-      responses:
-        '200':
-          description: 查询成功
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/NotePageResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    post:
-      tags: [Notes]
-      summary: 创建备注
-      operationId: createNote
-      parameters:
-        - $ref: '#/components/parameters/UserId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateNoteRequest'
-      responses:
-        '201':
-          description: 创建成功
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/NoteDetail'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-  /api/v1/users/{userId}/notes/{noteId}:
-    get:
-      tags: [Notes]
-      summary: 查询备注详情
-      operationId: getNote
-      parameters:
-        - $ref: '#/components/parameters/UserId'
-        - $ref: '#/components/parameters/NoteId'
-      responses:
-        '200':
-          description: 查询成功
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/NoteDetail'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    put:
-      tags: [Notes]
-      summary: 更新备注
-      operationId: updateNote
-      parameters:
-        - $ref: '#/components/parameters/UserId'
-        - $ref: '#/components/parameters/NoteId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateNoteRequest'
-      responses:
-        '200':
-          description: 更新成功
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/NoteDetail'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    delete:
-      tags: [Notes]
-      summary: 删除备注
-      operationId: deleteNote
-      parameters:
-        - $ref: '#/components/parameters/UserId'
-        - $ref: '#/components/parameters/NoteId'
-      responses:
-        '200':
-          description: 删除成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
 components:
   securitySchemes:
     bearerAuth:
