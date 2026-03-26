@@ -282,6 +282,8 @@ Authorization: Bearer <token>
 }
 ```
 
+- `poiId`：餐厅 POI ID，必填，长度不超过 `64`
+
 成功返回 `201 Created`。
 
 ### 8.3 删除黑名单项

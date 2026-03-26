@@ -675,6 +675,7 @@ components:
       properties:
         poiId:
           type: string
+          maxLength: 64
           example: B0FF123456
       required: [poiId]
     CreateNoteRequest:
