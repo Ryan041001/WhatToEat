@@ -158,4 +158,4 @@ backend/src/main/resources/db/migration/
 4. 执行随机策略并返回
 5. 可选写入 `user_choice_history` 供后续去重优化
 
-该流程确保“用户偏好优先于随机结果”。
+该流程确保“黑名单过滤优先于随机结果”。

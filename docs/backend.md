@@ -25,12 +25,12 @@
 
 ---
 
-## 3. 规划中的后端分层
+## 3. 当前后端分层
 
 ```text
 backend/src/main/java/com/zjgsu/whattoeat/
 ├── controller/       # 对外 API
-├── service/          # 业务逻辑（推荐、黑名单过滤）
+├── service/          # 业务逻辑（application/domain 分层）
 ├── integration/
 │   └── amap/         # 高德 API 封装
 ├── repository/       # 用户侧数据访问（黑名单、备注、历史）
@@ -52,10 +52,10 @@ backend/src/main/java/com/zjgsu/whattoeat/
 - 随机推荐餐厅（高德结果池中随机）
 - 左滑右滑候选卡片列表（高德结果池）
 
-### 4.2 用户偏好
+### 4.2 用户侧数据
 
-- 用户拉黑/取消拉黑餐厅（按 `userId + poiId`）
-- 用户备注/避雷信息（按 `userId + poiId`）
+- 用户黑名单创建、删除与分页查询（按 `userId + poiId`）
+- 用户备注创建、分页查询、详情、更新、删除（按 `userId + poiId` 约束唯一）
 - 推荐时过滤当前用户黑名单
 
 ---
@@ -96,7 +96,7 @@ amap.search-radius=3000
 
 ## 6. 数据库最小化设计（仅高德主数据）
 
-按当前阶段规划，本地库暂不存完整餐厅主表，建议只保留：
+按当前阶段实现，本地库暂不存完整餐厅主表，当前保留：
 
 1. `user_blacklist`
    - `id`
@@ -111,7 +111,7 @@ amap.search-radius=3000
    - `content`
    - `created_at`
 
-3. （可选）`user_choice_history`
+3. （可选，预留）`user_choice_history`
    - `id`
    - `user_id`
    - `poi_id`
@@ -119,10 +119,10 @@ amap.search-radius=3000
 
 ---
 
-## 7. 计划补充的依赖（按当前方案）
+## 7. 当前依赖说明（按现状）
 
 - MySQL Connector/J
-- MyBatis-Plus（或 Spring Data JPA，二选一）
+- Spring Data JPA + Hibernate
 - Spring Validation
 - Spring Boot Configuration Processor
 - HTTP 客户端（RestClient / WebClient）
@@ -151,6 +151,6 @@ java -jar target/WhatToEat-0.0.1-SNAPSHOT.jar
 1. 补充基础工程能力（统一返回体、配置绑定、异常处理）
 2. 封装高德 nearby/search 接口
 3. 打通随机推荐接口
-4. 落地黑名单与备注表
+4. 落地黑名单与备注表及对应 CRUD 接口
 5. 在推荐流程中接入黑名单过滤
 6. 与小程序前端联调
