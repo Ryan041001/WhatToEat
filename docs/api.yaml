@@ -5,7 +5,7 @@ info:
   description: |
     今天吃什么（WhatToEat）后端 API 文档。
 
-    本文档覆盖当前已经实现的资源：认证、餐厅查询、黑名单新增。
+    本文档覆盖当前已经实现的资源：认证、餐厅查询、推荐接口、黑名单新增。
 servers:
   - url: http://localhost:8080
     description: Local development
@@ -14,6 +14,8 @@ tags:
     description: 认证与会话
   - name: Restaurants
     description: 餐厅查询
+  - name: Recommendations
+    description: 餐厅推荐
   - name: Blacklist
     description: 用户黑名单新增
 paths:
@@ -147,6 +149,69 @@ paths:
           $ref: '#/components/responses/AmapUpstreamError'
         '504':
           $ref: '#/components/responses/AmapUpstreamTimeout'
+  /api/v1/recommendations/random:
+    get:
+      tags: [Recommendations]
+      summary: 获取随机推荐餐厅
+      operationId: getRandomRecommendation
+      description: 先按页拉取并过滤候选餐厅，补足最多 20 条可用候选后再随机返回一条结果。
+      parameters:
+        - $ref: '#/components/parameters/OptionalUserId'
+        - $ref: '#/components/parameters/Longitude'
+        - $ref: '#/components/parameters/Latitude'
+        - $ref: '#/components/parameters/Radius'
+      responses:
+        '200':
+          description: 推荐成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/RecommendationResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '502':
+          $ref: '#/components/responses/AmapUpstreamError'
+        '504':
+          $ref: '#/components/responses/AmapUpstreamTimeout'
+  /api/v1/recommendations/cards:
+    get:
+      tags: [Recommendations]
+      summary: 获取推荐卡片候选列表
+      operationId: getRecommendationCards
+      description: 按页继续拉取并过滤候选餐厅，直到收集满请求 size 或上游结果耗尽。
+      parameters:
+        - $ref: '#/components/parameters/OptionalUserId'
+        - $ref: '#/components/parameters/Longitude'
+        - $ref: '#/components/parameters/Latitude'
+        - $ref: '#/components/parameters/Radius'
+        - $ref: '#/components/parameters/RecommendationSize'
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/RecommendationCardList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '502':
+          $ref: '#/components/responses/AmapUpstreamError'
+        '504':
+          $ref: '#/components/responses/AmapUpstreamTimeout'
   /api/v1/users/{userId}/blacklist:
     post:
       tags: [Blacklist]
@@ -190,13 +255,15 @@ components:
       schema:
         type: integer
         format: int64
-    NoteId:
-      name: noteId
-      in: path
-      required: true
+    OptionalUserId:
+      name: userId
+      in: query
+      required: false
       schema:
         type: integer
         format: int64
+        minimum: 1
+      description: 可选；传入后会按该用户黑名单过滤结果。必须为正整数且对应用户必须存在。
     Longitude:
       name: longitude
       in: query
@@ -235,6 +302,15 @@ components:
       schema:
         type: integer
         default: 10
+        minimum: 1
+        maximum: 100
+    RecommendationSize:
+      name: size
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 20
         minimum: 1
         maximum: 100
   responses:
@@ -376,10 +452,14 @@ components:
           type: number
           format: double
           example: 30.3154
+        category:
+          type: string
+          example: 餐饮服务;中餐厅;快餐厅
         distance:
-          type: integer
+          type: number
+          format: double
           example: 180
-      required: [poiId, name, address, longitude, latitude, distance]
+      required: [poiId, name, address, longitude, latitude, category, distance]
     RecommendationResult:
       allOf:
         - $ref: '#/components/schemas/RestaurantItem'
@@ -389,43 +469,10 @@ components:
               type: string
               example: 符合筛选条件的随机结果
           required: [reason]
-    BlacklistItem:
-      type: object
-      properties:
-        poiId:
-          type: string
-          example: B0FF123456
-        createdAt:
-          type: string
-          format: date-time
-          example: '2026-03-26T18:00:00'
-      required: [poiId, createdAt]
-    NoteDetail:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-          example: 10
-        userId:
-          type: integer
-          format: int64
-          example: 1
-        poiId:
-          type: string
-          example: B0FF123456
-        content:
-          type: string
-          example: 晚高峰排队久，建议错峰
-        createdAt:
-          type: string
-          format: date-time
-          example: '2026-03-26T18:00:00'
-        updatedAt:
-          type: string
-          format: date-time
-          example: '2026-03-26T18:10:00'
-      required: [id, userId, poiId, content, createdAt, updatedAt]
+    RecommendationCardList:
+      type: array
+      items:
+        $ref: '#/components/schemas/RestaurantItem'
     CreateBlacklistRequest:
       type: object
       properties:
@@ -434,23 +481,6 @@ components:
           maxLength: 64
           example: B0FF123456
       required: [poiId]
-    CreateNoteRequest:
-      type: object
-      properties:
-        poiId:
-          type: string
-          example: B0FF123456
-        content:
-          type: string
-          example: 中午排队久，但味道不错
-      required: [poiId, content]
-    UpdateNoteRequest:
-      type: object
-      properties:
-        content:
-          type: string
-          example: 晚高峰排队久，建议错峰
-      required: [content]
     RestaurantPageResponse:
       type: object
       properties:
@@ -467,38 +497,4 @@ components:
         total:
           type: integer
           example: 35
-      required: [items, page, size, total]
-    BlacklistPageResponse:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/BlacklistItem'
-        page:
-          type: integer
-          example: 1
-        size:
-          type: integer
-          example: 10
-        total:
-          type: integer
-          example: 3
-      required: [items, page, size, total]
-    NotePageResponse:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/NoteDetail'
-        page:
-          type: integer
-          example: 1
-        size:
-          type: integer
-          example: 10
-        total:
-          type: integer
-          example: 8
       required: [items, page, size, total]
