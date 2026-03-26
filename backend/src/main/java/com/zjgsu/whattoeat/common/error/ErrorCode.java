@@ -12,6 +12,7 @@ public enum ErrorCode {
     BLACKLIST_NOT_FOUND(2002, "黑名单记录不存在"),
     NOTE_CONTENT_INVALID(2003, "备注内容非法"),
     NOTE_NOT_FOUND(2004, "备注不存在"),
+    NOTE_ALREADY_EXISTS(2005, "备注已存在"),
 
     // 上游/集成相关
     AMAP_UPSTREAM_ERROR(3001, "高德上游失败"),

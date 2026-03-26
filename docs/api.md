@@ -10,12 +10,13 @@
 /api/v1
 ```
 
-当前已实现四组资源：
+当前已实现五组资源：
 
 - `auth`：登录、登出、当前用户
 - `restaurants`：餐厅查询
 - `recommendations`：随机推荐与卡片候选列表
 - `users/{userId}/blacklist`：用户黑名单新增、删除、分页查询
+- `users/{userId}/notes`：用户备注 CRUD、分页查询与内容筛选
 
 ---
 
@@ -81,6 +82,11 @@ Authorization: Bearer <token>
 - `POST /api/v1/users/{userId}/blacklist`
 - `DELETE /api/v1/users/{userId}/blacklist/{poiId}`
 - `GET /api/v1/users/{userId}/blacklist`
+- `POST /api/v1/users/{userId}/notes`
+- `GET /api/v1/users/{userId}/notes`
+- `GET /api/v1/users/{userId}/notes/{noteId}`
+- `PUT /api/v1/users/{userId}/notes/{noteId}`
+- `DELETE /api/v1/users/{userId}/notes/{noteId}`
 
 说明：当前 blacklist 创建接口仍以 `userId` 作为资源定位参数，但服务端会校验 Bearer Token 对应用户与路径参数一致；后续如收敛到“当前用户上下文”，可在不改变资源语义的前提下进一步演进。
 
@@ -114,13 +120,19 @@ Authorization: Bearer <token>
 - `2001`：重复拉黑
 - `2002`：黑名单记录不存在
 
-### 5.3 高德上游
+### 5.3 备注
+
+- `2003`：备注内容非法
+- `2004`：备注不存在
+- `2005`：备注已存在
+
+### 5.4 高德上游
 
 - `3001`：高德上游失败
 - `3002`：高德上游超时
 - `3003`：高德无结果
 
-### 5.4 系统兜底
+### 5.5 系统兜底
 
 - `9000`：系统异常
 
@@ -132,7 +144,7 @@ Authorization: Bearer <token>
 
 - `page`：页码，从 `1` 开始
 - `size`：每页条数
-- `keyword`：可选筛选条件，适用于餐厅搜索
+- `keyword`：可选筛选条件，适用于餐厅搜索与备注内容筛选
 
 分页返回统一结构：
 
@@ -378,7 +390,154 @@ Authorization: Bearer <token>
 
 ---
 
-## 10. OpenAPI 导入说明
+## 10. 备注接口
+
+### 10.1 创建备注
+
+- 方法：`POST`
+- 路径：`/api/v1/users/{userId}/notes`
+
+请求体：
+
+```json
+{
+  "poiId": "B0FF123456",
+  "content": "中午排队久，但味道不错"
+}
+```
+
+- `poiId`：餐厅 POI ID，必填，长度不超过 `64`
+- `content`：备注内容，必填；字段缺失时返回 `400 Bad Request` / `1001`，提供后若去除首尾空白仍为空或长度超过 `1000`，返回 `400 Bad Request` / `2003`
+
+成功返回 `201 Created`。
+
+错误语义：
+
+- 未登录、token 无效或 token 对应用户与路径 `userId` 不一致时，返回 `401 Unauthorized` / `1003`
+- 参数校验失败时，返回 `400 Bad Request` / `1001`
+- 备注内容非法（如去除首尾空白后为空、长度超过 `1000`）时，返回 `400 Bad Request` / `2003`
+- 同一用户对同一 `poiId` 重复创建备注时，返回 `409 Conflict` / `2005`
+
+### 10.2 分页查询备注
+
+- 方法：`GET`
+- 路径：`/api/v1/users/{userId}/notes`
+
+查询参数：
+
+- `page`：页码，默认 `1`
+- `size`：每页条数，默认 `10`，最大 `100`
+- `keyword`：可选；按备注内容做包含筛选
+
+返回结构：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "items": [
+      {
+        "id": 10,
+        "poiId": "B0FF123456",
+        "content": "晚高峰排队久，建议错峰",
+        "createdAt": "2026-03-26T18:00:00",
+        "updatedAt": "2026-03-26T18:10:00"
+      }
+    ],
+    "page": 1,
+    "size": 10,
+    "total": 1
+  }
+}
+```
+
+字段说明：
+
+- `items[].id`：备注主键 ID
+- `items[].poiId`：餐厅 POI ID
+- `items[].content`：备注内容
+- `items[].createdAt`：创建时间，ISO-8601 本地日期时间字符串
+- `items[].updatedAt`：更新时间，ISO-8601 本地日期时间字符串
+
+结果语义说明：
+
+- 列表按 `updatedAt DESC, id DESC` 排序，优先返回最近更新的备注
+- `keyword` 为空或只包含空白时，按未筛选列表处理
+
+### 10.3 查询备注详情
+
+- 方法：`GET`
+- 路径：`/api/v1/users/{userId}/notes/{noteId}`
+
+路径参数：
+
+- `noteId`：备注主键 ID，必须为正整数
+
+返回结构：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "id": 10,
+    "userId": 1,
+    "poiId": "B0FF123456",
+    "content": "晚高峰排队久，建议错峰",
+    "createdAt": "2026-03-26T18:00:00",
+    "updatedAt": "2026-03-26T18:10:00"
+  }
+}
+```
+
+字段说明：
+
+- `userId`：所属用户 ID
+
+### 10.4 更新备注
+
+- 方法：`PUT`
+- 路径：`/api/v1/users/{userId}/notes/{noteId}`
+
+请求体：
+
+```json
+{
+  "content": "已改成错峰去，人少很多"
+}
+```
+
+- `content`：备注内容，必填；字段缺失时返回 `400 Bad Request` / `1001`，提供后若去除首尾空白仍为空或长度超过 `1000`，返回 `400 Bad Request` / `2003`
+
+成功返回 `200 OK`，响应 `data` 结构与备注详情一致。
+
+错误语义：
+
+- `noteId` 非正整数等参数校验失败时，返回 `400 Bad Request` / `1001`
+- 目标备注不存在时，返回 `404 Not Found` / `2004`
+- 备注内容非法（如去除首尾空白后为空、长度超过 `1000`）时，返回 `400 Bad Request` / `2003`
+
+### 10.5 删除备注
+
+- 方法：`DELETE`
+- 路径：`/api/v1/users/{userId}/notes/{noteId}`
+
+成功返回 `200 OK`。
+
+错误语义：
+
+- `noteId` 非正整数等参数校验失败时，返回 `400 Bad Request` / `1001`
+- 目标备注不存在时，返回 `404 Not Found` / `2004`
+
+### 10.6 备注接口通用错误语义
+
+- 未登录、token 无效或 token 对应用户与路径 `userId` 不一致时，返回 `401 Unauthorized` / `1003`
+- 参数校验失败时，返回 `400 Bad Request` / `1001`
+
+---
+
+## 11. OpenAPI 导入说明
 
 OpenAPI 主契约文件位于：
 
@@ -401,16 +560,15 @@ docs/api.yaml
 
 ---
 
-## 11. 实现说明
+## 12. 实现说明
 
 - 当前认证实现为 mock 微信登录，接口形状贴近真实小程序登录流程
 - 餐厅主数据来源于高德，不在本地维护完整餐厅主表
-- 当前已实现的用户侧写接口包括推荐查询与黑名单新增、删除、分页查询
-- 备注 CRUD 仍在后续迭代中，未纳入本文档当前契约
+- 当前已实现的用户侧写接口包括黑名单与备注 CRUD、推荐查询
 
 ---
 
-## 12. 与旧版文档的差异
+## 13. 与旧版文档的差异
 
 本版相较于早期草稿，做了以下收敛：
 
@@ -418,5 +576,6 @@ docs/api.yaml
 2. 补充认证资源 `auth`
 3. 补充分页结构、错误码、Bearer Token 说明
 4. 补充随机推荐与卡片候选列表接口契约
-5. 当前文档只保留已落地接口，未实现资源不再作为现行契约发布
-6. 以 `docs/api.yaml` 作为后续实现与联调的主契约
+5. 补充备注 CRUD 契约、错误码与筛选语义
+6. 当前文档只保留已落地接口，未实现资源不再作为现行契约发布
+7. 以 `docs/api.yaml` 作为后续实现与联调的主契约

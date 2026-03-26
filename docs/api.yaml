@@ -5,7 +5,7 @@ info:
   description: |
     今天吃什么（WhatToEat）后端 API 文档。
 
-    本文档覆盖当前已经实现的资源：认证、餐厅查询、推荐接口、黑名单新增、删除与分页查询。
+    本文档覆盖当前已经实现的资源：认证、餐厅查询、推荐接口、黑名单 CRUD 与备注 CRUD。
 servers:
   - url: http://localhost:8080
     description: Local development
@@ -18,6 +18,8 @@ tags:
     description: 餐厅推荐
   - name: Blacklist
     description: 用户黑名单管理
+  - name: Notes
+    description: 用户备注管理
 paths:
   /api/v1/auth/wechat-login:
     post:
@@ -291,6 +293,144 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+  /api/v1/users/{userId}/notes:
+    post:
+      tags: [Notes]
+      summary: 创建备注
+      operationId: createNote
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNoteRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    get:
+      tags: [Notes]
+      summary: 分页查询备注
+      operationId: listNotes
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/NoteKeyword'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/NotePageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/users/{userId}/notes/{noteId}:
+    get:
+      tags: [Notes]
+      summary: 查询备注详情
+      operationId: getNoteDetail
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/NoteId'
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/NoteDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NoteNotFound'
+    put:
+      tags: [Notes]
+      summary: 更新备注
+      operationId: updateNote
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/NoteId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNoteRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/NoteDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NoteNotFound'
+    delete:
+      tags: [Notes]
+      summary: 删除备注
+      operationId: deleteNote
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/NoteId'
+      responses:
+        '200':
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NoteNotFound'
 components:
   securitySchemes:
     bearerAuth:
@@ -323,6 +463,22 @@ components:
         type: string
         maxLength: 64
       description: 黑名单中的餐厅 POI ID。
+    NoteId:
+      name: noteId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+      description: 备注主键 ID。
+    NoteKeyword:
+      name: keyword
+      in: query
+      required: false
+      schema:
+        type: string
+      description: 可选；按备注内容做包含筛选。
     Longitude:
       name: longitude
       in: query
@@ -385,6 +541,11 @@ components:
                 code: 1001
                 message: 参数校验失败
                 data: null
+            noteContentInvalid:
+              value:
+                code: 2003
+                message: 备注内容非法
+                data: null
     Unauthorized:
       description: 未登录或 token 无效
       content:
@@ -403,12 +564,46 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            userNotFound:
+              value:
+                code: 1002
+                message: 用户不存在
+                data: null
+            noteNotFound:
+              value:
+                code: 2004
+                message: 备注不存在
+                data: null
+    NoteNotFound:
+      description: 备注不存在
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            noteNotFound:
+              value:
+                code: 2004
+                message: 备注不存在
+                data: null
     Conflict:
       description: 资源冲突
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            blacklistAlreadyExists:
+              value:
+                code: 2001
+                message: 重复拉黑
+                data: null
+            noteAlreadyExists:
+              value:
+                code: 2005
+                message: 备注已存在
+                data: null
     AmapUpstreamError:
       description: 高德上游失败
       content:
@@ -540,6 +735,28 @@ components:
           maxLength: 64
           example: B0FF123456
       required: [poiId]
+    CreateNoteRequest:
+      type: object
+      properties:
+        poiId:
+          type: string
+          maxLength: 64
+          example: B0FF123456
+        content:
+          type: string
+          maxLength: 1000
+          description: 必填；字段缺失时返回 1001，提供后若去除首尾空白仍为空或长度超过 1000 则返回 2003。
+          example: 中午排队久，但味道不错
+      required: [poiId, content]
+    UpdateNoteRequest:
+      type: object
+      properties:
+        content:
+          type: string
+          maxLength: 1000
+          description: 必填；字段缺失时返回 1001，提供后若去除首尾空白仍为空或长度超过 1000 则返回 2003。
+          example: 已改成错峰去，人少很多
+      required: [content]
     BlacklistItem:
       type: object
       properties:
@@ -551,6 +768,56 @@ components:
           format: date-time
           example: '2026-03-26T10:00:00'
       required: [poiId, createdAt]
+    NoteItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        poiId:
+          type: string
+          example: B0FF123456
+        content:
+          type: string
+          example: 晚高峰排队久，建议错峰
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-03-26T18:00:00'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-03-26T18:10:00'
+      required: [id, poiId, content, createdAt, updatedAt]
+    NoteDetail:
+      allOf:
+        - $ref: '#/components/schemas/NoteItem'
+        - type: object
+          properties:
+            userId:
+              type: integer
+              format: int64
+              example: 1
+          required: [userId]
+    NotePageResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/NoteItem'
+        page:
+          type: integer
+          example: 1
+        size:
+          type: integer
+          example: 10
+        total:
+          type: integer
+          format: int64
+          example: 35
+      required: [items, page, size, total]
     BlacklistPageResponse:
       type: object
       properties:
