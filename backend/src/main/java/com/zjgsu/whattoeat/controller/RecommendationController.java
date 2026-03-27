@@ -24,7 +24,7 @@ public class RecommendationController {
     }
 
     /**
-     * GET /api/v1/recommendations/random?userId=&longitude=&latitude=&radius=
+     * Example: GET /api/v1/recommendations/random?longitude=120.35&latitude=30.31&radius=1000
      */
     @GetMapping("/random")
     public ApiResponse<RecommendationApplicationService.RecommendationResult> random(

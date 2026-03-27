@@ -144,6 +144,46 @@ cd backend
 java -jar target/WhatToEat-0.0.1-SNAPSHOT.jar
 ```
 
+### 8.1 无 MySQL 时本地启动
+
+```bash
+cd backend
+JAVA_HOME=$(/usr/libexec/java_home -v 17) ./mvnw spring-boot:run \
+  -Dspring-boot.run.profiles=test \
+  -Dspring-boot.run.useTestClasspath=true
+```
+
+说明：
+
+- `dev`：默认本地开发模式，连接宿主机 MySQL `localhost:3306/whattoeat_dev`
+- `test`：H2 内存库模式，适合无 MySQL 的功能验证
+- `docker`：容器化本地开发模式，连接 Compose 内的 `mysql` 服务
+
+### 8.2 Docker Compose 本地联调
+
+在项目根目录执行：
+
+```bash
+cp .env.example .env
+docker compose --env-file .env up --build
+```
+
+首次使用前请将 `.env` 中的 `AMAP_KEY` 替换为真实可用的高德 Web 服务 Key；默认的 `test-key` 仅用于让容器配置完整，不保证餐厅查询与推荐接口可用。
+
+常用命令：
+
+```bash
+docker compose --env-file .env ps
+docker compose --env-file .env down
+```
+
+联调说明：
+
+- 微信开发者工具使用 `http://127.0.0.1:8080`
+- 真机同局域网调试使用 `http://<你的宿主机局域网IP>:8080`
+- 容器模式下数据库由 Compose 管理，表结构仍由 Flyway 自动迁移
+- 当前小程序侧只补充了 API 地址配置边界，真正的 `wx.request` 接口接入仍需后续前端联调时补齐
+
 ---
 
 ## 9. 当前阶段建议实施顺序

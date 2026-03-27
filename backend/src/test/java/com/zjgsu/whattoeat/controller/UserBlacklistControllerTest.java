@@ -159,6 +159,16 @@ class UserBlacklistControllerTest {
     }
 
     @Test
+    void addBlacklistShouldReturn404WhenUserIdPathSegmentMissing() throws Exception {
+        mockMvc.perform(post("/api/v1/users//blacklist")
+                        .header("Authorization", "Bearer fake-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"poiId\":\"B0FF123456\"}"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value(1001));
+    }
+
+    @Test
     void deleteBlacklistShouldReturn200AndRemoveRecord() throws Exception {
         UserEntity user = createUser("mock-openid-mock-code-blacklist-delete-success", "Eve");
         String token = loginAndExtractToken("mock-code-blacklist-delete-success", "Eve");

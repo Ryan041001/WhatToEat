@@ -36,12 +36,17 @@ JAVA_HOME=$(/usr/libexec/java_home -v 17) ./mvnw spring-boot:run
 JAVA_HOME=$(/usr/libexec/java_home -v 17) ./mvnw spring-boot:run \
   -Dspring-boot.run.profiles=test \
   -Dspring-boot.run.useTestClasspath=true
+cp .env.example .env
+docker compose --env-file .env up --build
 ```
 
 Notes:
 
 - Default profile is `dev` and expects local MySQL on `localhost:3306/whattoeat_dev`
 - `test` profile uses H2 and is the preferred mode when MySQL is not running
+- Docker Compose uses the `docker` profile and starts MySQL plus backend together
+- WeChat DevTools should call `http://127.0.0.1:8080`; real devices on the same LAN should call `http://<your-host-lan-ip>:8080`
+- `.env.example` uses `AMAP_KEY=test-key`; replace it with a real key before testing restaurant/recommendation endpoints
 
 ### Frontend
 

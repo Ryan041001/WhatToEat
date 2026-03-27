@@ -7,8 +7,14 @@ info:
 
     本文档覆盖当前已经实现的资源：认证、餐厅查询、推荐接口、黑名单 CRUD 与备注 CRUD。
 servers:
-  - url: http://localhost:8080
-    description: Local development
+  - url: http://127.0.0.1:8080
+    description: WeChat DevTools local development
+  - url: http://{host}:8080
+    description: Real-device LAN development (replace with your host machine IP)
+    variables:
+      host:
+        default: 192.168.0.10
+        description: Host machine LAN IP for WeChat real-device debugging
 tags:
   - name: Auth
     description: 认证与会话
@@ -38,12 +44,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/LoginResponse'
+                $ref: '#/components/schemas/LoginSuccessResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
   /api/v1/auth/logout:
@@ -75,12 +76,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/UserInfo'
+                $ref: '#/components/schemas/UserInfoSuccessResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
   /api/v1/restaurants/nearby:
@@ -100,16 +96,11 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/RestaurantPageResponse'
+                $ref: '#/components/schemas/RestaurantPageSuccessResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/AmapNoResultNotFound'
         '502':
           $ref: '#/components/responses/AmapUpstreamError'
         '504':
@@ -125,7 +116,9 @@ paths:
           required: true
           schema:
             type: string
-          description: 搜索关键词
+            minLength: 1
+            pattern: .*(\S|[^\s]).*
+          description: 搜索关键词（必填，且不能是空白字符串）
         - $ref: '#/components/parameters/Longitude'
         - $ref: '#/components/parameters/Latitude'
         - $ref: '#/components/parameters/Radius'
@@ -137,16 +130,11 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/RestaurantPageResponse'
+                $ref: '#/components/schemas/RestaurantPageSuccessResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/AmapNoResultNotFound'
         '502':
           $ref: '#/components/responses/AmapUpstreamError'
         '504':
@@ -168,16 +156,11 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/RecommendationResult'
+                $ref: '#/components/schemas/RecommendationResultSuccessResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/UserOrAmapNoResultNotFound'
         '502':
           $ref: '#/components/responses/AmapUpstreamError'
         '504':
@@ -200,16 +183,11 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/RecommendationCardList'
+                $ref: '#/components/schemas/RecommendationCardListSuccessResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/UserOrAmapNoResultNotFound'
         '502':
           $ref: '#/components/responses/AmapUpstreamError'
         '504':
@@ -258,18 +236,11 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/BlacklistPageResponse'
+                $ref: '#/components/schemas/BlacklistPageSuccessResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
   /api/v1/users/{userId}/blacklist/{poiId}:
     delete:
       tags: [Blacklist]
@@ -292,7 +263,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/BlacklistNotFound'
   /api/v1/users/{userId}/notes:
     post:
       tags: [Notes]
@@ -338,12 +309,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/NotePageResponse'
+                $ref: '#/components/schemas/NotePageSuccessResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -364,12 +330,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/NoteDetail'
+                $ref: '#/components/schemas/NoteDetailSuccessResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -397,12 +358,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/NoteDetail'
+                $ref: '#/components/schemas/NoteDetailSuccessResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -446,6 +402,9 @@ components:
       schema:
         type: integer
         format: int64
+        minimum: 1
+      description: 必填；用户主键 ID。请先调用 /api/v1/auth/me 获取当前登录用户的 id，再将该值填入路径中；不能留空。若使用 Apifox，可将环境变量 {{userId}} 绑定到该路径参数。
+      example: 1
     OptionalUserId:
       name: userId
       in: query
@@ -454,14 +413,17 @@ components:
         type: integer
         format: int64
         minimum: 1
-      description: 可选；传入后会按该用户黑名单过滤结果。必须为正整数且对应用户必须存在。
+      description: 可选；传入后会按该用户黑名单过滤结果。必须为正整数且对应用户必须存在；不需要过滤时请省略该参数，不要传空值。
+      example: 1
     BlacklistPoiId:
       name: poiId
       in: path
       required: true
       schema:
         type: string
+        minLength: 1
         maxLength: 64
+        pattern: .*(\S|[^\s]).*
       description: 黑名单中的餐厅 POI ID。
     NoteId:
       name: noteId
@@ -486,6 +448,8 @@ components:
       schema:
         type: number
         format: double
+      description: 必填；必须传具体经度数值，不能只传参数名或传空值。
+      example: 120.35
     Latitude:
       name: latitude
       in: query
@@ -493,6 +457,8 @@ components:
       schema:
         type: number
         format: double
+      description: 必填；必须传具体纬度数值，不能只传参数名或传空值。
+      example: 30.31
     Radius:
       name: radius
       in: query
@@ -502,6 +468,8 @@ components:
         default: 1000
         minimum: 100
         maximum: 50000
+      description: 可选；搜索半径（米），默认 1000。
+      example: 1000
     Page:
       name: page
       in: query
@@ -510,6 +478,8 @@ components:
         type: integer
         default: 1
         minimum: 1
+      description: 可选；页码，从 1 开始，默认 1。
+      example: 1
     Size:
       name: size
       in: query
@@ -519,6 +489,8 @@ components:
         default: 10
         minimum: 1
         maximum: 100
+      description: 可选；每页条数，默认 10，最大 100。
+      example: 10
     RecommendationSize:
       name: size
       in: query
@@ -528,6 +500,8 @@ components:
         default: 20
         minimum: 1
         maximum: 100
+      description: 可选；候选卡片数量，默认 20，最大 100。
+      example: 20
   responses:
     BadRequest:
       description: 参数错误
@@ -586,6 +560,47 @@ components:
               value:
                 code: 2004
                 message: 备注不存在
+                data: null
+    BlacklistNotFound:
+      description: 黑名单记录不存在
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            blacklistNotFound:
+              value:
+                code: 2002
+                message: 黑名单记录不存在
+                data: null
+    AmapNoResultNotFound:
+      description: 高德无结果
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            amapNoResult:
+              value:
+                code: 3003
+                message: 高德无结果
+                data: null
+    UserOrAmapNoResultNotFound:
+      description: 用户不存在或高德无结果
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            userNotFound:
+              value:
+                code: 1002
+                message: 用户不存在
+                data: null
+            amapNoResult:
+              value:
+                code: 3003
+                message: 高德无结果
                 data: null
     Conflict:
       description: 资源冲突
@@ -658,6 +673,8 @@ components:
       properties:
         code:
           type: string
+          minLength: 10
+          pattern: ^mock-code-.*
           example: mock-code-001
         nickname:
           type: string
@@ -672,6 +689,30 @@ components:
         user:
           $ref: '#/components/schemas/UserInfo'
       required: [token, user]
+    LoginSuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/LoginResponse'
+      required: [code, message, data]
+    UserInfoSuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/UserInfo'
+      required: [code, message, data]
     UserInfo:
       type: object
       properties:
@@ -727,12 +768,38 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/RestaurantItem'
+    RecommendationResultSuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/RecommendationResult'
+      required: [code, message, data]
+    RecommendationCardListSuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/RecommendationCardList'
+      required: [code, message, data]
     CreateBlacklistRequest:
       type: object
       properties:
         poiId:
           type: string
+          minLength: 1
           maxLength: 64
+          pattern: .*(\S|[^\s]).*
           example: B0FF123456
       required: [poiId]
     CreateNoteRequest:
@@ -740,7 +807,9 @@ components:
       properties:
         poiId:
           type: string
+          minLength: 1
           maxLength: 64
+          pattern: .*(\S|[^\s]).*
           example: B0FF123456
         content:
           type: string
@@ -800,6 +869,42 @@ components:
               format: int64
               example: 1
           required: [userId]
+    BlacklistPageSuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/BlacklistPageResponse'
+      required: [code, message, data]
+    NotePageSuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/NotePageResponse'
+      required: [code, message, data]
+    NoteDetailSuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/NoteDetail'
+      required: [code, message, data]
     NotePageResponse:
       type: object
       properties:
@@ -853,3 +958,15 @@ components:
           type: integer
           example: 35
       required: [items, page, size, total]
+    RestaurantPageSuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/RestaurantPageResponse'
+      required: [code, message, data]

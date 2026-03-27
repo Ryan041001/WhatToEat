@@ -178,6 +178,17 @@ Authorization: Bearer <token>
 - `page`：页码，默认 `1`
 - `size`：每页条数，默认 `10`
 
+调用提示：
+
+- `longitude`、`latitude` 必须传具体数值，不能只写成 `?longitude&latitude`
+- `radius`、`page`、`size` 不传时会走默认值；如果要传，也必须传具体数值
+
+请求示例：
+
+```bash
+curl 'http://127.0.0.1:8080/api/v1/restaurants/nearby?longitude=120.35&latitude=30.31&radius=1000&page=1&size=10'
+```
+
 结果语义说明：
 - 当 `total == 0` 时，返回 `404 Not Found`，业务码 `3003`（高德无结果）
 - 当 `total > 0` 且当前页 `items` 为空时，返回 `200 OK`，`items: []`
@@ -221,6 +232,12 @@ Authorization: Bearer <token>
 - `page`：页码
 - `size`：每页条数
 
+请求示例：
+
+```bash
+curl 'http://127.0.0.1:8080/api/v1/restaurants/search?keyword=拉面&longitude=120.36&latitude=30.32&radius=1000&page=1&size=10'
+```
+
 结果语义说明：
 - 当 `total == 0` 时，返回 `404 Not Found`，业务码 `3003`（高德无结果）
 - 当 `total > 0` 且当前页 `items` 为空时，返回 `200 OK`，`items: []`
@@ -246,6 +263,17 @@ Authorization: Bearer <token>
 - `latitude`：纬度，必填
 - `radius`：搜索半径（米），默认 `1000`
 - `userId`：可选；传入后会过滤该用户黑名单中的 `poiId`
+
+调用提示：
+
+- `userId` 不需要时请省略整个参数，不要传成 `userId=`
+- `longitude`、`latitude` 必须传具体数值
+
+请求示例：
+
+```bash
+curl 'http://127.0.0.1:8080/api/v1/recommendations/random?longitude=120.35&latitude=30.31&radius=1000'
+```
 
 结果语义说明：
 - 使用高德 nearby 结果作为候选池，内部会按页继续拉取并补足最多 `20` 条可用候选，再随机返回一条
@@ -284,6 +312,12 @@ Authorization: Bearer <token>
 - `size`：候选数量，默认 `20`
 - `userId`：可选；传入后会过滤该用户黑名单中的 `poiId`
 
+请求示例：
+
+```bash
+curl 'http://127.0.0.1:8080/api/v1/recommendations/cards?longitude=120.35&latitude=30.31&radius=1000&size=20'
+```
+
 结果语义说明：
 - 会按页继续拉取高德结果，直到收集满请求的 `size` 条可用候选或上游结果耗尽
 - 返回过滤后的候选列表，顺序与高德返回顺序一致
@@ -319,6 +353,11 @@ Authorization: Bearer <token>
 - 方法：`POST`
 - 路径：`/api/v1/users/{userId}/blacklist`
 
+路径参数：
+
+- `userId`：用户 ID，必填。不要留空；应先登录，再调用 `GET /api/v1/auth/me` 获取当前用户的 `id`
+- 在 Apifox 中，推荐把路径写成 `/api/v1/users/{{userId}}/blacklist`，并将环境变量 `userId` 绑定到这个路径参数；如果最终生成的 URL 仍然是 `/users//blacklist`，说明变量没有真正替换成功
+
 请求体：
 
 ```json
@@ -330,6 +369,29 @@ Authorization: Bearer <token>
 - `poiId`：餐厅 POI ID，必填，长度不超过 `64`
 
 成功返回 `201 Created`。
+
+正确调用示例：
+
+```bash
+curl --location --request POST 'http://127.0.0.1:8080/api/v1/users/1/blacklist' \
+--header 'Authorization: Bearer <token>' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+  "poiId": "B0FF123456"
+}'
+```
+
+调试顺序建议：
+
+1. `POST /api/v1/auth/wechat-login` 获取 `token`
+2. `GET /api/v1/auth/me` 获取当前用户 `id`
+3. 用拿到的 `id` 替换路径里的 `{userId}`，再调用黑名单接口
+4. 如果在 Apifox 里用环境变量，确认最终请求 URL 已经变成 `/api/v1/users/1/blacklist` 这种实际值，而不是 `/api/v1/users//blacklist`
+
+错误示例：
+
+- `POST /api/v1/users//blacklist`
+  `userId` 为空，属于错误路径，不是合法请求
 
 ### 9.2 移除黑名单
 
@@ -397,6 +459,11 @@ Authorization: Bearer <token>
 - 方法：`POST`
 - 路径：`/api/v1/users/{userId}/notes`
 
+路径参数：
+
+- `userId`：用户 ID，必填。不要留空；应先登录，再调用 `GET /api/v1/auth/me` 获取当前用户的 `id`
+- 在 Apifox 中，推荐把路径写成 `/api/v1/users/{{userId}}/notes`，并将环境变量 `userId` 绑定到这个路径参数；如果最终生成的 URL 仍然是 `/users//notes`，说明变量没有真正替换成功
+
 请求体：
 
 ```json
@@ -410,6 +477,18 @@ Authorization: Bearer <token>
 - `content`：备注内容，必填；字段缺失时返回 `400 Bad Request` / `1001`，提供后若去除首尾空白仍为空或长度超过 `1000`，返回 `400 Bad Request` / `2003`
 
 成功返回 `201 Created`。
+
+正确调用示例：
+
+```bash
+curl --location --request POST 'http://127.0.0.1:8080/api/v1/users/1/notes' \
+--header 'Authorization: Bearer <token>' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+  "poiId": "B0FF123456",
+  "content": "中午排队久，但味道不错"
+}'
+```
 
 错误语义：
 
@@ -554,9 +633,16 @@ docs/api.yaml
 建议流程：
 
 1. 导入 `docs/api.yaml`
-2. 选择本地服务地址 `http://localhost:8080`
-3. 先调用 `POST /api/v1/auth/wechat-login` 获取 token
-4. 在受保护接口中配置 `Authorization: Bearer <token>`
+2. 微信开发者工具调试时选择 `http://127.0.0.1:8080`
+3. 真机同局域网调试时选择 `http://<你的宿主机局域网IP>:8080`
+4. 先调用 `POST /api/v1/auth/wechat-login` 获取 token
+5. 在受保护接口中配置 `Authorization: Bearer <token>`
+
+说明：
+
+- Docker Compose 本地联调默认将后端暴露在宿主机 `8080` 端口
+- `localhost` 只适合开发者工具，不适合真机；真机应使用宿主机局域网 IP
+- 若使用 Compose，请先把 `.env` 里的 `AMAP_KEY` 换成真实高德 Key，再测试餐厅与推荐接口
 
 ---
 
