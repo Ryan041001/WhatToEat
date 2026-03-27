@@ -448,7 +448,7 @@ components:
       schema:
         type: number
         format: double
-      description: 必填；必须传具体经度数值，不能只传参数名或传空值。
+      description: 必填；GCJ-02（火星坐标系）经度数值，不能只传参数名或传空值。
       example: 120.35
     Latitude:
       name: latitude
@@ -457,7 +457,7 @@ components:
       schema:
         type: number
         format: double
-      description: 必填；必须传具体纬度数值，不能只传参数名或传空值。
+      description: 必填；GCJ-02（火星坐标系）纬度数值，不能只传参数名或传空值。
       example: 30.31
     Radius:
       name: radius

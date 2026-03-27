@@ -172,15 +172,15 @@ Authorization: Bearer <token>
 
 查询参数：
 
-- `longitude`：经度，必填
-- `latitude`：纬度，必填
+- `longitude`：经度，必填，坐标系 GCJ-02
+- `latitude`：纬度，必填，坐标系 GCJ-02
 - `radius`：搜索半径（米），默认 `1000`
 - `page`：页码，默认 `1`
 - `size`：每页条数，默认 `10`
 
 调用提示：
 
-- `longitude`、`latitude` 必须传具体数值，不能只写成 `?longitude&latitude`
+- `longitude`、`latitude` 必须传具体数值，不能只写成 `?longitude&latitude`；坐标系须为 **GCJ-02**（火星坐标系），传入 WGS-84 会导致位置偏移
 - `radius`、`page`、`size` 不传时会走默认值；如果要传，也必须传具体数值
 
 请求示例：
@@ -226,8 +226,8 @@ curl 'http://127.0.0.1:8080/api/v1/restaurants/nearby?longitude=120.35&latitude=
 查询参数：
 
 - `keyword`：关键词，必填
-- `longitude`：经度，必填
-- `latitude`：纬度，必填
+- `longitude`：经度，必填，坐标系 GCJ-02
+- `latitude`：纬度，必填，坐标系 GCJ-02
 - `radius`：搜索半径，默认 `1000`
 - `page`：页码
 - `size`：每页条数
@@ -259,15 +259,15 @@ curl 'http://127.0.0.1:8080/api/v1/restaurants/search?keyword=拉面&longitude=1
 
 查询参数：
 
-- `longitude`：经度，必填
-- `latitude`：纬度，必填
+- `longitude`：经度，必填，坐标系 GCJ-02
+- `latitude`：纬度，必填，坐标系 GCJ-02
 - `radius`：搜索半径（米），默认 `1000`
 - `userId`：可选；传入后会过滤该用户黑名单中的 `poiId`
 
 调用提示：
 
 - `userId` 不需要时请省略整个参数，不要传成 `userId=`
-- `longitude`、`latitude` 必须传具体数值
+- `longitude`、`latitude` 必须传具体数值；坐标系须为 **GCJ-02**（火星坐标系），传入 WGS-84 会导致位置偏移
 
 请求示例：
 
@@ -306,8 +306,8 @@ curl 'http://127.0.0.1:8080/api/v1/recommendations/random?longitude=120.35&latit
 
 查询参数：
 
-- `longitude`：经度，必填
-- `latitude`：纬度，必填
+- `longitude`：经度，必填，坐标系 GCJ-02
+- `latitude`：纬度，必填，坐标系 GCJ-02
 - `radius`：搜索半径（米），默认 `1000`
 - `size`：候选数量，默认 `20`
 - `userId`：可选；传入后会过滤该用户黑名单中的 `poiId`
