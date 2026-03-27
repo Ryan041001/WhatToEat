@@ -89,7 +89,7 @@ erDiagram
 | created_at | datetime | NOT NULL | 创建时间 |
 | updated_at | datetime | NOT NULL | 更新时间 |
 
-唯一约束：`uk_note_user_poi (user_id, poi_id)`（同一用户同一 POI 保持单条可更新备注）
+唯一约束：`uk_user_poi (user_id, poi_id)`（同一用户同一 POI 只允许创建一条备注；重复创建返回 `409 Conflict`，后续内容修改通过 `PUT` 更新）
 
 ## 3.4 user_choice_history
 
@@ -109,7 +109,7 @@ erDiagram
 |---|---|---|---|
 | users | uk_users_openid(openid) | unique | 登录/查找用户 |
 | user_blacklist | uk_blacklist_user_poi(user_id, poi_id) | unique | 去重与过滤 |
-| user_restaurant_note | uk_note_user_poi(user_id, poi_id) | unique | 备注 upsert |
+| user_restaurant_note | uk_user_poi(user_id, poi_id) | unique | 防止重复创建备注，并支持按 userId + poiId 快速定位 |
 | user_choice_history | idx_user_chosen(user_id, chosen_at) | normal | 历史查询 |
 
 ---
@@ -158,4 +158,4 @@ backend/src/main/resources/db/migration/
 4. 执行随机策略并返回
 5. 可选写入 `user_choice_history` 供后续去重优化
 
-该流程确保“用户偏好优先于随机结果”。
+该流程确保“黑名单过滤优先于随机结果”。

@@ -12,7 +12,14 @@ public interface AmapClient {
      * @param radius    搜索半径（米）
      * @param page      页码（从 1 开始）
      * @param pageSize  每页数量
-     * @return POI 列表
      */
-    List<AmapPoi> searchNearby(double longitude, double latitude, int radius, int page, int pageSize);
+    AmapSearchResult searchNearby(double longitude, double latitude, int radius, int page, int pageSize);
+
+    /**
+     * 按关键词搜索餐厅 POI
+     */
+    AmapSearchResult searchByKeyword(String keyword, double longitude, double latitude, int radius, int page, int pageSize);
+
+    record AmapSearchResult(List<AmapPoi> items, long total) {
+    }
 }

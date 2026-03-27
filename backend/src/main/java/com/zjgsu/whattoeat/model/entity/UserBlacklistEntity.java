@@ -14,9 +14,48 @@ public class UserBlacklistEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(name = "poi_id", nullable = false)
+    @Column(name = "poi_id", nullable = false, length = 64)
     private String poiId;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @PrePersist
+    public void prePersist() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public String getPoiId() {
+        return poiId;
+    }
+
+    public void setPoiId(String poiId) {
+        this.poiId = poiId;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }

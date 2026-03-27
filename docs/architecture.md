@@ -17,7 +17,7 @@
 1. 附近餐厅查询（高德）
 2. 随机推荐（支持黑名单过滤）
 3. 卡片候选列表
-4. 用户偏好：拉黑/取消拉黑、备注
+4. 用户侧数据：黑名单、备注（历史能力预留）
 
 ### 2.2 关键约束
 
@@ -32,7 +32,7 @@
 | 层级 | 选择 | 理由 |
 |---|---|---|
 | 后端框架 | Spring Boot 4 + Java 17 | 便于快速搭建 RESTful API，生态成熟，适合后续扩展参数校验、统一异常处理、配置管理与测试能力 |
-| 数据访问 | Spring Data JPA + Hibernate | 适合本阶段以用户偏好数据为主的 CRUD 场景，开发成本低，和 Spring Boot 集成直接 |
+| 数据访问 | Spring Data JPA + Hibernate | 适合本阶段以黑名单、备注等用户侧数据为主的 CRUD 场景，开发成本低，和 Spring Boot 集成直接 |
 | 数据库 | MySQL 8 | 适合承载结构化用户数据，和 JPA、Flyway 配套成熟，便于后续联调与部署 |
 | 数据库迁移 | Flyway | 用版本化 SQL 管理表结构演进，避免人工改库导致环境不一致 |
 | 外部服务集成 | 高德 Web 服务 API | 提供餐厅主数据与位置能力，避免本地维护完整餐厅主表 |
@@ -51,12 +51,14 @@ flowchart TD
 
         subgraph WEB[Web Layer]
             RC[RecommendationController]
-            UC[UserPreferenceController]
+            BC[UserBlacklistController]
+            NC[UserNoteController]
         end
 
         subgraph APP[Application Layer]
             RAS[RecommendationApplicationService]
-            UAS[UserPreferenceApplicationService]
+            BAS[UserBlacklistApplicationService]
+            NAS[UserNoteApplicationService]
         end
 
         subgraph DOMAIN[Domain Layer]
@@ -84,21 +86,22 @@ flowchart TD
     end
 
     FE --> RC
-    FE --> UC
+    FE --> BC
+    FE --> NC
 
     RC --> RAS
-    UC --> UAS
+    BC --> BAS
+    NC --> NAS
 
     RAS --> RDS
     RAS --> AR
     RAS --> UBR
-    RAS --> UHR
-    UAS --> UR
-    UAS --> UBR
-    UAS --> UNR
+    BAS --> UR
+    BAS --> UBR
+    NAS --> UR
+    NAS --> UNR
 
     RDS --> UBR
-    RDS --> UHR
     AR --> AMAP
     UR --> DB
     UBR --> DB
@@ -106,11 +109,15 @@ flowchart TD
     UHR --> DB
 
     RC -.统一返回.-> RESP
-    UC -.统一返回.-> RESP
+    BC -.统一返回.-> RESP
+    NC -.统一返回.-> RESP
     RC -.异常处理.-> EX
-    UC -.异常处理.-> EX
+    BC -.异常处理.-> EX
+    NC -.异常处理.-> EX
     AR -.配置注入.-> CFG
 ```
+
+说明：`user_choice_history` 当前只在数据模型中预留，尚未接入现行推荐链路。
 
 ### 4.1 分层职责
 
@@ -144,7 +151,8 @@ backend/src/main/java/com/zjgsu/whattoeat/
 当前仓库已按上述结构落地，核心代码位置如下：
 
 - `controller/RecommendationController.java`：餐厅推荐相关接口
-- `controller/UserPreferenceController.java`：用户偏好相关接口
+- `controller/UserBlacklistController.java`：用户黑名单相关接口
+- `controller/UserNoteController.java`：用户备注相关接口
 - `service/application/`：流程编排层
 - `service/domain/`：推荐与过滤规则
 - `integration/amap/`：高德接口封装
@@ -191,8 +199,8 @@ sequenceDiagram
 
 ### 6.2 用户拉黑流程
 
-1. 前端请求 `POST /api/v1/users/{userId}/blacklist/{poiId}`
-2. 后端校验参数并检查唯一键（`user_id + poi_id`）
+1. 前端请求 `POST /api/v1/users/{userId}/blacklist`
+2. 后端校验 Bearer Token 与路径 `userId` 一致，并检查唯一键（`user_id + poi_id`）
 3. 持久化写入 `user_blacklist`
 4. 返回统一成功响应
 
@@ -318,4 +326,3 @@ graph TD
     style P_Mine fill:#D6EAF8
     style C_Nav fill:#D5F5E3
 ```
-
