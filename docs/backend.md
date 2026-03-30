@@ -25,12 +25,12 @@
 
 ---
 
-## 3. 规划中的后端分层
+## 3. 当前后端分层
 
 ```text
 backend/src/main/java/com/zjgsu/whattoeat/
 ├── controller/       # 对外 API
-├── service/          # 业务逻辑（推荐、黑名单过滤）
+├── service/          # 业务逻辑（application/domain 分层）
 ├── integration/
 │   └── amap/         # 高德 API 封装
 ├── repository/       # 用户侧数据访问（黑名单、备注、历史）
@@ -52,10 +52,10 @@ backend/src/main/java/com/zjgsu/whattoeat/
 - 随机推荐餐厅（高德结果池中随机）
 - 左滑右滑候选卡片列表（高德结果池）
 
-### 4.2 用户偏好
+### 4.2 用户侧数据
 
-- 用户拉黑/取消拉黑餐厅（按 `userId + poiId`）
-- 用户备注/避雷信息（按 `userId + poiId`）
+- 用户黑名单创建、删除与分页查询（按 `userId + poiId`）
+- 用户备注创建、分页查询、详情、更新、删除（按 `userId + poiId` 约束唯一）
 - 推荐时过滤当前用户黑名单
 
 ---
@@ -96,7 +96,7 @@ amap.search-radius=3000
 
 ## 6. 数据库最小化设计（仅高德主数据）
 
-按当前阶段规划，本地库暂不存完整餐厅主表，建议只保留：
+按当前阶段实现，本地库暂不存完整餐厅主表，当前保留：
 
 1. `user_blacklist`
    - `id`
@@ -111,7 +111,7 @@ amap.search-radius=3000
    - `content`
    - `created_at`
 
-3. （可选）`user_choice_history`
+3. （可选，预留）`user_choice_history`
    - `id`
    - `user_id`
    - `poi_id`
@@ -119,10 +119,10 @@ amap.search-radius=3000
 
 ---
 
-## 7. 计划补充的依赖（按当前方案）
+## 7. 当前依赖说明（按现状）
 
 - MySQL Connector/J
-- MyBatis-Plus（或 Spring Data JPA，二选一）
+- Spring Data JPA + Hibernate
 - Spring Validation
 - Spring Boot Configuration Processor
 - HTTP 客户端（RestClient / WebClient）
@@ -144,6 +144,46 @@ cd backend
 java -jar target/WhatToEat-0.0.1-SNAPSHOT.jar
 ```
 
+### 8.1 无 MySQL 时本地启动
+
+```bash
+cd backend
+JAVA_HOME=$(/usr/libexec/java_home -v 17) ./mvnw spring-boot:run \
+  -Dspring-boot.run.profiles=test \
+  -Dspring-boot.run.useTestClasspath=true
+```
+
+说明：
+
+- `dev`：默认本地开发模式，连接宿主机 MySQL `localhost:3306/whattoeat_dev`
+- `test`：H2 内存库模式，适合无 MySQL 的功能验证
+- `docker`：容器化本地开发模式，连接 Compose 内的 `mysql` 服务
+
+### 8.2 Docker Compose 本地联调
+
+在项目根目录执行：
+
+```bash
+cp .env.example .env
+docker compose --env-file .env up --build
+```
+
+首次使用前请将 `.env` 中的 `AMAP_KEY` 替换为真实可用的高德 Web 服务 Key；默认的 `test-key` 仅用于让容器配置完整，不保证餐厅查询与推荐接口可用。
+
+常用命令：
+
+```bash
+docker compose --env-file .env ps
+docker compose --env-file .env down
+```
+
+联调说明：
+
+- 微信开发者工具使用 `http://127.0.0.1:8080`
+- 真机同局域网调试使用 `http://<你的宿主机局域网IP>:8080`
+- 容器模式下数据库由 Compose 管理，表结构仍由 Flyway 自动迁移
+- 当前小程序侧只补充了 API 地址配置边界，真正的 `wx.request` 接口接入仍需后续前端联调时补齐
+
 ---
 
 ## 9. 当前阶段建议实施顺序
@@ -151,6 +191,6 @@ java -jar target/WhatToEat-0.0.1-SNAPSHOT.jar
 1. 补充基础工程能力（统一返回体、配置绑定、异常处理）
 2. 封装高德 nearby/search 接口
 3. 打通随机推荐接口
-4. 落地黑名单与备注表
+4. 落地黑名单与备注表及对应 CRUD 接口
 5. 在推荐流程中接入黑名单过滤
 6. 与小程序前端联调

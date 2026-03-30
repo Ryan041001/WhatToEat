@@ -1,4 +1,6 @@
 {
-  "navigationBarTitleText": "大转盘",
-  "usingComponents": {}
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "bottom-nav": "/components/bottom-nav/bottom-nav"
+  }
 }

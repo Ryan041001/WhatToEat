@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "首页",
-  "usingComponents": {}
+  "usingComponents": {
+    "bottom-nav": "/components/bottom-nav/bottom-nav"
+  }
 }

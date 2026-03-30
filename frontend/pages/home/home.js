@@ -1,108 +1,133 @@
 // pages/home/home.js
-const app = getApp();
+import { GetNearbyRestaurants, mapApiRestaurantToCard } from '../../api/restaurants.js'
+const app = getApp()
 
 Page({
   data: {
     totalCount: 0,
     activeCount: 0,
-    blacklistedCount: 0,
     topRated: [],
-    shakeResult: '',
-    shaking: false
-  },
-
-  onLoad() {
-    this.loadData();
+    shaking: false,
+    shakeResult: null,
+    usingRemoteData: false,
   },
 
   onShow() {
-    this.loadData();
+    this.updateData()
   },
 
-  // 加载数据
-  loadData() {
-    const restaurants = app.getRestaurants();
-    const actives = app.getActiveRestaurants();
-    const topRated = [...actives]
-      .sort((a, b) => b.rating - a.rating)
-      .slice(0, 3)
-      .map(r => ({
-        ...r,
-        priceText: '¥'.repeat(r.priceLevel)
-      }));
+  async updateData() {
+    let restaurants = app.getRestaurants()
+    let usingRemoteData = false
+
+    try {
+      const location = await this.getLocationOrDefault()
+      const res = await GetNearbyRestaurants({
+        longitude: location.longitude,
+        latitude: location.latitude,
+        radius: 1500,
+        page: 1,
+        size: 20
+      })
+
+      const remoteItems = (res?.data?.items || []).map(mapApiRestaurantToCard)
+      if (remoteItems.length > 0) {
+        app.globalData.restaurants = remoteItems
+        restaurants = remoteItems
+        usingRemoteData = true
+      }
+    } catch (err) {
+      console.warn('首页拉取附近餐厅失败，使用本地数据兜底', err)
+    }
+
+    const actives = restaurants.filter(item => !item.isBlacklisted)
+    const topRated = [...actives].sort((a, b) => b.rating - a.rating).slice(0, 3)
+    const topRatedFormatted = topRated.map(item => ({
+      ...item,
+      priceText: '¥'.repeat(item.priceLevel || 1)
+    }))
 
     this.setData({
       totalCount: restaurants.length,
       activeCount: actives.length,
-      blacklistedCount: restaurants.length - actives.length,
-      topRated
-    });
+      topRated: topRatedFormatted,
+      usingRemoteData
+    })
   },
 
-  // 跳转到大转盘
+  getLocationOrDefault() {
+    return new Promise((resolve) => {
+      wx.getLocation({
+        type: 'gcj02',
+        success: (loc) => {
+          resolve({ longitude: loc.longitude, latitude: loc.latitude })
+        },
+        fail: () => {
+          // 默认回退到学校附近坐标，保证 API 可用
+          resolve({ longitude: 120.3502, latitude: 30.3154 })
+        }
+      })
+    })
+  },
+
   goToSpin() {
-    wx.switchTab({
-      url: '/pages/spin/spin'
-    });
+    wx.navigateTo({ url: '/pages/spin/spin' })
   },
 
-  // 跳转到卡片滑选
   goToSwipe() {
-    wx.switchTab({
-      url: '/pages/swipe/swipe'
-    });
+    wx.navigateTo({ url: '/pages/swipe/swipe' })
   },
-
-  // 跳转到餐厅列表
-  goToRestaurants() {
-    wx.switchTab({
-      url: '/pages/restaurants/restaurants'
-    });
-  },
-
-  // 跳转到我的
+  
   goToMine() {
-    wx.switchTab({
-      url: '/pages/mine/mine'
-    });
+    wx.navigateTo({ url: '/pages/mine/mine' })
   },
 
-  // 摇一摇
-  handleShake() {
-    if (this.data.shaking) return;
+  goToRestaurants() {
+    wx.navigateTo({ url: '/pages/restaurants/restaurants' })
+  },
 
-    const actives = app.getActiveRestaurants();
+  handleShake() {
+    if (this.data.shaking) return
+
+    const actives = app.getActiveRestaurants()
     if (actives.length === 0) {
       wx.showToast({
-        title: '没有可选餐厅',
+        title: '没有可选的餐厅',
         icon: 'none'
-      });
-      return;
+      })
+      return
     }
 
-    this.setData({ shaking: true });
+    this.setData({ shaking: true })
+    
+    // Vibrate device
+    wx.vibrateShort({ type: 'medium' })
 
-    // 触发震动反馈
-    wx.vibrateShort({
-      type: 'medium'
-    });
-
+    const pick = actives[Math.floor(Math.random() * actives.length)]
+    
     setTimeout(() => {
-      const pick = actives[Math.floor(Math.random() * actives.length)];
       this.setData({
         shaking: false,
         shakeResult: pick.name
-      });
-
-      // 3秒后自动关闭
-      setTimeout(() => {
-        this.setData({ shakeResult: '' });
-      }, 3000);
-    }, 800);
+      })
+    }, 800)
   },
 
-  // 关闭摇一摇结果
   closeShakeResult() {
-    this.setData({ shakeResult: '' });
+    this.setData({
+      shakeResult: null
+    })
+  },
+  
+  noop() {
+    // Prevent event bubbling
+  },
+
+  handleImageError(e) {
+    const { index } = e.currentTarget.dataset
+    const { topRated } = this.data
+    if (topRated[index]) {
+      // Fallback image handling could go here
+    }
   }
 })

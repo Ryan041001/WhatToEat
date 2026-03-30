@@ -1,11 +1,11 @@
 {
   "pages": [
-    "pages/index/index",
     "pages/home/home",
     "pages/mine/mine",
     "pages/restaurants/restaurants",
     "pages/spin/spin",
-    "pages/swipe/swipe"
+    "pages/swipe/swipe",
+    "pages/index/index"
   ],
   "window": {
     "navigationBarBackgroundColor": "#ffffff",

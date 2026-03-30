@@ -1,141 +1,150 @@
 <!--pages/restaurants/restaurants.wxml-->
-<view class="container">
-  <!-- Header Filters -->
-  <view class="filters">
-    <!-- Category filter -->
-    <scroll-view class="category-scroll" scroll-x>
-      <view class="category-list">
-        <view 
-          class="category-item {{selectedCategory === '' ? 'active' : ''}}"
-          bindtap="selectCategory"
-          data-category=""
-        >
-          全部
-        </view>
-        <view 
-          class="category-item {{selectedCategory === item ? 'active' : ''}}"
-          wx:for="{{categories}}"
-          wx:key="*this"
-          bindtap="selectCategory"
-          data-category="{{item}}"
-        >
-          {{item}}
-        </view>
+<view class="app-shell page-with-bottom-nav flex flex-col container-restaurant">
+  <!-- Header -->
+  <view class="unified-topbar page-topbar header-bg">
+    <view class="page-topbar-row gap-2 mb-3">
+      <view bindtap="goToHome" class="topbar-back-btn flex items-center justify-center">
+         <text style="color: var(--primary-foreground); font-size: 40rpx; font-weight: bold;">‹</text>
       </view>
-    </scroll-view>
+      <text class="topbar-title">食堂总览</text>
+      <view class="ml-auto flex items-center gap-2">
+        <text class="glass-chip glass-blur-sm px-2 py-0-5 rounded-full header-badge-active">
+          {{activeCount}} 可选
+        </text>
+        <text wx:if="{{blacklistCount > 0}}" class="glass-chip glass-blur-sm px-2 py-0-5 rounded-full header-badge-black">
+          {{blacklistCount}} 拉黑
+        </text>
+      </view>
+    </view>
 
-    <!-- Price & Sort filters -->
-    <view class="filter-row">
-      <view class="filter-group">
-        <view 
-          class="filter-btn {{selectedPrice === 0 ? 'active' : ''}}"
-          bindtap="selectPrice"
-          data-price="{{0}}"
-        >
-          全部价位
-        </view>
-        <view 
-          class="filter-btn {{selectedPrice === 1 ? 'active' : ''}}"
-          bindtap="selectPrice"
-          data-price="{{1}}"
-        >
-          ¥
-        </view>
-        <view 
-          class="filter-btn {{selectedPrice === 2 ? 'active' : ''}}"
-          bindtap="selectPrice"
-          data-price="{{2}}"
-        >
-          ¥¥
-        </view>
-        <view 
-          class="filter-btn {{selectedPrice === 3 ? 'active' : ''}}"
-          bindtap="selectPrice"
-          data-price="{{3}}"
-        >
-          ¥¥¥
-        </view>
-      </view>
-      <view class="sort-dropdown" bindtap="toggleSort">
-        <text class="sort-text">{{sortOptions[selectedSort]}}</text>
-        <text class="sort-arrow">▼</text>
-      </view>
+    <!-- Search bar -->
+    <view class="glass-overlay flex items-center gap-2 px-3 py-2 rounded-xl search-bar">
+      <text style="color: var(--muted-foreground); font-size: 28rpx;">🔍</text>
+      <input type="text" value="{{search}}" bindinput="onSearchInput" placeholder="搜餐厅名、口味、标签..." class="search-input" placeholder-class="search-placeholder" />
     </view>
   </view>
 
-  <!-- Restaurant List -->
-  <scroll-view class="restaurant-list" scroll-y>
-    <view class="list-content">
-      <view 
-        class="restaurant-card {{item.isBlacklisted ? 'blacklisted' : ''}}"
-        wx:for="{{filteredRestaurants}}"
-        wx:key="id"
+  <!-- Category pills -->
+  <scroll-view scroll-x class="cat-list border-b" enable-flex>
+    <view class="flex items-center gap-2 px-3 py-3 w-max">
+      <view wx:for="{{CATEGORIES}}" wx:key="*this"
+        bindtap="setCategory" data-val="{{item}}"
+        class="cat-chip glass-blur-sm px-3 py-1_5 rounded-full click-hover-lift {{activeCategory === item ? 'cat-active' : 'cat-inactive'}}"
       >
-        <image class="card-image" src="{{item.image}}" mode="aspectFill"></image>
-        <view class="card-info">
-          <view class="card-header">
-            <text class="card-name">{{item.name}}</text>
-            <view class="card-rating">
-              <text class="star">⭐</text>
-              <text class="rating-value">{{item.rating}}</text>
-            </view>
-          </view>
-          <view class="card-meta">
-            <text class="meta-item">{{item.category}}</text>
-            <text class="meta-divider">·</text>
-            <text class="meta-item">📍 {{item.distance}}</text>
-            <text class="meta-divider">·</text>
-            <text class="meta-item">{{item.priceText}}</text>
-          </view>
-          <view class="card-tags">
-            <text class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">{{tag}}</text>
-          </view>
-          <text class="card-desc" wx:if="{{item.description}}">{{item.description}}</text>
-        </view>
-        <view class="card-action">
-          <button 
-            class="action-btn {{item.isBlacklisted ? 'btn-unblock' : 'btn-block'}}"
-            bindtap="toggleBlacklist"
-            data-id="{{item.id}}"
-          >
-            {{item.isBlacklisted ? '取消拉黑' : '拉黑'}}
-          </button>
-        </view>
-
-        <!-- Blacklist overlay -->
-        <view class="blacklist-overlay" wx:if="{{item.isBlacklisted}}">
-          <text class="overlay-text">🚫 已拉黑</text>
-        </view>
-      </view>
-
-      <!-- Empty state -->
-      <view class="empty-state" wx:if="{{filteredRestaurants.length === 0}}">
-        <text class="empty-emoji">🔍</text>
-        <text class="empty-text">没有找到餐厅</text>
-        <text class="empty-tip">试试调整筛选条件吧~</text>
+        {{item}}
       </view>
     </view>
   </scroll-view>
 
-  <!-- Sort Modal -->
-  <view class="sort-modal {{showSortModal ? 'show' : ''}}" bindtap="toggleSort">
-    <view class="sort-content" catchtap="stopPropagation">
-      <view 
-        class="sort-option {{selectedSort === 'rating' ? 'active' : ''}}"
-        bindtap="changeSort"
-        data-sort="rating"
+  <!-- Filter row -->
+  <view class="flex items-center gap-2 px-3 py-2 filter-row border-b">
+    <text style="color: var(--muted-foreground); font-size: 24rpx;">🎛</text>
+    <view class="flex gap-1_5">
+      <view wx:for="{{PRICE_FILTERS}}" wx:key="*this"
+        bindtap="setPriceFilter" data-val="{{item}}"
+        class="price-chip px-2_5 py-1 rounded-lg {{activePriceFilter === item ? 'price-active' : 'price-inactive'}}"
       >
-        <text class="sort-label">按评分</text>
-        <text class="sort-check" wx:if="{{selectedSort === 'rating'}}">✓</text>
-      </view>
-      <view 
-        class="sort-option {{selectedSort === 'distance' ? 'active' : ''}}"
-        bindtap="changeSort"
-        data-sort="distance"
-      >
-        <text class="sort-label">按距离</text>
-        <text class="sort-check" wx:if="{{selectedSort === 'distance'}}">✓</text>
+        {{item}}
       </view>
     </view>
+    <view bindtap="toggleShowBlacklisted" class="ml-auto px-2_5 py-1 rounded-lg {{showBlacklisted ? 'price-active' : 'price-inactive'}}" style="font-size: 22rpx;">
+      {{showBlacklisted ? '隐藏雷区' : '显示雷区'}}
+    </view>
   </view>
+
+  <!-- List -->
+  <scroll-view scroll-y class="flex-1 list-container px-3 py-3" enable-flex>
+    <view wx:if="{{filtered.length === 0}}" class="flex flex-col items-center gap-3 py-16">
+      <text style="font-size: 96rpx;">🔍</text>
+      <text style="font-size: 28rpx; color: var(--muted-foreground);">没找到符合条件的餐厅</text>
+    </view>
+    <view wx:else class="flex flex-col gap-3">
+      <view wx:for="{{filtered}}" wx:key="id" class="restaurant-card rounded-2xl overflow-hidden glass-blur-sm click-hover-lift {{item.isBlacklisted ? 'card-blacklisted' : 'card-normal'}}">
+        <view class="relative">
+          <image src="{{item.image}}" class="card-img" mode="aspectFill"></image>
+          <view wx:if="{{item.isBlacklisted}}" class="absolute-overlay">
+            <view class="flex flex-col items-center gap-1">
+              <text style="font-size: 56rpx; color: var(--primary-foreground);">🚫</text>
+              <text style="color: var(--primary-foreground); font-size: 24rpx; font-weight: 700;">已拉黑</text>
+            </view>
+          </view>
+          <view class="glass-chip glass-blur-sm chip-tl">
+            <text style="color: var(--foreground); font-size: 22rpx; font-weight: 700;">{{item.category}}</text>
+          </view>
+          <view wx:if="{{item.isUserAdded}}" class="glass-chip glass-blur-sm chip-tr">
+            <text style="color: var(--warning); font-size: 20rpx; font-weight: 700;">我添加的</text>
+          </view>
+          <view class="glass-chip glass-blur-sm chip-br click-hover-lift" bindtap="toggleMenu" data-id="{{item.id}}">
+            <text style="color: var(--foreground); font-size: 24rpx;" class="chevron {{menuStates[item.id] ? 'chevron-up' : ''}}">▼</text>
+          </view>
+        </view>
+
+        <view class="card-content px-3 py-3 glass-blur-md">
+          <view class="flex items-start justify-between min-w-0">
+            <view class="flex-1 min-w-0">
+              <text style="font-size: 28rpx; font-weight: 700; color: var(--foreground); display: block;" class="truncate">{{item.name}}</text>
+              <view class="mt-0_5 flex items-center gap-2">
+                <view class="flex items-center gap-0_5">
+                  <text style="color: var(--warning); font-size: 22rpx;">★</text>
+                  <text style="font-size: 22rpx; color: var(--warning); font-weight: 600;">{{item.rating}}</text>
+                </view>
+                <text style="font-size: 22rpx; color: var(--muted-foreground);">{{item.priceText}}</text>
+                <view class="flex items-center gap-0_5">
+                  <text style="color: var(--muted-foreground); font-size: 18rpx;">📍</text>
+                  <text style="font-size: 20rpx; color: var(--muted-foreground);">{{item.distance}}</text>
+                </view>
+              </view>
+            </view>
+          </view>
+          
+          <text style="font-size: 22rpx; color: rgba(59, 38, 23, 0.58); margin-top: 8rpx; line-height: 1.4; display: block;" class="truncate-2">{{item.description}}</text>
+
+          <view class="flex flex-wrap gap-1 mt-2">
+            <view wx:for="{{item.tags}}" wx:for-item="t" wx:key="*this" class="glass-chip glass-blur-sm tag-chip">
+              #{{t}}
+            </view>
+          </view>
+
+          <!-- Actions -->
+          <view class="action-row mt-3 pt-2 flex items-center justify-between">
+            <view class="flex items-center gap-3">
+               <view class="flex items-center gap-1 action-btn" bindtap="handleVote" data-id="{{item.id}}" data-type="up" style="opacity: {{voteStates[item.id] === 'down' ? 0.4 : 1}}">
+                 <text style="font-size: 26rpx;">{{voteStates[item.id] === 'up' ? '👍' : '👍🏻'}}</text>
+                 <text style="font-size: 22rpx; color: {{voteStates[item.id] === 'up' ? 'var(--warning)' : 'var(--muted-foreground)'}}">{{item.votes.up || 0}}</text>
+               </view>
+               <view class="flex items-center gap-1 action-btn" bindtap="handleVote" data-id="{{item.id}}" data-type="down" style="opacity: {{voteStates[item.id] === 'up' ? 0.4 : 1}}">
+                 <text style="font-size: 26rpx;">{{voteStates[item.id] === 'down' ? '👎' : '👎🏻'}}</text>
+                 <text style="font-size: 22rpx; color: {{voteStates[item.id] === 'down' ? 'var(--primary)' : 'var(--muted-foreground)'}}">{{item.votes.down || 0}}</text>
+               </view>
+            </view>
+            
+            <view class="flex items-center gap-2">
+               <view class="flex items-center gap-1 px-2 py-1 rounded-lg toggle-bl-btn" style="background: {{item.isBlacklisted ? 'var(--glass-surface-light)' : 'var(--glass-surface-medium)'}}; color: {{item.isBlacklisted ? 'var(--primary)' : 'var(--muted-foreground)'}}" bindtap="toggleBlacklist" data-id="{{item.id}}">
+                 <text style="font-size: 22rpx;">🚫</text>
+                 <text style="font-size: 20rpx; font-weight: 600;">{{item.isBlacklisted ? '解除拉黑' : '拉黑'}}</text>
+               </view>
+            </view>
+          </view>
+
+          <!-- Expanded -->
+          <view wx:if="{{menuStates[item.id]}}" class="expanded-actions mt-2 pt-2 flex items-center justify-between anim-expand">
+            <text style="font-size: 22rpx; color: rgba(59, 38, 23, 0.58);" class="truncate">{{item.address || ''}}</text>
+            <view wx:if="{{item.isUserAdded}}" bindtap="deleteRestaurant" data-id="{{item.id}}" class="flex items-center gap-1 px-2 py-1 rounded-lg btn-del">
+               <text style="font-size: 22rpx;">🗑</text>
+               <text style="font-size: 20rpx; font-weight: 600;">删除</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="load-more-wrap">
+        <view wx:if="{{isLoading}}" class="load-more-tip">加载中...</view>
+        <view wx:elif="{{usingRemoteData && hasMore}}" bindtap="loadMore" class="load-more-btn">加载更多</view>
+        <view wx:elif="{{usingRemoteData && !hasMore && filtered.length > 0}}" class="load-more-tip">没有更多了</view>
+      </view>
+    </view>
+    <view style="height: 32rpx; padding-bottom: env(safe-area-inset-bottom);"></view>
+  </scroll-view>
+
+  <bottom-nav current="restaurants"></bottom-nav>
 </view>

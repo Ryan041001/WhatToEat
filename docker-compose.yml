@@ -1,0 +1,44 @@
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-whattoeat_dev}
+      MYSQL_USER: ${DB_USER:-whattoeat}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-whattoeat}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./backend/src/main/resources/application-docker.yml:/app/config/application-docker.yml:ro
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-whattoeat_dev}
+      DB_USER: ${DB_USER:-whattoeat}
+      DB_PASSWORD: ${DB_PASSWORD:-whattoeat}
+      AMAP_KEY: ${AMAP_KEY:-test-key}
+      AMAP_BASE_URL: ${AMAP_BASE_URL:-https://restapi.amap.com}
+      AMAP_TIMEOUT_SECONDS: ${AMAP_TIMEOUT_SECONDS:-5}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+
+volumes:
+  mysql-data:
