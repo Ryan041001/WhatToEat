@@ -265,16 +265,16 @@ curl 'http://127.0.0.1:8080/api/v1/restaurants/search?keyword=拉面&longitude=1
 页面联调接入：
 
 - `frontend/pages/home/home.js`：首页优先调用 `/api/v1/restaurants/nearby`
-- `frontend/pages/restaurants/restaurants.js`：餐厅页调用 `nearby/search`，支持 `page/size` 分页与“加载更多”
+- `frontend/pages/restaurants/restaurants.js`：餐厅页调用 `nearby/search`，支持 `page/size` 分页与”加载更多”
 
 实现细节：
 
 - 请求参数包含 `longitude`、`latitude`、`radius`、`page`、`size`
 - 餐厅页支持关键词搜索，输入后重置到第 1 页
 - 当远端接口失败时，自动回退到本地 mock 数据，保证页面可用
-- 当远端返回“无结果”（业务码 `3003`）时，显示空列表，不回退本地数据
+- 当远端返回”无结果”（业务码 `3003`）时，显示空列表，不回退本地数据
 
-这部分实现可直接作为“前端 API 访问层 + 数据查询（分页/筛选）”作业证据。
+这部分实现可直接作为”前端 API 访问层 + 数据查询（分页/筛选）”作业证据。
 
 ### 8.1 随机推荐餐厅
 
