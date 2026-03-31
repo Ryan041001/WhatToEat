@@ -1,124 +1,296 @@
 // pages/restaurants/restaurants.js
-const app = getApp();
+import { GetNearbyRestaurants, SearchRestaurants, mapApiRestaurantToCard } from '../../api/restaurants.js'
+const app = getApp()
+
+const CATEGORIES = ['全部', '川菜', '日料', '快餐', '烧烤', '米线', '面食', '韩餐', '西餐', '北方面食', '其他'];
+const PRICE_FILTERS = ['全部', '¥', '¥¥', '¥¥¥'];
 
 Page({
   data: {
     restaurants: [],
-    filteredRestaurants: [],
-    categories: ['川菜', '日料', '快餐', '烧烤', '米线', '面食', '韩餐', '西餐', '火锅', '小吃'],
-    selectedCategory: '',
-    selectedPrice: 0,
-    selectedSort: 'rating',
-    sortOptions: {
-      rating: '按评分',
-      distance: '按距离'
-    },
-    showSortModal: false
+    filtered: [],
+    search: '',
+    activeCategory: '全部',
+    activePriceFilter: '全部',
+    showBlacklisted: false,
+    activeCount: 0,
+    blacklistCount: 0,
+    page: 1,
+    size: 20,
+    total: 0,
+    hasMore: false,
+    isLoading: false,
+    usingRemoteData: false,
+    CATEGORIES,
+    PRICE_FILTERS,
+    
+    // UI states per restaurant
+    menuStates: {}, // id -> boolean
+    voteStates: {}  // id -> 'up' | 'down' | null
   },
 
   onShow() {
-    this.loadData();
+    this.reloadFirstPage();
   },
 
-  // 加载数据
-  loadData() {
-    const restaurants = app.getRestaurants().map(r => ({
+  reloadFirstPage() {
+    this.loadData({ page: 1, append: false });
+  },
+
+  enrichRestaurant(r) {
+    return {
       ...r,
-      priceText: '¥'.repeat(r.priceLevel),
-      distanceValue: this.parseDistance(r.distance)
-    }));
-    
-    this.setData({ restaurants }, () => {
-      this.filterRestaurants();
-    });
+      priceText: '¥'.repeat(r.priceLevel || 1),
+      votes: r.votes || { up: 0, down: 0 }
+    };
   },
 
-  // 解析距离（用于排序）
-  parseDistance(distanceStr) {
-    const match = distanceStr.match(/(\d+)/);
-    return match ? parseInt(match[0]) : 999999;
-  },
+  async loadData(options = {}) {
+    if (this.data.isLoading) return;
 
-  // 筛选餐厅
-  filterRestaurants() {
-    let filtered = [...this.data.restaurants];
+    const { size, search } = this.data;
+    const page = options.page || this.data.page || 1;
+    const append = !!options.append;
 
-    // 按分类筛选
-    if (this.data.selectedCategory) {
-      filtered = filtered.filter(r => r.category === this.data.selectedCategory);
+    this.setData({ isLoading: true });
+
+    let usingRemoteData = false;
+    let allRestaurants = [];
+    let total = 0;
+    let hasMore = false;
+
+    try {
+      const location = await this.getLocationOrDefault();
+      const params = {
+        longitude: location.longitude,
+        latitude: location.latitude,
+        radius: 1500,
+        page,
+        size
+      };
+
+      const response = search
+        ? await SearchRestaurants({ ...params, keyword: search })
+        : await GetNearbyRestaurants(params);
+
+      const items = (response?.data?.items || []).map(mapApiRestaurantToCard);
+      const mapped = items.map(r => this.enrichRestaurant(r));
+      total = Number(response?.data?.total || mapped.length);
+
+      allRestaurants = append
+        ? this.mergeById(this.data.restaurants, mapped)
+        : mapped;
+
+      usingRemoteData = true;
+      hasMore = allRestaurants.length < total && mapped.length > 0;
+
+      if (!append && mapped.length > 0) {
+        app.globalData.restaurants = mapped;
+      }
+    } catch (err) {
+      if (err && err.code === 3003) {
+        // 远端明确无结果，显示空列表，不回退本地数据
+        allRestaurants = [];
+        total = 0;
+        usingRemoteData = true;
+        hasMore = false;
+      } else {
+        console.warn('餐厅页拉取远端数据失败，使用本地数据兜底', err);
+      }
     }
 
-    // 按价格筛选
-    if (this.data.selectedPrice > 0) {
-      filtered = filtered.filter(r => r.priceLevel === this.data.selectedPrice);
+    if (!usingRemoteData && allRestaurants.length === 0) {
+      allRestaurants = (app.getRestaurants() || []).map(r => this.enrichRestaurant(r));
+      total = allRestaurants.length;
+      hasMore = false;
     }
 
-    // 排序
-    if (this.data.selectedSort === 'rating') {
-      filtered.sort((a, b) => b.rating - a.rating);
-    } else if (this.data.selectedSort === 'distance') {
-      filtered.sort((a, b) => a.distanceValue - b.distanceValue);
-    }
-
-    this.setData({ filteredRestaurants: filtered });
-  },
-
-  // 选择分类
-  selectCategory(e) {
-    const category = e.currentTarget.dataset.category;
-    this.setData({ selectedCategory: category }, () => {
-      this.filterRestaurants();
-    });
-  },
-
-  // 选择价格
-  selectPrice(e) {
-    const price = parseInt(e.currentTarget.dataset.price);
-    this.setData({ selectedPrice: price }, () => {
-      this.filterRestaurants();
-    });
-  },
-
-  // 切换排序模态框
-  toggleSort() {
-    this.setData({ showSortModal: !this.data.showSortModal });
-  },
-
-  // 阻止冒泡
-  stopPropagation() {},
-
-  // 改变排序
-  changeSort(e) {
-    const sort = e.currentTarget.dataset.sort;
-    this.setData({ 
-      selectedSort: sort,
-      showSortModal: false
+    this.setData({
+      page,
+      total,
+      hasMore,
+      isLoading: false,
+      restaurants: allRestaurants,
+      usingRemoteData
     }, () => {
-      this.filterRestaurants();
+      this.filterData();
     });
   },
 
-  // 切换拉黑状态
-  toggleBlacklist(e) {
-    const id = e.currentTarget.dataset.id;
-    const restaurant = this.data.restaurants.find(r => r.id === id);
-    
-    if (!restaurant) return;
+  mergeById(prev = [], next = []) {
+    const map = new Map();
+    [...prev, ...next].forEach((item) => {
+      map.set(String(item.id), item);
+    });
+    return Array.from(map.values());
+  },
 
-    wx.showModal({
-      title: '提示',
-      content: restaurant.isBlacklisted ? '确定要取消拉黑吗？' : '确定要拉黑这家餐厅吗？',
-      success: (res) => {
-        if (res.confirm) {
-          app.toggleBlacklist(id);
-          this.loadData();
-          
-          wx.showToast({
-            title: restaurant.isBlacklisted ? '已取消拉黑' : '已拉黑',
-            icon: 'success'
-          });
+  loadMore() {
+    if (!this.data.usingRemoteData || !this.data.hasMore || this.data.isLoading) return;
+    this.loadData({ page: this.data.page + 1, append: true });
+  },
+
+  onSearchInput(e) {
+    this.setData({ search: e.detail.value }, () => {
+      this.reloadFirstPage()
+    })
+  },
+
+  getLocationOrDefault() {
+    return new Promise((resolve) => {
+      wx.getLocation({
+        type: 'gcj02',
+        success: (loc) => {
+          resolve({ longitude: loc.longitude, latitude: loc.latitude });
+        },
+        fail: () => {
+          resolve({ longitude: 120.3502, latitude: 30.3154 });
+        }
+      });
+    });
+  },
+
+  setCategory(e) {
+    this.setData({ activeCategory: e.currentTarget.dataset.val }, () => {
+      this.filterData()
+    })
+  },
+
+  setPriceFilter(e) {
+    this.setData({ activePriceFilter: e.currentTarget.dataset.val }, () => {
+      this.filterData()
+    })
+  },
+
+  toggleShowBlacklisted() {
+    this.setData({ showBlacklisted: !this.data.showBlacklisted }, () => {
+      this.filterData()
+    })
+  },
+
+  filterData() {
+    const { restaurants, search, activeCategory, activePriceFilter, showBlacklisted } = this.data;
+    
+    const filtered = restaurants.filter(r => {
+      if (!showBlacklisted && r.isBlacklisted) return false;
+      if (activeCategory !== '全部' && r.category !== activeCategory) return false;
+      
+      if (activePriceFilter !== '全部') {
+        const level = activePriceFilter.length; // '¥' -> 1, '¥¥' -> 2
+        if (r.priceLevel !== level) return false;
+      }
+      
+      if (search) {
+        const q = search.toLowerCase();
+        return (
+          r.name.toLowerCase().includes(q) ||
+          r.category.toLowerCase().includes(q) ||
+          (r.tags && r.tags.some(t => t.toLowerCase().includes(q))) ||
+          (r.description && r.description.toLowerCase().includes(q))
+        );
+      }
+      return true;
+    });
+
+    const activeCount = restaurants.filter(r => !r.isBlacklisted).length;
+    const blacklistCount = restaurants.filter(r => r.isBlacklisted).length;
+
+    this.setData({
+      filtered,
+      activeCount,
+      blacklistCount
+    });
+  },
+
+  goToHome() {
+    if (getCurrentPages().length > 1) {
+      wx.navigateBack();
+      return;
+    }
+    wx.redirectTo({ url: '/pages/home/home' });
+  },
+
+  toggleMenu(e) {
+    const id = e.currentTarget.dataset.id;
+    const { menuStates } = this.data;
+    this.setData({
+      [`menuStates.${id}`]: !menuStates[id]
+    });
+  },
+
+  handleVote(e) {
+    const { id, type } = e.currentTarget.dataset;
+    const { voteStates } = this.data;
+    if (voteStates[id]) return; // already voted
+
+    // Mock voting:
+    // In real app, call app.voteRestaurant(id, type)
+    let upAdded = type === 'up' ? 1 : 0;
+    let downAdded = type === 'down' ? 1 : 0;
+
+    const newFiltered = this.data.filtered.map(r => {
+      if (r.id === id) {
+        return {
+          ...r,
+          votes: {
+            up: (r.votes?.up || 0) + upAdded,
+            down: (r.votes?.down || 0) + downAdded
+          }
         }
       }
+      return r;
     });
+    
+    // Also update main list
+    const newRestaurants = this.data.restaurants.map(r => {
+      if (r.id === id) {
+        return {
+          ...r,
+          votes: {
+            up: (r.votes?.up || 0) + upAdded,
+            down: (r.votes?.down || 0) + downAdded
+          }
+        }
+      }
+      return r;
+    });
+    
+    // Actually you should persist to app.js
+    if (app.voteRestaurant) {
+      app.voteRestaurant(id, type);
+    }
+    
+    this.setData({
+      [`voteStates.${id}`]: type,
+      filtered: newFiltered,
+      restaurants: newRestaurants
+    });
+  },
+
+  toggleBlacklist(e) {
+    const id = e.currentTarget.dataset.id;
+    
+    if (app.toggleBlacklist) {
+      app.toggleBlacklist(id);
+      this.reloadFirstPage();
+    } else {
+      // Mock toggle
+      const newRestaurants = this.data.restaurants.map(r => {
+        if (r.id === id) return { ...r, isBlacklisted: !r.isBlacklisted }
+        return r;
+      });
+      this.setData({ restaurants: newRestaurants }, () => this.filterData());
+    }
+  },
+
+  deleteRestaurant(e) {
+    const id = e.currentTarget.dataset.id;
+    if (app.deleteRestaurant) {
+      app.deleteRestaurant(id);
+      this.reloadFirstPage();
+    } else {
+      const newRestaurants = this.data.restaurants.filter(r => r.id !== id);
+      this.setData({ restaurants: newRestaurants }, () => this.filterData());
+    }
   }
 })
