@@ -51,7 +51,7 @@ Page({
       wx.navigateBack();
       return;
     }
-    wx.redirectTo({ url: '/pages/home/home' });
+    wx.switchTab({ url: '/pages/home/home' });
   },
 
   loadData() {
@@ -83,7 +83,6 @@ Page({
   draw(angle, highlightIdx = -1) {
     const ctx = this.ctx;
     const canvas = this.canvas;
-    const sysInfo = wx.getSystemInfoSync();
     // Simulate color-mix with fixed rgba fallbacks for wxss variables 
     // Wait, we can't use var(--x) in canvas. We must hardcode the hex/rgba equivalent.
     // var(--glass-surface-strong) -> rgba(255, 255, 255, 0.6)

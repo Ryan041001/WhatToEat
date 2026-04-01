@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "今天吃什么",
-  "usingComponents": {}
+  "usingComponents": {
+    "custom-nav-bar": "../../components/navigation-bar/navigation-bar"
+  }
 }

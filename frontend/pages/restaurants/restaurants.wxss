@@ -1,274 +1,131 @@
-/* pages/restaurants/restaurants.wxss */
-.container-restaurant {
-  width: 100vw;
-  height: 100vh;
-  background: var(--background);
-  overflow: hidden;
+.detail-container {
+  background-color: #f5f5f5;
+  min-height: 100vh;
+  padding-bottom: 120rpx;
 }
-
-.header-bg {
-  background: linear-gradient(135deg, var(--primary), #ff9a5c);
-  padding: 24rpx 32rpx 32rpx;
-  flex-shrink: 0;
-}
-
-.mt-status {
-  padding-top: var(--status-bar-height, 0); 
-  /* Mini program automatically handles this if nav is default, 
-     but if custom nav, we need it. We will assume default but adjust spacing slightly. */
-}
-
-.back-btn {
-  width: 60rpx;
-  height: 60rpx;
-}
-
-.header-badge-active {
-  background: rgba(255, 255, 255, 0.2);
-  color: var(--primary-foreground);
-  font-size: 22rpx;
-}
-
-.header-badge-black {
-  background: rgba(0, 0, 0, 0.2);
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 22rpx;
-}
-
-.search-bar {
-  background: rgba(255, 255, 255, 0.94);
-}
-
-.search-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  font-size: 26rpx;
-  color: var(--foreground);
-}
-
-.search-placeholder {
-  color: var(--muted-foreground);
-}
-
-.border-b {
-  border-bottom: 1px solid var(--glass-border-soft);
-  background: var(--primary-foreground);
-}
-
-.cat-list {
-  width: 100%;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.w-max {
-  width: max-content;
-}
-
-.cat-chip {
-  flex-shrink: 0;
-  transition: all 0.2s;
-}
-
-.cat-active {
-  background: var(--primary) !important;
-  color: var(--primary-foreground) !important;
-  font-weight: 600;
+.detail-back-btn {
+  position: fixed;
+  top: 24rpx;
+  left: 24rpx;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
   font-size: 24rpx;
+  padding: 10rpx 18rpx;
+  border-radius: 999rpx;
 }
-
-.cat-inactive {
-  background: var(--glass-surface-medium) !important;
-  color: var(--muted-foreground) !important;
-  font-weight: 400;
-  font-size: 24rpx;
-}
-
-.filter-row {
-  flex-shrink: 0;
-}
-
-.price-chip {
-  font-size: 22rpx;
-}
-
-.price-active {
-  background: var(--glass-surface-light) !important;
-  color: var(--primary) !important;
-  font-weight: 600;
-}
-
-.price-inactive {
-  background: var(--glass-surface-medium) !important;
-  color: var(--muted-foreground) !important;
-  font-weight: 400;
-}
-
-.list-container {
-  flex: 1;
-  height: 0; /* needed for scroll-view inside flex column */
-}
-
-.restaurant-card {
-  box-shadow: var(--neumorph-shadow-strong);
-  background: var(--glass-surface-medium);
-}
-
-.card-blacklisted {
-  background: var(--glass-surface-light);
-  opacity: 0.75;
-}
-
-.card-normal {
-  background: var(--glass-surface-medium);
-}
-
-.card-img {
+.cover-img {
   width: 100%;
-  height: 320rpx;
+  height: 480rpx;
+  background-color: #eee;
   display: block;
 }
-
-.absolute-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(59, 38, 23, 0.5);
+.info-section {
+  background-color: #fff;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+}
+.title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+.name {
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #333;
+}
+.price {
+  font-size: 28rpx;
+  color: #ff5722;
+}
+.meta-row {
   display: flex;
   align-items: center;
-  justify-content: center;
+  margin-bottom: 24rpx;
 }
-
-.chip-tl {
-  position: absolute;
-  top: 16rpx;
-  left: 16rpx;
-  background: var(--glass-surface-strong) !important;
-  border: 1px solid var(--glass-border-medium) !important;
-  border-radius: 24rpx !important;
-  padding: 8rpx 20rpx !important;
+.rating {
+  font-size: 28rpx;
+  color: #ff9800;
+  margin-right: 20rpx;
 }
-
-.chip-tr {
-  position: absolute;
-  top: 16rpx;
-  right: 16rpx;
-  background: var(--glass-surface-strong) !important;
-  border: 1px solid var(--glass-border-medium) !important;
-  border-radius: 24rpx !important;
-  padding: 8rpx 20rpx !important;
-}
-
-.chip-br {
-  position: absolute;
-  bottom: 20rpx;
-  right: 20rpx;
-  background: var(--glass-surface-strong) !important;
-  border: 1px solid var(--glass-border-medium) !important;
-  border-radius: 50% !important;
-  width: 72rpx;
-  height: 72rpx;
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-}
-
-.chevron {
-  transition: transform 0.3s;
-}
-
-.chevron-up {
-  transform: rotate(180deg);
-}
-
-.card-content {
-  background: var(--glass-surface-light);
-  border-top: 1px solid var(--glass-border-soft);
-}
-
-.truncate {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.truncate-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.tag-chip {
-  font-size: 20rpx;
-  color: var(--warning) !important;
-  background: rgba(255,255,255, 0.86) !important;
-  border-radius: 8rpx !important;
-  padding: 2rpx 12rpx !important;
-  border: none !important;
-}
-
-.action-row {
-  border-top: 1px solid var(--glass-border-soft);
-}
-
-.action-btn {
-  transition: transform 0.2s;
-}
-
-.action-btn:active {
-  transform: scale(0.9);
-}
-
-.toggle-bl-btn {
-  transition: transform 0.2s;
-}
-
-.toggle-bl-btn:active {
-  transform: scale(0.95);
-}
-
-.expanded-actions {
-  border-top: 1px dashed var(--glass-border-soft);
-  overflow: hidden;
-}
-
-.btn-del {
-  background: var(--glass-surface-light);
-  color: var(--primary);
-}
-
-.anim-expand {
-  animation: expandDown 0.3s ease-out forwards;
-}
-
-@keyframes expandDown {
-  from { opacity: 0; max-height: 0; }
-  to { opacity: 1; max-height: 100rpx; }
-}
-
-.py-0-5 {
-  padding-top: 4rpx;
-  padding-bottom: 4rpx;
-}
-
-.load-more-wrap {
+.tags {
   display: flex;
-  justify-content: center;
-  padding: 16rpx 0 8rpx;
 }
-
-.load-more-btn {
-  padding: 14rpx 28rpx;
-  border-radius: 9999rpx;
-  font-size: 24rpx;
-  font-weight: 700;
-  color: var(--primary-foreground);
-  background: var(--primary);
-  box-shadow: var(--glass-shadow-ambient);
-}
-
-.load-more-tip {
+.tag {
   font-size: 22rpx;
-  color: var(--muted-foreground);
+  color: #666;
+  background-color: #f0f0f0;
+  padding: 4rpx 12rpx;
+  border-radius: 4rpx;
+  margin-right: 12rpx;
+}
+.address-row {
+  display: flex;
+  align-items: center;
+  font-size: 28rpx;
+  color: #666;
+  padding-top: 24rpx;
+  border-top: 1rpx solid #eee;
+}
+.address-icon {
+  margin-right: 10rpx;
+}
+.address-text {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.arrow {
+  color: #ccc;
+  margin-left: 10rpx;
+}
+.section {
+  background-color: #fff;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+}
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  margin-bottom: 20rpx;
+  color: #333;
+}
+.dishes-scroll {
+  display: flex;
+  height: 240rpx;
+}
+.dish-item {
+  width: 180rpx;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+}
+.dish-img {
+  width: 180rpx;
+  height: 180rpx;
+  border-radius: 12rpx;
+  background-color: #ddd;
+  margin-bottom: 10rpx;
+}
+.dish-name {
+  font-size: 24rpx;
+  color: #333;
+  text-align: center;
+}
+.bottom-action {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #fff;
+  padding: 20rpx;
+  border-top: 1rpx solid #eee;
+  z-index: 100;
+}
+.btn-primary {
+  width: 100% !important;
+  background-color: #ff5722 !important;
+  color: #fff;
 }

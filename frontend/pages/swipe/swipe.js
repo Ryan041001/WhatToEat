@@ -47,7 +47,7 @@ Page({
       wx.navigateBack();
       return;
     }
-    wx.redirectTo({ url: '/pages/home/home' });
+    wx.switchTab({ url: '/pages/home/home' });
   },
 
   buildQueue() {

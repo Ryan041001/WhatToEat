@@ -1,133 +1,52 @@
-// pages/home/home.js
-import { GetNearbyRestaurants, mapApiRestaurantToCard } from '../../api/restaurants.js'
-const app = getApp()
-
 Page({
   data: {
-    totalCount: 0,
-    activeCount: 0,
-    topRated: [],
-    shaking: false,
-    shakeResult: null,
-    usingRemoteData: false,
+    restaurants: [],
+    isLoading: false,
+    hasMore: true,
+    page: 1,
+    searchQuery: ""
   },
-
-  onShow() {
-    this.updateData()
+  onLoad() {
+    this.fetchData();
   },
-
-  async updateData() {
-    let restaurants = app.getRestaurants()
-    let usingRemoteData = false
-
-    try {
-      const location = await this.getLocationOrDefault()
-      const res = await GetNearbyRestaurants({
-        longitude: location.longitude,
-        latitude: location.latitude,
-        radius: 1500,
-        page: 1,
-        size: 20
-      })
-
-      const remoteItems = (res?.data?.items || []).map(mapApiRestaurantToCard)
-      if (remoteItems.length > 0) {
-        app.globalData.restaurants = remoteItems
-        restaurants = remoteItems
-        usingRemoteData = true
-      }
-    } catch (err) {
-      console.warn('首页拉取附近餐厅失败，使用本地数据兜底', err)
-    }
-
-    const actives = restaurants.filter(item => !item.isBlacklisted)
-    const topRated = [...actives].sort((a, b) => b.rating - a.rating).slice(0, 3)
-    const topRatedFormatted = topRated.map(item => ({
-      ...item,
-      priceText: '¥'.repeat(item.priceLevel || 1)
-    }))
-
+  onSearchInput(e) {
     this.setData({
-      totalCount: restaurants.length,
-      activeCount: actives.length,
-      topRated: topRatedFormatted,
-      usingRemoteData
-    })
+      searchQuery: e.detail.value,
+      restaurants: [],
+      page: 1,
+      hasMore: true
+    });
+    this.fetchData();
   },
-
-  getLocationOrDefault() {
-    return new Promise((resolve) => {
-      wx.getLocation({
-        type: 'gcj02',
-        success: (loc) => {
-          resolve({ longitude: loc.longitude, latitude: loc.latitude })
-        },
-        fail: () => {
-          // 默认回退到学校附近坐标，保证 API 可用
-          resolve({ longitude: 120.3502, latitude: 30.3154 })
-        }
-      })
-    })
-  },
-
-  goToSpin() {
-    wx.navigateTo({ url: '/pages/spin/spin' })
-  },
-
-  goToSwipe() {
-    wx.navigateTo({ url: '/pages/swipe/swipe' })
-  },
-  
-  goToMine() {
-    wx.navigateTo({ url: '/pages/mine/mine' })
-  },
-
-  goToRestaurants() {
-    wx.navigateTo({ url: '/pages/restaurants/restaurants' })
-  },
-
-  handleShake() {
-    if (this.data.shaking) return
-
-    const actives = app.getActiveRestaurants()
-    if (actives.length === 0) {
-      wx.showToast({
-        title: '没有可选的餐厅',
-        icon: 'none'
-      })
-      return
+  onLoadMore(e) {
+    if(!this.data.isLoading && this.data.hasMore) {
+      this.setData({ page: this.data.page + 1 });
+      this.fetchData();
     }
-
-    this.setData({ shaking: true })
-    
-    // Vibrate device
-    wx.vibrateShort({ type: 'medium' })
-
-    const pick = actives[Math.floor(Math.random() * actives.length)]
-    
+  },
+  goToDetail(e) {
+    const { id } = e.detail.restaurant;
+    wx.navigateTo({
+      url: `/pages/restaurants/restaurants?id=${id}`
+    });
+  },
+  fetchData() {
+    this.setData({ isLoading: true });
+    // Mock API Call
     setTimeout(() => {
+      const mockResult = Array.from({length: 10}).map((_, i) => ({
+        id: this.data.page * 100 + i,
+        name: `好吃的餐馆 ${this.data.page}-${i+1}${this.data.searchQuery ? " - " + this.data.searchQuery : ""}`,
+        rating: (Math.random() * 2 + 3).toFixed(1),
+        avgPrice: Math.floor(Math.random() * 50 + 15),
+        description: "这里的推荐菜非常不错，回头客很多很多，环境还不错",
+        tags: ["中餐", "快餐", "热度高"]
+      }));
       this.setData({
-        shaking: false,
-        shakeResult: pick.name
-      })
-    }, 800)
-  },
-
-  closeShakeResult() {
-    this.setData({
-      shakeResult: null
-    })
-  },
-  
-  noop() {
-    // Prevent event bubbling
-  },
-
-  handleImageError(e) {
-    const { index } = e.currentTarget.dataset
-    const { topRated } = this.data
-    if (topRated[index]) {
-      // Fallback image handling could go here
-    }
+        restaurants: [...this.data.restaurants, ...mockResult],
+        isLoading: false,
+        hasMore: this.data.page < 3 // 模拟只有三页
+      });
+    }, 1000);
   }
 })

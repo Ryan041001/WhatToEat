@@ -1,5 +1,5 @@
 <!--pages/swipe/swipe.wxml-->
-<view class="app-shell page-with-bottom-nav container swipe-container" style="min-height: 100vh; background: var(--color-background); display: flex; flex-direction: column; overflow: hidden; position: relative;">
+<view class="app-shell container swipe-container" style="min-height: 100vh; background: var(--color-background); display: flex; flex-direction: column; overflow: hidden; position: relative;">
   
   <!-- Header -->
   <view class="unified-topbar page-topbar page-topbar-row justify-between" style="background: linear-gradient(135deg, var(--accent), var(--color-success))">
@@ -193,7 +193,5 @@
       <view style="color: var(--primary-foreground); font-size: 17px; font-weight: 800;">{{showMatch.name}}</view>
     </view>
   </view>
-
-  <bottom-nav current="swipe"></bottom-nav>
 
 </view>

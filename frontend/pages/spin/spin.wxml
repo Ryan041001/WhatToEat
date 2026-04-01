@@ -1,5 +1,5 @@
 <!--pages/spin/spin.wxml-->
-<view class="app-shell page-with-bottom-nav container spin-container" style="min-height: 100vh; background: var(--color-background); display: flex; flex-direction: column;">
+<view class="app-shell container spin-container" style="min-height: 100vh; background: var(--color-background); display: flex; flex-direction: column;">
   
   <!-- Header -->
   <view class="unified-topbar page-topbar page-topbar-row" style="background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 60%, var(--color-warning)))">
@@ -56,5 +56,4 @@
     </view>
   </view>
 
-  <bottom-nav current="spin"></bottom-nav>
 </view>

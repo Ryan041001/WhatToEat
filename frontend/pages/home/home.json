@@ -1,6 +1,7 @@
 {
-  "navigationBarTitleText": "首页",
   "usingComponents": {
-    "bottom-nav": "/components/bottom-nav/bottom-nav"
-  }
+    "restaurant-card": "../../components/restaurant-card/restaurant-card",
+    "loading-spinner": "../../components/loading-spinner/loading-spinner"
+  },
+  "navigationBarTitleText": "去哪吃"
 }

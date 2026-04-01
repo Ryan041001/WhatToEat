@@ -1,129 +1,24 @@
-<!--pages/home/home.wxml-->
-<view class="app-shell page-with-bottom-nav flex min-h-full flex-col pb-5">
-  <view class="home-header page-topbar relative overflow-hidden pb-6">
-    <view class="absolute -right-5 -top-5 h-24 w-24 rounded-full decoration-1"></view>
-    <view class="absolute -bottom-7 left-16 h-20 w-20 rounded-full decoration-2"></view>
-
-    <view class="relative">
-      <view class="page-topbar-row mb-3 justify-between">
-        <view>
-          <text class="home-subtitle text-12 block">今天吃什么？</text>
-          <text class="topbar-title text-22 font-bold leading-tight block" style="color: var(--glass-text-inverse)">干饭防纠结 🍚</text>
-        </view>
-        <view class="glass-chip flex items-center gap-1 px-3 py-1_5 home-badge">
-          <text class="text-11 font-medium" style="color: var(--glass-text-inverse)">{{activeCount}} 家可选</text>
-        </view>
-      </view>
-
-      <view class="glass-overlay click-hover-lift w-full rounded-2xl px-4 py-3" bindtap="goToSpin" hover-class="btn-hover">
-        <view class="flex items-center justify-between gap-3" style="width: 100%">
-          <view class="flex items-center gap-3">
-            <text class="text-24">🎰</text>
-            <view class="text-left flex flex-col">
-              <text class="text-14 font-semibold" style="color: var(--glass-text-inverse)">随机替我选一个！</text>
-              <text class="text-11" style="color: rgba(255,255,255,0.7)">告别选择困难症</text>
-            </view>
-          </view>
-          <view class="glass-chip px-3 py-1 bg-strong">
-            <text class="text-12 font-bold" style="color: var(--primary)">开始</text>
-          </view>
-        </view>
-      </view>
-    </view>
+<view class="home-container">
+  <view class="search-bar">
+    <input class="search-input" placeholder="搜索餐厅..." bindinput="onSearchInput" />
   </view>
+  
+  <scroll-view class="restaurant-list" scroll-y bindscrolltolower="onLoadMore">
+    <loading-spinner show="{{isLoading && restaurants.length === 0}}" message="加载数据中..."></loading-spinner>
+    
+    <block wx:for="{{restaurants}}" wx:key="id">
+      <restaurant-card restaurant="{{item}}" bind:tapcard="goToDetail"></restaurant-card>
+    </block>
 
-  <view class="-mt-2 px-4">
-    <view class="glass-panel grid-3 gap-3 p-4">
-      <view class="glass-panel click-hover-lift flex flex-col items-center gap-2 rounded-2xl p-4 btn-spin" bindtap="goToSpin" hover-class="btn-hover">
-        <text class="text-28">🎡</text>
-        <text class="text-12 font-semibold" style="color: var(--glass-text-inverse)">大转盘</text>
-      </view>
-      <view class="glass-panel click-hover-lift flex flex-col items-center gap-2 rounded-2xl p-4 btn-shake {{shaking ? 'anim-shake' : ''}}" bindtap="handleShake" hover-class="btn-hover">
-        <text class="text-28">📱</text>
-        <text class="text-12 font-semibold" style="color: var(--primary-foreground)">摇一摇</text>
-      </view>
-      <view class="glass-panel click-hover-lift flex flex-col items-center gap-2 rounded-2xl p-4 btn-swipe" bindtap="goToSwipe" hover-class="btn-hover">
-        <text class="text-28">💘</text>
-        <text class="text-12 font-semibold" style="color: var(--glass-text-inverse)">卡片滑</text>
-      </view>
+    <view class="loading-more" wx:if="{{isLoading && restaurants.length > 0}}">
+      <loading-spinner show="{{true}}" message="加载更多..."></loading-spinner>
     </view>
-  </view>
-
-  <view class="shake-result-overlay {{shakeResult ? 'show' : ''}}" bindtap="closeShakeResult">
-    <view class="glass-overlay shake-content text-center" catchtap="noop">
-      <view class="mb-2 text-48">🎉</view>
-      <text class="text-14 block shake-muted">摇到了！就吃</text>
-      <text class="my-1 text-22 font-bold block" style="color: var(--glass-text-inverse)">{{shakeResult}}</text>
-      <text class="text-12 block shake-tip">点击关闭</text>
+    
+    <view class="no-more" wx:if="{{!hasMore && restaurants.length > 0}}">没有更多餐馆了</view>
+    
+    <view class="empty-state" wx:if="{{!isLoading && restaurants.length === 0}}">
+      <text class="empty-icon">😢</text>
+      <text>暂无找到相关餐馆</text>
     </view>
-  </view>
-
-  <view class="mt-3 grid-3 gap-2 px-4">
-    <view class="glass-panel flex flex-col items-center py-3 stat-card">
-      <text class="text-18">🍽️</text>
-      <text class="text-18 font-bold leading-tight text-foreground">{{totalCount}}</text>
-      <text class="text-10 text-muted-foreground">总餐厅</text>
-    </view>
-    <view class="glass-panel flex flex-col items-center py-3 stat-card">
-      <text class="text-18">✅</text>
-      <text class="text-18 font-bold leading-tight text-foreground">{{activeCount}}</text>
-      <text class="text-10 text-muted-foreground">可选择</text>
-    </view>
-    <view class="glass-panel flex flex-col items-center py-3 stat-card">
-      <text class="text-18">🚫</text>
-      <text class="text-18 font-bold leading-tight text-foreground">{{totalCount - activeCount}}</text>
-      <text class="text-10 text-muted-foreground">已拉黑</text>
-    </view>
-  </view>
-
-  <view class="mb-4 mt-4 px-4">
-    <view class="mb-3 flex items-center justify-between">
-      <view class="flex items-center gap-1_5">
-        <image src="/assets/trending.svg" style="width: 28rpx; height: 28rpx;"></image>
-        <text class="text-14 font-bold text-foreground">热门推荐</text>
-      </view>
-      <view bindtap="goToRestaurants" class="text-12 font-medium" style="color: var(--primary)">
-        查看全部 →
-      </view>
-    </view>
-
-    <view class="flex flex-col gap-2">
-      <view wx:for="{{topRated}}" wx:key="id" class="glass-panel flex items-center gap-3 rounded-xl p-3 anim-fade-in list-item" style="animation-delay: {{index * 0.08}}s">
-        <view class="relative shrink-0">
-          <image src="{{item.image}}" class="h-14 w-14 rounded-xl object-cover img-shadow" mode="aspectFill" binderror="handleImageError" data-index="{{index}}"></image>
-          <view class="absolute flex items-center justify-center rounded-full text-9 font-bold rank-badge rank-bg-{{index}}">
-            {{index + 1}}
-          </view>
-        </view>
-        <view class="min-w-0 flex-1">
-          <text class="text-13 font-semibold text-foreground block">{{item.name}}</text>
-          <view class="mt-0_5 flex items-center gap-2">
-            <view class="flex items-center gap-1_5">
-              <text style="color: var(--warning); font-size: 20rpx;">★</text>
-              <text class="text-11 font-semibold" style="color: var(--warning)">{{item.rating}}</text>
-            </view>
-            <view class="flex items-center gap-0_5">
-              <text style="color: var(--muted-foreground); font-size: 18rpx;">📍</text>
-              <text class="text-10 text-muted-foreground">{{item.distance}}</text>
-            </view>
-            <text class="text-10 text-muted-foreground">{{item.priceText}}</text>
-          </view>
-          <view class="mt-1 flex flex-wrap gap-1">
-             <view wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this" wx:if="{{index < 3}}" class="glass-chip px-1_5 py-0_5 text-9" style="color: var(--primary)">
-               {{tag}}
-             </view>
-          </view>
-        </view>
-      </view>
-    </view>
-  </view>
-
-  <view class="mb-6 px-4" style="padding-bottom: env(safe-area-inset-bottom);">
-    <view bindtap="goToMine" class="glass-panel click-hover-lift w-full rounded-2xl border-dashed py-3 flex items-center justify-center gap-2 btn-add" hover-class="btn-hover">
-      <text class="text-16">+</text>
-      <text class="text-13 font-semibold">添加新餐厅</text>
-    </view>
-  </view>
-
-  <bottom-nav current="home"></bottom-nav>
+  </scroll-view>
 </view>
