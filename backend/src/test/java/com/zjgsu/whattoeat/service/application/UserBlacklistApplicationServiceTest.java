@@ -32,7 +32,7 @@ class UserBlacklistApplicationServiceTest {
         when(userBlacklistRepository.saveAndFlush(org.mockito.ArgumentMatchers.any(UserBlacklistEntity.class)))
                 .thenThrow(new DataIntegrityViolationException("duplicate key"));
 
-        assertThatThrownBy(() -> service.addBlacklist(1L, "B0FF123456"))
+        assertThatThrownBy(() -> service.addBlacklist(1L, "B0FF123456", "测试原因"))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("重复拉黑");
     }

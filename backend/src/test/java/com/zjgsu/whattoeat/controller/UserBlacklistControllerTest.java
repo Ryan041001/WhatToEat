@@ -24,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -59,7 +60,7 @@ class UserBlacklistControllerTest {
         mockMvc.perform(post("/api/v1/users/{userId}/blacklist", user.getId())
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"poiId\":\"B0FF123456\"}"))
+                        .content("{\"poiId\":\"B0FF123456\",\"reason\":\"太辣了\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.message").value("success"))
@@ -277,6 +278,64 @@ class UserBlacklistControllerTest {
         assertThat(poiIds).containsExactlyInAnyOrder("B0FFTIE001", "B0FFTIE002", "B0FFTIE003", "B0FFTIE004");
     }
 
+    @Test
+    void getBlacklistShouldReturn200WithReasonField() throws Exception {
+        UserEntity user = createUser("mock-openid-mock-code-blacklist-get", "Mike");
+        String token = loginAndExtractToken("mock-code-blacklist-get", "Mike");
+        createBlacklistWithReason(user.getId(), "B0FFGET001", "服务态度差", LocalDateTime.of(2026, 3, 26, 14, 0));
+
+        mockMvc.perform(get("/api/v1/users/{userId}/blacklist/{poiId}", user.getId(), "B0FFGET001")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.poiId").value("B0FFGET001"))
+                .andExpect(jsonPath("$.data.reason").value("服务态度差"))
+                .andExpect(jsonPath("$.data.createdAt").value("2026-03-26T14:00:00"));
+    }
+
+    @Test
+    void getBlacklistShouldReturn404WhenRecordDoesNotExist() throws Exception {
+        UserEntity user = createUser("mock-openid-mock-code-blacklist-get-404", "Nina");
+        String token = loginAndExtractToken("mock-code-blacklist-get-404", "Nina");
+
+        mockMvc.perform(get("/api/v1/users/{userId}/blacklist/{poiId}", user.getId(), "B0FFNOTFOUND")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value(2002));
+    }
+
+    @Test
+    void updateBlacklistShouldReturn200AndUpdateReason() throws Exception {
+        UserEntity user = createUser("mock-openid-mock-code-blacklist-update", "Oscar");
+        String token = loginAndExtractToken("mock-code-blacklist-update", "Oscar");
+        createBlacklistWithReason(user.getId(), "B0FFUPDATE01", "太贵了", LocalDateTime.of(2026, 3, 26, 15, 0));
+
+        mockMvc.perform(put("/api/v1/users/{userId}/blacklist/{poiId}", user.getId(), "B0FFUPDATE01")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"reason\":\"环境太吵\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
+
+        mockMvc.perform(get("/api/v1/users/{userId}/blacklist/{poiId}", user.getId(), "B0FFUPDATE01")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.reason").value("环境太吵"));
+    }
+
+    @Test
+    void updateBlacklistShouldReturn404WhenRecordDoesNotExist() throws Exception {
+        UserEntity user = createUser("mock-openid-mock-code-blacklist-update-404", "Paul");
+        String token = loginAndExtractToken("mock-code-blacklist-update-404", "Paul");
+
+        mockMvc.perform(put("/api/v1/users/{userId}/blacklist/{poiId}", user.getId(), "B0FFNOTFOUND")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"reason\":\"新原因\"}"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value(2002));
+    }
+
     private UserEntity createUser(String openid, String nickname) {
         UserEntity user = new UserEntity();
         user.setOpenid(openid);
@@ -288,6 +347,15 @@ class UserBlacklistControllerTest {
         com.zjgsu.whattoeat.model.entity.UserBlacklistEntity entity = new com.zjgsu.whattoeat.model.entity.UserBlacklistEntity();
         entity.setUserId(userId);
         entity.setPoiId(poiId);
+        entity.setCreatedAt(createdAt);
+        userBlacklistRepository.saveAndFlush(entity);
+    }
+
+    private void createBlacklistWithReason(Long userId, String poiId, String reason, LocalDateTime createdAt) {
+        com.zjgsu.whattoeat.model.entity.UserBlacklistEntity entity = new com.zjgsu.whattoeat.model.entity.UserBlacklistEntity();
+        entity.setUserId(userId);
+        entity.setPoiId(poiId);
+        entity.setReason(reason);
         entity.setCreatedAt(createdAt);
         userBlacklistRepository.saveAndFlush(entity);
     }

@@ -18,23 +18,10 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 public class RestaurantController {
 
-    private final RestaurantQueryApplicationService service;
+    private final RestaurantQueryApplicationService queryService;
 
-    public RestaurantController(RestaurantQueryApplicationService service) {
-        this.service = service;
-    }
-
-    @GetMapping("/nearby")
-    public ApiResponse<RestaurantQueryApplicationService.RestaurantPage> nearby(
-            @RequestParam double longitude,
-            @RequestParam double latitude,
-            @RequestParam(defaultValue = "1000") @Min(100) @Max(50000) int radius,
-            @RequestParam(defaultValue = "1") @Min(1) int page,
-            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
-        if (page < 1) {
-            throw new BusinessException(ErrorCode.VALIDATION_FAILED);
-        }
-        return ApiResponse.ok(service.nearby(longitude, latitude, radius, page, size));
+    public RestaurantController(RestaurantQueryApplicationService queryService) {
+        this.queryService = queryService;
     }
 
     @GetMapping("/search")
@@ -48,6 +35,6 @@ public class RestaurantController {
         if (keyword == null || keyword.isBlank() || page < 1) {
             throw new BusinessException(ErrorCode.VALIDATION_FAILED);
         }
-        return ApiResponse.ok(service.search(keyword, longitude, latitude, radius, page, size));
+        return ApiResponse.ok(queryService.search(keyword, longitude, latitude, radius, page, size));
     }
 }
