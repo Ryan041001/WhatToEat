@@ -24,6 +24,16 @@ public class RestaurantController {
         this.queryService = queryService;
     }
 
+    @GetMapping("/nearby")
+    public ApiResponse<RestaurantQueryApplicationService.RestaurantPage> nearby(
+            @RequestParam double longitude,
+            @RequestParam double latitude,
+            @RequestParam(defaultValue = "1000") @Min(100) @Max(50000) int radius,
+            @RequestParam(defaultValue = "1") @Min(1) int page,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
+        return ApiResponse.ok(queryService.nearby(longitude, latitude, radius, page, size));
+    }
+
     @GetMapping("/search")
     public ApiResponse<RestaurantQueryApplicationService.RestaurantPage> search(
             @RequestParam @NotBlank String keyword,
