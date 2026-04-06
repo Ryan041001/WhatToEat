@@ -30,21 +30,6 @@
     "include": []
   },
   "appid": "wx24f6a6b3c7966abd",
-  "condition": {
-    "miniprogram": {
-      "current": 0,
-      "list": [
-        {
-          "id": 0,
-          "name": "default",
-          "pathName": "pages/home/home",
-          "query": "",
-          "launchMode": "default",
-          "scene": null
-        }
-      ]
-    }
-  },
   "editorSetting": {},
   "libVersion": "3.14.3"
 }

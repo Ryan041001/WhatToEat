@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "首页",
+  "navigationBarTitleText": "餐厅详情",
   "usingComponents": {
     "loading-spinner": "/components/loading-spinner/loading-spinner"
   }

@@ -1,4 +1,4 @@
 {
-  "navigationStyle": "custom",
-  "disableScroll": true
+  "navigationBarTitleText": "卡片滑选",
+  "usingComponents": {}
 }

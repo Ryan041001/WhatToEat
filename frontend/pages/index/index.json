@@ -1,6 +1,4 @@
 {
-  "navigationBarTitleText": "今天吃什么",
-  "usingComponents": {
-    "custom-nav-bar": "../../components/navigation-bar/navigation-bar"
-  }
+  "navigationBarTitleText": "登录",
+  "usingComponents": {}
 }

@@ -1,197 +1,94 @@
 <!--pages/swipe/swipe.wxml-->
-<view class="app-shell container swipe-container" style="min-height: 100vh; background: var(--color-background); display: flex; flex-direction: column; overflow: hidden; position: relative;">
-  
+<view class="container">
   <!-- Header -->
-  <view class="unified-topbar page-topbar page-topbar-row justify-between" style="background: linear-gradient(135deg, var(--accent), var(--color-success))">
-    <view class="flex items-center gap-2">
-      <view bindtap="goBack" class="topbar-back-btn flex items-center justify-center" style="margin-right: 4px;">
-        <image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m15 18-6-6 6-6'/%3E%3C/svg%3E" style="width: 22px; height: 22px;"></image>
-      </view>
-      <view>
-        <view class="topbar-title" style="font-size: 16px;">卡片滑选</view>
-      </view>
-    </view>
-    <view class="flex items-center gap-3">
-      <view style="color: color-mix(in srgb, var(--primary-foreground) 90%, transparent); font-size: 12px; font-weight: 600;">
-        ❤️ {{liked.length}} 家
-      </view>
-      <view
-        bindtap="handleReset"
-        class="glass-chip glass-blur-sm click-hover-lift flex items-center gap-1 px-2 py-1 rounded-full"
-        style="background: var(--glass-surface-strong); border: 1px solid var(--glass-border-medium);"
-      >
-        <image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8'/%3E%3Cpath d='M3 3v5h5'/%3E%3C/svg%3E" style="width: 14px; height: 14px;"></image>
-        <view style="color: var(--primary-foreground); font-size: 11px;">重置</view>
-      </view>
-    </view>
+  <view class="header">
+    <text class="header-title">💘 卡片滑选</text>
+    <text class="header-subtitle">右滑喜欢 · 左滑不喜欢</text>
   </view>
 
-  <!-- Swipe direction hint -->
-  <view class="glass-blur-sm flex justify-between px-6 py-2_5" style="background: var(--glass-surface-strong); border-bottom: 1px solid var(--glass-border-medium);">
-    <view class="flex items-center gap-1_5">
-      <view class="glass-chip glass-blur-sm flex items-center justify-center rounded-full" style="width: 24px; height: 24px; background: var(--glass-surface-strong); border: 1px solid var(--glass-border-medium);">
-        <view style="color: var(--primary); font-size: 10px; font-weight: bold;">✕</view>
-      </view>
-      <view style="font-size: 11px; color: var(--primary); font-weight: 600;">左滑不想吃</view>
-    </view>
-    <view class="flex items-center gap-0_5">
-      <view style="font-size: 11px; color: var(--glass-text-muted-transparent);">拖动卡片选择</view>
-    </view>
-    <view class="flex items-center gap-1_5">
-      <view style="font-size: 11px; color: var(--color-success); font-weight: 600;">右滑想吃！</view>
-      <view class="glass-chip glass-blur-sm flex items-center justify-center rounded-full" style="width: 24px; height: 24px; background: var(--glass-surface-strong); border: 1px solid var(--glass-border-medium);">
-        <view style="color: var(--color-success); font-size: 12px;">❤</view>
-      </view>
-    </view>
-  </view>
-
-  <!-- Cards area -->
-  <view class="flex-1 flex flex-col items-center justify-start px-5 pt-4" style="overflow: hidden;">
-    <block wx:if="{{cardQueue.length === 0}}">
-      <view class="flex flex-col items-center gap-4 py-8 w-full pop-in">
-        <view style="font-size: 64px;">🎊</view>
-        <view style="font-size: 18px; font-weight: 800; color: var(--foreground);">全部滑完啦！</view>
-
-        <block wx:if="{{liked.length > 0}}">
-          <view style="font-size: 13px; color: var(--glass-text-muted-transparent);">你喜欢的 {{liked.length}} 家餐厅 👇</view>
-          <view class="flex flex-col gap-2 w-full pt-2" style="max-height: 250px; overflow-y: auto;">
-            <block wx:for="{{liked}}" wx:key="id">
-              <view class="glass-blur-sm flex items-center gap-3 p-3 rounded-2xl slide-in-right" style="animation-delay: {{index * 0.07}}s; background: var(--glass-surface-strong); border: 1px solid var(--glass-border-medium); box-shadow: var(--glass-shadow-ambient);">
-                <image src="{{item.image}}" mode="aspectFill" style="width: 44px; height: 44px; border-radius: 10px;"></image>
-                <view class="flex-1" style="min-width: 0;">
-                  <view style="font-size: 13px; font-weight: 700; color: var(--foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{item.name}}</view>
-                  <view style="font-size: 11px; color: var(--muted-foreground);">{{item.category}} · {{item.distance}}</view>
-                </view>
-                <view style="color: var(--primary);">❤</view>
-              </view>
-            </block>
-          </view>
-        </block>
-        <block wx:else>
-          <view style="font-size: 14px; color: var(--glass-text-muted-transparent);">哇，一家都不喜欢？也太难伺候了吧 😅</view>
-        </block>
-
-        <view bindtap="handleReset" class="mt-2 px-10 py-3_5 rounded-full click-hover-lift" style="background: linear-gradient(135deg, var(--accent), var(--color-success)); color: var(--primary-foreground); font-size: 15px; font-weight: 700; box-shadow: var(--glass-shadow-glow);">
-          重新来一遍
+  <!-- Card Stack -->
+  <view class="card-stack" wx:if="{{restaurants.length > 0 && !showResult}}">
+    <!-- Background cards -->
+    <view 
+      class="swipe-card card-{{index}}"
+      wx:for="{{visibleCards}}"
+      wx:key="id"
+      style="{{item.style}}"
+    >
+      <image class="card-bg" src="{{item.image}}" mode="aspectFill"></image>
+      <view class="card-overlay"></view>
+      <view class="card-content">
+        <text class="card-name">{{item.name}}</text>
+        <view class="card-info">
+          <text class="card-category">{{item.category}}</text>
+          <text class="card-distance">📍 {{item.distance}}</text>
+        </view>
+        <view class="card-tags">
+          <text class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this" wx:if="{{tagIndex < 4}}" wx:for-index="tagIndex">{{tag}}</text>
         </view>
       </view>
-    </block>
-    <block wx:else>
-      <view style="position: relative; width: 100%; height: 800rpx;">
-        <block wx:for="{{visibleCardsReverse}}" wx:key="id" wx:for-item="restaurant">
-          <view
-            class="{{restaurant.isTop && isDragging ? 'dragging' : (restaurant.isTop && isAnimating ? 'animating' : '')}}"
-            data-index="{{restaurant.index}}"
-            bindtouchstart="{{restaurant.isTop ? 'onTouchStart' : ''}}"
-            bindtouchmove="{{restaurant.isTop ? 'onTouchMove' : ''}}"
-            bindtouchend="{{restaurant.isTop ? 'onTouchEnd' : ''}}"
-            style="position: absolute; width: 100%; z-index: {{10 - restaurant.stackIndex}}; {{restaurant.isTop ? topCardStyle : 'transform: scale(' + (1 - restaurant.stackIndex * 0.05) + ') translateY(' + (restaurant.stackIndex * 20) + 'rpx); transition: all 0.3s ease;'}}"
-          >
-            <view class="glass-panel glass-blur-sm rounded-3xl overflow-hidden pointer-events-none" style="box-shadow: var(--glass-shadow-ambient); background: var(--glass-surface-strong); border: 1px solid var(--glass-border-medium);">
-              <!-- Image area -->
-              <view style="position: relative; height: 280px;">
-                <image src="{{restaurant.image}}" mode="aspectFill" style="width: 100%; height: 100%; display: block;"></image>
 
-                <!-- Dark gradient -->
-                <view style="position: absolute; inset: 0; background: linear-gradient(to top, color-mix(in srgb, var(--foreground) 72%, transparent) 0%, color-mix(in srgb, var(--foreground) 0%, transparent) 55%);"></view>
-
-                <!-- WANT stamp -->
-                <view wx:if="{{restaurant.isTop}}" style="opacity: {{likeOpacity}}; position: absolute; top: 20px; left: 18px; border: 3px solid var(--color-success); border-radius: 10px; padding: 4px 14px; transform: rotate(-12deg);">
-                  <view style="color: var(--color-success); font-size: 20px; font-weight: 900; letter-spacing: 1px;">WANT!</view>
-                </view>
-
-                <!-- NOPE stamp -->
-                <view wx:if="{{restaurant.isTop}}" style="opacity: {{nopeOpacity}}; position: absolute; top: 20px; right: 18px; border: 3px solid var(--primary); border-radius: 10px; padding: 4px 14px; transform: rotate(12deg);">
-                  <view style="color: var(--primary); font-size: 20px; font-weight: 900; letter-spacing: 1px;">NOPE</view>
-                </view>
-
-                <!-- Category badge -->
-                <view class="glass-chip glass-blur-sm" style="position: absolute; top: 14px; left: 50%; transform: translateX(-50%); background: var(--glass-surface-strong); border-radius: 20px; padding: 4px 14px; border: 1px solid var(--glass-border-medium);">
-                  <view style="color: var(--primary-foreground); font-size: 12px; font-weight: 600;">{{restaurant.category}}</view>
-                </view>
-
-                <!-- Bottom info on image -->
-                <view style="position: absolute; bottom: 0; left: 0; right: 0; padding: 14px 16px;">
-                  <view style="color: var(--primary-foreground); font-size: 20px; font-weight: 800;">{{restaurant.name}}</view>
-                  <view class="flex items-center gap-3 mt-1">
-                    <view class="flex items-center gap-1">
-                      <view style="color: var(--color-warning); font-size: 12px;">★</view>
-                      <view style="color: var(--color-warning); font-size: 12px; font-weight: 700;">{{restaurant.rating}}</view>
-                    </view>
-                    <view class="flex items-center gap-1">
-                      <view style="color: color-mix(in srgb, var(--glass-text-inverse) 75%, transparent); font-size: 10px;">📍</view>
-                      <view style="color: color-mix(in srgb, var(--glass-text-inverse) 75%, transparent); font-size: 11px;">{{restaurant.distance}}</view>
-                    </view>
-                    <view style="color: color-mix(in srgb, var(--glass-text-inverse) 75%, transparent); font-size: 11px;">{{restaurant.priceStr}}</view>
-                  </view>
-                </view>
-              </view>
-
-              <!-- Card body -->
-              <view class="px-4 py-3">
-                <view style="color: var(--muted-foreground); font-size: 12px; line-height: 1.5; height: 36px; overflow: hidden;">{{restaurant.description}}</view>
-                <view class="flex items-center gap-1 mt-1_5">
-                  <view style="font-size: 10px; color: var(--muted-foreground);">📍</view>
-                  <view style="color: var(--muted-foreground); font-size: 10px;">{{restaurant.address}}</view>
-                </view>
-                <view class="flex flex-wrap gap-1_5 mt-2">
-                  <block wx:for="{{restaurant.tags4}}" wx:key="*this" wx:for-item="t">
-                    <view style="font-size: 10px; color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, transparent); border-radius: 6px; padding: 2px 7px;">#{{t}}</view>
-                  </block>
-                </view>
-                <view class="flex items-center gap-3 mt-2 pt-2" style="border-top: 1px solid var(--glass-border-soft);">
-                  <view style="font-size: 11px; color: var(--color-success);">👍 {{restaurant.votes.up}}</view>
-                  <view style="font-size: 11px; color: var(--primary);">👎 {{restaurant.votes.down}}</view>
-                </view>
-              </view>
-            </view>
-          </view>
-        </block>
+      <!-- Pass/Yep labels -->
+      <view class="label label-pass" wx:if="{{index === 0 && swipeDirection === 'left'}}">
+        <text class="label-text">PASS</text>
       </view>
-    </block>
-  </view>
-
-  <!-- Bottom action buttons -->
-  <view wx:if="{{cardQueue.length > 0}}" class="flex-shrink-0">
-    <view class="flex justify-center items-center gap-5 py-3 px-4">
-      <view bindtap="btnSwipeLeft" class="glass-chip glass-blur-sm click-hover-lift flex items-center justify-center rounded-full" style="width: 60px; height: 60px; background: var(--glass-surface-strong); box-shadow: var(--neumorph-shadow-soft); border: 1px solid var(--glass-border-medium);">
-        <view style="color: var(--primary); font-size: 26px; font-weight: bold;">✕</view>
-      </view>
-
-      <block wx:if="{{history.length > 0}}">
-        <view bindtap="handleUndo" class="glass-chip glass-blur-sm click-hover-lift flex items-center justify-center rounded-full" style="width: 40px; height: 40px; background: var(--glass-surface-strong); box-shadow: var(--neumorph-shadow-soft); border: 1px solid var(--glass-border-medium);">
-          <image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8'/%3E%3Cpath d='M3 3v5h5'/%3E%3C/svg%3E" style="width: 16px; height: 16px;"></image>
-        </view>
-      </block>
-      <block wx:else>
-        <!-- hidden placeholder for layout -->
-        <view style="width: 40px; height: 40px;"></view>
-      </block>
-
-      <view bindtap="btnSwipeRight" class="glass-chip glass-blur-sm click-hover-lift flex items-center justify-center rounded-full" style="width: 60px; height: 60px; background: var(--glass-surface-strong); box-shadow: var(--neumorph-shadow-soft); border: 1px solid var(--glass-border-medium);">
-        <view style="color: var(--color-success); font-size: 24px;">❤</view>
+      <view class="label label-yep" wx:if="{{index === 0 && swipeDirection === 'right'}}">
+        <text class="label-text">YEP</text>
       </view>
     </view>
 
-    <!-- Progress bar -->
-    <view class="px-6 pb-4">
-      <view class="flex justify-between mb-1">
-        <view style="font-size: 10px; color: var(--muted-foreground);">还剩 {{cardQueue.length}} 家</view>
-        <view style="font-size: 10px; color: var(--muted-foreground);">已看 {{history.length}} 家</view>
-      </view>
-      <view class="glass-blur-sm" style="height: 3px; background: var(--glass-surface-strong); border: 1px solid var(--glass-border-medium); border-radius: 2px;">
-        <view style="height: 100%; width: {{(history.length / (history.length + cardQueue.length)) * 100}}%; background: linear-gradient(135deg, var(--accent), var(--color-success)); border-radius: 2px; transition: width 0.3s ease;"></view>
-      </view>
-    </view>
+    <!-- Touch area for top card -->
+    <view 
+      class="touch-area"
+      bindtouchstart="onTouchStart"
+      bindtouchmove="onTouchMove"
+      bindtouchend="onTouchEnd"
+    ></view>
   </view>
 
-  <!-- Match popup -->
-  <view wx:if="{{showMatch}}" class="match-popup active">
-    <view class="px-7 py-5 rounded-3xl text-center" style="background: linear-gradient(135deg, var(--accent), var(--color-success)); box-shadow: var(--glass-shadow-glow); min-width: 180px;">
-      <view style="font-size: 36px;">💚</view>
-      <view style="color: color-mix(in srgb, var(--primary-foreground) 85%, transparent); font-size: 11px; margin-top: 4px;">右滑了！</view>
-      <view style="color: var(--primary-foreground); font-size: 17px; font-weight: 800;">{{showMatch.name}}</view>
-    </view>
+  <!-- Action Buttons -->
+  <view class="action-buttons" wx:if="{{restaurants.length > 0 && !showResult}}">
+    <button class="action-btn btn-pass" bindtap="handlePass">
+      <text class="btn-icon">✗</text>
+    </button>
+    <button class="action-btn btn-like" bindtap="handleLike">
+      <text class="btn-icon">♥</text>
+    </button>
   </view>
 
+  <!-- Progress -->
+  <view class="progress" wx:if="{{restaurants.length > 0 && !showResult}}">
+    <text class="progress-text">{{currentIndex + 1}} / {{restaurants.length}}</text>
+  </view>
+
+  <!-- Result -->
+  <view class="result-view" wx:if="{{showResult}}">
+    <text class="result-emoji">🎉</text>
+    <text class="result-title">滑选完成！</text>
+    <view class="result-card" wx:if="{{finalResult}}">
+      <image class="result-image" src="{{finalResult.image}}" mode="aspectFill"></image>
+      <text class="result-name">{{finalResult.name}}</text>
+      <text class="result-subtitle">根据你的喜好，推荐这家~</text>
+      <view class="result-meta">
+        <text class="meta-item">{{finalResult.category}}</text>
+        <text class="meta-item">📍 {{finalResult.distance}}</text>
+        <text class="meta-item">⭐ {{finalResult.rating}}</text>
+      </view>
+    </view>
+    <view class="result-empty" wx:else>
+      <text class="empty-text">😅</text>
+      <text class="empty-label">你一个都没选...</text>
+      <text class="empty-tip">要不再试试？</text>
+    </view>
+    <button class="result-btn" bindtap="reset">
+      <text>再玩一次</text>
+    </button>
+  </view>
+
+  <!-- Empty State -->
+  <view class="empty-state" wx:if="{{restaurants.length === 0}}">
+    <text class="empty-emoji">😕</text>
+    <text class="empty-text">还没有可选餐厅</text>
+    <text class="empty-tip">快去添加一些餐厅吧~</text>
+  </view>
 </view>

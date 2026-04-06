@@ -2,10 +2,10 @@
   "libVersion": "3.14.3",
   "projectname": "frontend",
   "setting": {
-    "urlCheck": false,
+    "urlCheck": true,
     "coverView": true,
     "lazyloadPlaceholderEnable": false,
-    "skylineRenderEnable": false,
+    "skylineRenderEnable": true,
     "preloadBackgroundData": false,
     "autoAudits": false,
     "showShadowRootInWxmlPanel": true,

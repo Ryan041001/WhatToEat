@@ -1,59 +1,59 @@
 <!--pages/spin/spin.wxml-->
-<view class="app-shell container spin-container" style="min-height: 100vh; background: var(--color-background); display: flex; flex-direction: column;">
-  
+<view class="container">
   <!-- Header -->
-  <view class="unified-topbar page-topbar page-topbar-row" style="background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 60%, var(--color-warning)))">
-    <view bindtap="goBack" class="topbar-back-btn flex items-center justify-center">
-      <image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m15 18-6-6 6-6'/%3E%3C/svg%3E" style="width: 22px; height: 22px;"></image>
-    </view>
-    <view class="topbar-title" style="font-size: 16px;">大转盘</view>
-    <view class="topbar-subtitle" style="font-size: 12px;">随机替你决定！</view>
+  <view class="header">
+    <text class="header-title">🎡 大转盘抽取</text>
+    <text class="header-subtitle">随机决定，告别纠结</text>
   </view>
 
-  <view class="flex flex-col items-center px-4 pt-6">
-    <block wx:if="{{restaurants.length === 0}}">
-      <view class="flex flex-col items-center gap-3 py-16">
-        <view style="font-size: 48px;">🍽️</view>
-        <view style="color: var(--muted-foreground); font-size: 14px;">还没有可选餐厅，先去添加吧~</view>
-      </view>
-    </block>
-    <block wx:else>
-      <!-- Pointer indicator -->
-      <view class="pointer-indicator"></view>
-
-      <!-- Wheel canvas -->
-      <view class="glass-panel glass-blur-sm enhanced-neumorph-card neumorph-strong click-hover-lift canvas-wrapper">
-        <canvas type="2d" id="spinCanvas" class="spin-canvas" style="width: 290px; height: 290px; display: block;"></canvas>
-      </view>
-
-      <!-- Spin button -->
-      <view
-        bindtap="spin"
-        class="spin-btn glass-chip glass-blur-sm click-hover-lift mt-7 px-12 py-4 rounded-full {{spinning ? 'is-spinning' : ''}}"
-      >
-        {{spinning ? '🎡 转动中…' : '🎡 开始转！'}}
-      </view>
-    </block>
+  <!-- Canvas Wheel -->
+  <view class="wheel-wrapper" wx:if="{{!showResult}}">
+    <canvas type="2d" canvas-id="wheelCanvas" class="wheel-canvas" disable-scroll="true"></canvas>
+    <view class="wheel-pointer">▼</view>
   </view>
 
-  <!-- Result banner -->
-  <view wx:if="{{result && !spinning}}" class="result-banner mx-4 mt-6 p-5 rounded-3xl glass-overlay glass-blur-md fade-in-up">
-    <view class="flex items-center gap-4">
-      <view style="font-size: 40px;">🎉</view>
-      <view class="flex-1">
-        <view style="color: color-mix(in srgb, var(--primary-foreground) 85%, transparent); font-size: 12px;">转盘已决定！今天就吃</view>
-        <view style="color: var(--primary-foreground); font-size: 22px; font-weight: 700;">{{result}}</view>
+  <!-- Spin Button -->
+  <view class="spin-btn-wrapper" wx:if="{{!showResult}}">
+    <button 
+      class="spin-btn {{isSpinning ? 'spinning' : ''}}" 
+      bindtap="handleSpin"
+      disabled="{{isSpinning}}"
+    >
+      <text class="spin-btn-text">{{isSpinning ? '正在转...' : '开始抽取'}}</text>
+    </button>
+  </view>
+
+  <!-- Result Card -->
+  <view class="result-overlay {{showResult ? 'show' : ''}}">
+    <view class="result-card">
+      <text class="result-emoji">🎉</text>
+      <text class="result-label">恭喜抽中</text>
+      <view class="result-info" wx:if="{{result}}">
+        <image class="result-image" src="{{result.image}}" mode="aspectFill"></image>
+        <text class="result-name">{{result.name}}</text>
+        <view class="result-meta">
+          <text class="result-category">{{result.category}}</text>
+          <text class="result-distance">📍 {{result.distance}}</text>
+        </view>
+        <view class="result-tags">
+          <text class="tag" wx:for="{{result.tags}}" wx:key="*this">{{item}}</text>
+        </view>
       </view>
-    </view>
-    <view class="flex gap-2 mt-4 w-full">
-      <view
-        bindtap="spinAgain"
-        class="glass-chip glass-blur-sm click-hover-lift flex-1 py-3 rounded-2xl flex items-center justify-center text-center"
-        style="background: var(--glass-surface-strong); color: var(--primary-foreground); font-size: 13px; font-weight: 600; border: 1px solid var(--glass-border-medium);"
-      >
-        再转一次
+      <view class="result-actions">
+        <button class="result-btn result-btn-secondary" bindtap="handleSpinAgain">
+          <text>再转一次</text>
+        </button>
+        <button class="result-btn result-btn-primary" bindtap="closeResult">
+          <text>就这家了</text>
+        </button>
       </view>
     </view>
   </view>
 
+  <!-- Empty State -->
+  <view class="empty-state" wx:if="{{restaurants.length === 0}}">
+    <text class="empty-emoji">😕</text>
+    <text class="empty-text">还没有可选餐厅</text>
+    <text class="empty-tip">快去添加一些餐厅吧~</text>
+  </view>
 </view>

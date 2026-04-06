@@ -1,6 +1,6 @@
 {
-  "navigationBarTitleText": "详情页",
+  "navigationBarTitleText": "餐厅列表",
   "usingComponents": {
-    "loading-spinner": "../../components/loading-spinner/loading-spinner"
+    "loading-spinner": "/components/loading-spinner/loading-spinner"
   }
 }

@@ -1,24 +1,136 @@
-<view class="home-container">
-  <view class="search-bar">
-    <input class="search-input" placeholder="搜索餐厅..." bindinput="onSearchInput" />
+<!--pages/home/home.wxml-->
+<view class="container">
+  <loading-spinner show="{{loading}}" message="正在加载餐厅..." />
+  <view class="error-banner" wx:if="{{error}}">
+    <text>{{error}}</text>
   </view>
-  
-  <scroll-view class="restaurant-list" scroll-y bindscrolltolower="onLoadMore">
-    <loading-spinner show="{{isLoading && restaurants.length === 0}}" message="加载数据中..."></loading-spinner>
-    
-    <block wx:for="{{restaurants}}" wx:key="id">
-      <restaurant-card restaurant="{{item}}" bind:tapcard="goToDetail"></restaurant-card>
-    </block>
 
-    <view class="loading-more" wx:if="{{isLoading && restaurants.length > 0}}">
-      <loading-spinner show="{{true}}" message="加载更多..."></loading-spinner>
-    </view>
+  <!-- Header -->
+  <view class="header">
+    <view class="blob blob-1"></view>
+    <view class="blob blob-2"></view>
     
-    <view class="no-more" wx:if="{{!hasMore && restaurants.length > 0}}">没有更多餐馆了</view>
-    
-    <view class="empty-state" wx:if="{{!isLoading && restaurants.length === 0}}">
-      <text class="empty-icon">😢</text>
-      <text>暂无找到相关餐馆</text>
+    <view class="header-content">
+      <view class="header-top">
+        <view class="header-left">
+          <text class="header-subtitle">今天吃什么？</text>
+          <text class="header-title">干饭防纠结 🍚</text>
+        </view>
+        <view class="header-right">
+          <view class="header-badge">
+            <text class="badge-text">{{activeCount}} 家可选</text>
+          </view>
+          <view class="mine-entry" bindtap="goToMine">
+            <text class="mine-entry-text">我的</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- Today's pick button -->
+      <view class="today-pick" bindtap="goToSpin">
+        <view class="pick-left">
+          <text class="pick-emoji">🎰</text>
+          <view class="pick-text">
+            <text class="pick-title">随机替我选一个！</text>
+            <text class="pick-subtitle">告别选择困难症</text>
+          </view>
+        </view>
+        <view class="pick-btn">
+          <text class="pick-btn-text">开始</text>
+        </view>
+      </view>
     </view>
-  </scroll-view>
+  </view>
+
+  <!-- Quick actions -->
+  <view class="quick-actions px-4 mb-6">
+    <view class="actions-card">
+      <view class="action-btn action-spin" bindtap="goToSpin">
+        <text class="action-emoji">🎡</text>
+        <text class="action-text">大转盘</text>
+      </view>
+      <view class="action-btn action-shake" bindtap="handleShake">
+        <text class="action-emoji {{shaking ? 'shaking' : ''}}">📱</text>
+        <text class="action-text">摇一摇</text>
+      </view>
+      <view class="action-btn action-swipe" bindtap="goToSwipe">
+        <text class="action-emoji">💘</text>
+        <text class="action-text">卡片滑</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Shake result popup -->
+  <view class="shake-result {{shakeResult ? 'show' : ''}}" bindtap="closeShakeResult">
+    <view class="shake-content">
+      <text class="shake-emoji">🎉</text>
+      <text class="shake-label">摇到了！就吃</text>
+      <text class="shake-name">{{shakeResult}}</text>
+      <text class="shake-tip">点击关闭</text>
+    </view>
+  </view>
+
+  <!-- Stats row -->
+  <view class="stats-row px-4 mb-6">
+    <view class="stat-item">
+      <text class="stat-emoji">🍽️</text>
+      <text class="stat-value">{{totalCount}}</text>
+      <text class="stat-label">总餐厅</text>
+    </view>
+    <view class="stat-item">
+      <text class="stat-emoji">✅</text>
+      <text class="stat-value">{{activeCount}}</text>
+      <text class="stat-label">可选择</text>
+    </view>
+    <view class="stat-item">
+      <text class="stat-emoji">🚫</text>
+      <text class="stat-value">{{blacklistedCount}}</text>
+      <text class="stat-label">已拉黑</text>
+    </view>
+  </view>
+
+  <!-- Hot picks -->
+  <view class="hot-picks px-4 mb-6">
+    <view class="picks-header">
+      <view class="picks-title">
+        <image class="title-icon" src="/images/trending.png" mode="aspectFit"></image>
+        <text class="picks-text">热门推荐</text>
+      </view>
+      <text class="picks-more" bindtap="goToRestaurants">查看全部 →</text>
+    </view>
+
+    <view class="picks-list">
+      <view class="pick-card" wx:for="{{topRated}}" wx:key="id" bindtap="goToDetail" data-id="{{item.id}}">
+        <view class="pick-image-wrapper">
+          <image class="pick-image" src="{{item.image}}" mode="aspectFill"></image>
+          <view class="pick-rank rank-{{index}}">{{index + 1}}</view>
+        </view>
+        <view class="pick-info">
+          <text class="pick-name">{{item.name}}</text>
+          <view class="pick-meta">
+            <view class="rating">
+              <text class="star">⭐</text>
+              <text class="rating-value">{{item.rating}}</text>
+            </view>
+            <view class="distance">
+              <text class="distance-icon">📍</text>
+              <text class="distance-text">{{item.distance}}</text>
+            </view>
+            <text class="price">{{item.priceText}}</text>
+          </view>
+          <view class="pick-tags">
+            <text class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this" wx:if="{{index < 3}}">{{tag}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- Add restaurant button -->
+  <view class="add-btn-wrapper px-4 mb-6">
+    <view class="add-btn" bindtap="goToMine">
+      <text class="add-icon">👤</text>
+      <text class="add-text">进入我的</text>
+    </view>
+  </view>
 </view>
