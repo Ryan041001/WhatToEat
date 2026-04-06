@@ -40,7 +40,9 @@ const request = (url, method = 'GET', data = {}, options = {}) => {
             title: '登录已过期，请重新登录',
             icon: 'none'
           });
-          // 可以进行路由跳转到登录页等
+          wx.redirectTo({
+            url: '/pages/index/index'
+          });
           reject(new Error('Unauthorized'));
         } else {
           // 其他服务器错误

@@ -1,133 +1,130 @@
 // pages/home/home.js
-import { GetNearbyRestaurants, mapApiRestaurantToCard } from '../../api/restaurants.js'
-const app = getApp()
+const app = getApp();
 
 Page({
   data: {
+    loading: false,
+    error: '',
     totalCount: 0,
     activeCount: 0,
+    blacklistedCount: 0,
     topRated: [],
-    shaking: false,
-    shakeResult: null,
-    usingRemoteData: false,
+    shakeResult: '',
+    shaking: false
+  },
+
+  onLoad() {
+    this.loadData();
   },
 
   onShow() {
-    this.updateData()
+    this.loadData();
   },
 
-  async updateData() {
-    let restaurants = app.getRestaurants()
-    let usingRemoteData = false
-
+  // 加载数据
+  async loadData() {
+    this.setData({ loading: true, error: '' });
     try {
-      const location = await this.getLocationOrDefault()
-      const res = await GetNearbyRestaurants({
-        longitude: location.longitude,
-        latitude: location.latitude,
-        radius: 1500,
-        page: 1,
-        size: 20
-      })
+      await app.bootstrapRestaurants();
+      const restaurants = app.getRestaurants();
+      const actives = app.getActiveRestaurants();
+      const topRated = [...actives]
+        .sort((a, b) => b.rating - a.rating)
+        .slice(0, 3)
+        .map((r) => ({
+          ...r,
+          priceText: '¥'.repeat(r.priceLevel)
+        }));
 
-      const remoteItems = (res?.data?.items || []).map(mapApiRestaurantToCard)
-      if (remoteItems.length > 0) {
-        app.globalData.restaurants = remoteItems
-        restaurants = remoteItems
-        usingRemoteData = true
-      }
-    } catch (err) {
-      console.warn('首页拉取附近餐厅失败，使用本地数据兜底', err)
+      this.setData({
+        totalCount: restaurants.length,
+        activeCount: actives.length,
+        blacklistedCount: restaurants.length - actives.length,
+        topRated
+      });
+    } catch (error) {
+      this.setData({
+        error: '加载失败，请稍后再试'
+      });
+    } finally {
+      this.setData({ loading: false });
     }
-
-    const actives = restaurants.filter(item => !item.isBlacklisted)
-    const topRated = [...actives].sort((a, b) => b.rating - a.rating).slice(0, 3)
-    const topRatedFormatted = topRated.map(item => ({
-      ...item,
-      priceText: '¥'.repeat(item.priceLevel || 1)
-    }))
-
-    this.setData({
-      totalCount: restaurants.length,
-      activeCount: actives.length,
-      topRated: topRatedFormatted,
-      usingRemoteData
-    })
   },
 
-  getLocationOrDefault() {
-    return new Promise((resolve) => {
-      wx.getLocation({
-        type: 'gcj02',
-        success: (loc) => {
-          resolve({ longitude: loc.longitude, latitude: loc.latitude })
-        },
-        fail: () => {
-          // 默认回退到学校附近坐标，保证 API 可用
-          resolve({ longitude: 120.3502, latitude: 30.3154 })
-        }
-      })
-    })
-  },
-
+  // 跳转到大转盘
   goToSpin() {
-    wx.navigateTo({ url: '/pages/spin/spin' })
+    wx.navigateTo({
+      url: '/pages/spin/spin'
+    });
   },
 
+  // 跳转到卡片滑选
   goToSwipe() {
-    wx.navigateTo({ url: '/pages/swipe/swipe' })
-  },
-  
-  goToMine() {
-    wx.navigateTo({ url: '/pages/mine/mine' })
+    wx.navigateTo({
+      url: '/pages/swipe/swipe'
+    });
   },
 
+  // 跳转到餐厅列表
   goToRestaurants() {
-    wx.navigateTo({ url: '/pages/restaurants/restaurants' })
+    wx.navigateTo({
+      url: '/pages/restaurants/restaurants'
+    });
   },
 
-  handleShake() {
-    if (this.data.shaking) return
+  // 跳转到我的
+  goToMine() {
+    wx.navigateTo({
+      url: '/pages/mine/mine'
+    });
+  },
 
-    const actives = app.getActiveRestaurants()
+  goToDetail(e) {
+    const id = e.currentTarget.dataset.id;
+    if (!id) {
+      return;
+    }
+    wx.navigateTo({
+      url: `/pages/detail/detail?id=${id}`
+    });
+  },
+
+  // 摇一摇
+  handleShake() {
+    if (this.data.shaking) return;
+
+    const actives = app.getActiveRestaurants();
     if (actives.length === 0) {
       wx.showToast({
-        title: '没有可选的餐厅',
+        title: '没有可选餐厅',
         icon: 'none'
-      })
-      return
+      });
+      return;
     }
 
-    this.setData({ shaking: true })
-    
-    // Vibrate device
-    wx.vibrateShort({ type: 'medium' })
+    this.setData({ shaking: true });
 
-    const pick = actives[Math.floor(Math.random() * actives.length)]
-    
+    // 触发震动反馈
+    wx.vibrateShort({
+      type: 'medium'
+    });
+
     setTimeout(() => {
+      const pick = actives[Math.floor(Math.random() * actives.length)];
       this.setData({
         shaking: false,
         shakeResult: pick.name
-      })
-    }, 800)
+      });
+
+      // 3秒后自动关闭
+      setTimeout(() => {
+        this.setData({ shakeResult: '' });
+      }, 3000);
+    }, 800);
   },
 
+  // 关闭摇一摇结果
   closeShakeResult() {
-    this.setData({
-      shakeResult: null
-    })
-  },
-  
-  noop() {
-    // Prevent event bubbling
-  },
-
-  handleImageError(e) {
-    const { index } = e.currentTarget.dataset
-    const { topRated } = this.data
-    if (topRated[index]) {
-      // Fallback image handling could go here
-    }
+    this.setData({ shakeResult: '' });
   }
 })

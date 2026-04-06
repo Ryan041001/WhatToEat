@@ -26,7 +26,7 @@ public class UserBlacklistApplicationService {
     }
 
     @Transactional
-    public void addBlacklist(Long userId, String poiId) {
+    public void addBlacklist(Long userId, String poiId, String reason) {
         if (!userRepository.existsById(userId)) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
@@ -37,6 +37,7 @@ public class UserBlacklistApplicationService {
         UserBlacklistEntity entity = new UserBlacklistEntity();
         entity.setUserId(userId);
         entity.setPoiId(poiId);
+        entity.setReason(reason);
         try {
             userBlacklistRepository.saveAndFlush(entity);
         } catch (DataIntegrityViolationException ex) {
@@ -62,6 +63,29 @@ public class UserBlacklistApplicationService {
     }
 
     @Transactional(readOnly = true)
+    public BlacklistItem getBlacklist(Long userId, String poiId) {
+        if (!userRepository.existsById(userId)) {
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        UserBlacklistEntity entity = userBlacklistRepository.findByUserIdAndPoiId(userId, poiId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.BLACKLIST_NOT_FOUND));
+        return new BlacklistItem(entity.getPoiId(), entity.getReason(), entity.getCreatedAt());
+    }
+
+    @Transactional
+    public void updateBlacklist(Long userId, String poiId, String reason) {
+        if (!userRepository.existsById(userId)) {
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        UserBlacklistEntity entity = userBlacklistRepository.findByUserIdAndPoiId(userId, poiId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.BLACKLIST_NOT_FOUND));
+        entity.setReason(reason);
+        userBlacklistRepository.save(entity);
+    }
+
+    @Transactional(readOnly = true)
     public BlacklistPage listBlacklist(Long userId, int page, int size) {
         if (!userRepository.existsById(userId)) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
@@ -72,7 +96,7 @@ public class UserBlacklistApplicationService {
                 PageRequest.of(page - 1, size));
 
         List<BlacklistItem> items = result.getContent().stream()
-                .map(entity -> new BlacklistItem(entity.getPoiId(), entity.getCreatedAt()))
+                .map(entity -> new BlacklistItem(entity.getPoiId(), entity.getReason(), entity.getCreatedAt()))
                 .toList();
         return new BlacklistPage(items, page, size, result.getTotalElements());
     }
@@ -80,6 +104,6 @@ public class UserBlacklistApplicationService {
     public record BlacklistPage(List<BlacklistItem> items, int page, int size, long total) {
     }
 
-    public record BlacklistItem(String poiId, LocalDateTime createdAt) {
+    public record BlacklistItem(String poiId, String reason, LocalDateTime createdAt) {
     }
 }

@@ -252,29 +252,6 @@ curl 'http://127.0.0.1:8080/api/v1/restaurants/search?keyword=拉面&longitude=1
 - 必须为正整数，否则返回 `400 Bad Request` / `1001`
 - 对应用户必须存在，否则返回 `404 Not Found` / `1002`
 
----
-
-## 9. 前端 API 访问层实现说明（微信小程序）
-
-本项目前端已实现统一 API 访问层与页面联调逻辑，代码位置如下：
-
-- `frontend/api/client.js`：请求封装、统一 `baseURL`、自动注入 Bearer Token、错误处理
-- `frontend/api/auth.js`：认证接口封装（微信登录、登出、获取当前用户）
-- `frontend/api/restaurants.js`：餐厅接口封装（附近查询、关键词查询）与数据映射
-
-页面联调接入：
-
-- `frontend/pages/home/home.js`：首页优先调用 `/api/v1/restaurants/nearby`
-- `frontend/pages/restaurants/restaurants.js`：餐厅页调用 `nearby/search`，支持 `page/size` 分页与”加载更多”
-
-实现细节：
-
-- 请求参数包含 `longitude`、`latitude`、`radius`、`page`、`size`
-- 餐厅页支持关键词搜索，输入后重置到第 1 页
-- 当远端接口失败时，自动回退到本地 mock 数据，保证页面可用
-- 当远端返回”无结果”（业务码 `3003`）时，显示空列表，不回退本地数据
-
-这部分实现可直接作为”前端 API 访问层 + 数据查询（分页/筛选）”作业证据。
 
 ### 8.1 随机推荐餐厅
 

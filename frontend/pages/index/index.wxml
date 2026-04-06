@@ -1,7 +1,24 @@
-<!--index.wxml-->
-<navigation-bar title="Weixin" back="{{false}}" color="black" background="#FFF"></navigation-bar>
-<scroll-view class="scrollarea" scroll-y type="list">
-  <view class="container">
-    Weixin
+<view class="login-page">
+  <view class="hero">
+    <text class="hero-title">今天吃什么</text>
+    <text class="hero-subtitle">一键随机推荐，告别选择困难</text>
   </view>
-</scroll-view>
+
+  <view class="login-card">
+    <text class="card-title">登录 / 注册</text>
+    <text class="card-desc">首次登录将自动创建账号，支持后续黑名单和个性化推荐。</text>
+
+    <button class="login-btn" loading="{{loading}}" bindtap="handleWechatLogin">
+      {{loading ? '登录中...' : '微信一键登录'}}
+    </button>
+
+    <text class="hint">登录即表示你同意服务协议与隐私政策</text>
+
+    <view class="status" wx:if="{{usingMockLogin}}">
+      <text class="status-text">当前使用 Mock 登录（后端不可达时自动兜底）</text>
+    </view>
+    <view class="error" wx:if="{{loginError}}">
+      <text class="error-text">{{loginError}}</text>
+    </view>
+  </view>
+</view>

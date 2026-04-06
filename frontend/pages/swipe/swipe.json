@@ -1,7 +1,4 @@
 {
-  "navigationStyle": "custom",
-  "usingComponents": {
-    "bottom-nav": "/components/bottom-nav/bottom-nav"
-  },
-  "disableScroll": true
+  "navigationBarTitleText": "卡片滑选",
+  "usingComponents": {}
 }

@@ -17,6 +17,9 @@ public class UserBlacklistEntity {
     @Column(name = "poi_id", nullable = false, length = 64)
     private String poiId;
 
+    @Column(name = "reason", length = 255)
+    private String reason;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -49,6 +52,14 @@ public class UserBlacklistEntity {
 
     public void setPoiId(String poiId) {
         this.poiId = poiId;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
     }
 
     public LocalDateTime getCreatedAt() {

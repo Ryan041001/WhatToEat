@@ -1,247 +1,108 @@
 <!--pages/mine/mine.wxml-->
-<view class="app-shell page-with-bottom-nav container mine-container" style="min-height: 100vh; background: var(--color-background); display: flex; flex-direction: column; overflow-x: hidden;">
-
-  <!-- Main Profile View -->
-  <view wx:if="{{!showAddForm}}" class="flex flex-col {{animClass}}" style="min-height: 100%; animation: slideInLeft 0.3s ease;">
-    <!-- Header -->
-    <view class="unified-topbar page-topbar relative pb-8 overflow-hidden" style="background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 60%, var(--color-warning)));">
-
-      <view class="page-topbar-row">
-        <view bindtap="goBack" class="topbar-back-btn flex items-center justify-center">
-          <image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m15 18-6-6 6-6'/%3E%3C/svg%3E" style="width: 22px; height: 22px;"></image>
-        </view>
-        <view class="topbar-title" style="font-size: 16px;">我的</view>
-        <view class="topbar-spacer"></view>
+<view class="container">
+  <!-- Header -->
+  <view class="header">
+    <view class="blob"></view>
+    <view class="header-content">
+      <view class="avatar">
+        <text class="avatar-emoji">🍚</text>
       </view>
-
-      <view style="position: absolute; top: -20px; right: -20px; width: 120px; height: 120px; border-radius: 50%; background: color-mix(in srgb, var(--glass-surface-strong) 34%, transparent);"></view>
-      
-      <view class="flex items-center gap-3 mt-4" style="justify-content: space-between;">
-        <view class="flex items-center gap-3">
-          <!-- 未登录状态 -->
-          <block wx:if="{{!isLoggedIn}}">
-            <view class="flex items-center justify-center rounded-full" style="width: 56px; height: 56px; background: color-mix(in srgb, var(--glass-surface-strong) 62%, transparent);">
-              <view style="font-size: 28px;">👤</view>
-            </view>
-            <view class="login-entry">
-              <view style="color: var(--primary-foreground); font-size: 16px; font-weight: 700; padding: 2px 0;">未登录</view>
-              <view style="color: color-mix(in srgb, var(--glass-text-inverse) 78%, transparent); font-size: 12px;">登录后体验更完整的干饭功能</view>
-              <view bindtap="handleLogin" class="login-btn">微信一键登录</view>
-            </view>
-          </block>
-          
-          <!-- 已登录状态 -->
-          <block wx:else>
-            <image class="rounded-full" src="{{userInfo.avatarUrl || 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0'}}" mode="aspectFill" style="width: 56px; height: 56px; background: color-mix(in srgb, var(--glass-surface-strong) 62%, transparent);"></image>
-            <view>
-              <view style="color: var(--primary-foreground); font-size: 16px; font-weight: 700;">{{userInfo.nickname || '干饭人'}}</view>
-              <view style="color: color-mix(in srgb, var(--glass-text-inverse) 78%, transparent); font-size: 12px;">干饭人，干饭魂！</view>
-            </view>
-          </block>
-        </view>
-        
-        <!-- 登出按钮 -->
-        <view wx:if="{{isLoggedIn}}" bindtap="handleLogout" class="flex items-center justify-center rounded-full" style="width: 32px; height: 32px; background: rgba(0,0,0,0.1); margin-right: 16px;">
-          <view style="font-size: 14px;">🚪</view>
-        </view>
-      </view>
-    </view>
-
-    <!-- Stats -->
-    <view class="px-4" style="margin-top: -16px; position: relative; z-index: 2;">
-      <view class="glass-panel glass-blur-md enhanced-neumorph-card neumorph-strong grid-3 rounded-2xl overflow-hidden" style="box-shadow: var(--glass-shadow-glow);">
-        <view class="flex flex-col items-center py-4" style="border-right: 1px solid var(--glass-border-soft);">
-          <view style="font-size: 20px;">🍽️</view>
-          <view style="font-size: 20px; font-weight: 700; color: var(--primary); line-height: 1.2;">{{stats.total}}</view>
-          <view style="font-size: 10px; color: var(--muted-foreground); margin-top: 2px;">收录餐厅</view>
-        </view>
-        <view class="flex flex-col items-center py-4" style="border-right: 1px solid var(--glass-border-soft);">
-          <view style="font-size: 20px;">✍️</view>
-          <view style="font-size: 20px; font-weight: 700; color: var(--primary); line-height: 1.2;">{{stats.userAdded}}</view>
-          <view style="font-size: 10px; color: var(--muted-foreground); margin-top: 2px;">我添加的</view>
-        </view>
-        <view class="flex flex-col items-center py-4">
-          <view style="font-size: 20px;">✅</view>
-          <view style="font-size: 20px; font-weight: 700; color: var(--primary); line-height: 1.2;">{{stats.actives}}</view>
-          <view style="font-size: 10px; color: var(--muted-foreground); margin-top: 2px;">当前可选</view>
-        </view>
-      </view>
-    </view>
-
-    <!-- Add restaurant CTA -->
-    <view class="px-4 mt-4">
-      <view bindtap="openAddForm" class="glass-panel glass-blur-md enhanced-neumorph-card neumorph-strong w-full flex items-center gap-4 p-4 rounded-2xl click-hover-lift" style="background: color-mix(in srgb, var(--warning) 18%, var(--glass-surface-strong)); box-shadow: var(--glass-shadow-glow); border: 1px solid color-mix(in srgb, var(--warning) 28%, var(--glass-border-medium));">
-        <view class="flex items-center justify-center rounded-2xl" style="width: 48px; height: 48px; background: color-mix(in srgb, var(--warning) 20%, var(--glass-surface-light));">
-          <view style="color: var(--primary); font-size: 28px; font-weight: bold; margin-top: -4px;">+</view>
-        </view>
-        <view class="text-left flex-1">
-          <view style="color: var(--foreground); font-size: 15px; font-weight: 700;">添加新餐厅</view>
-          <view style="color: var(--glass-text-muted-transparent); font-size: 12px;">分享你发现的美食宝藏</view>
-        </view>
-        <view style="color: var(--primary); font-size: 18px;">→</view>
-      </view>
-    </view>
-
-    <!-- My added restaurants -->
-    <view wx:if="{{userAddedList.length > 0}}" class="px-4 mt-4">
-      <view class="flex items-center justify-between mb-3">
-        <view style="font-size: 14px; font-weight: 700; color: var(--foreground);">我添加的餐厅</view>
-        <view bindtap="goToRestaurants" class="glass-chip glass-blur-sm px-2_5 py-1 rounded-full" style="font-size: 12px; color: var(--primary);">管理 →</view>
-      </view>
-      <view class="flex flex-col gap-2">
-        <block wx:for="{{userAddedList}}" wx:key="id">
-          <view class="glass-panel glass-blur-md enhanced-neumorph-card neumorph-strong flex items-center gap-3 p-3 rounded-xl" style="box-shadow: var(--glass-shadow-ambient);">
-            <image src="{{item.image}}" mode="aspectFill" style="width: 44px; height: 44px; border-radius: 10px;"></image>
-            <view class="flex-1" style="min-width: 0;">
-              <view style="font-size: 13px; font-weight: 600; color: var(--foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{item.name}}</view>
-              <view style="font-size: 11px; color: var(--muted-foreground);">{{item.category}} · {{item.distance}}</view>
-            </view>
-            <view class="flex items-center gap-1">
-              <view style="color: var(--warning); font-size: 12px;">★</view>
-              <view style="font-size: 11px; color: var(--warning); font-weight: 600;">{{item.rating}}</view>
-            </view>
-          </view>
-        </block>
-      </view>
-    </view>
-
-    <!-- Tips section -->
-    <view class="px-4 mt-4 mb-6">
-      <view class="glass-panel glass-blur-md enhanced-neumorph-card neumorph-strong p-4 rounded-2xl" style="background: color-mix(in srgb, var(--warning) 10%, var(--glass-surface-strong)); border: 1px solid color-mix(in srgb, var(--warning) 24%, var(--glass-border-soft)); box-shadow: var(--glass-shadow-ambient);">
-        <view style="font-size: 12px; font-weight: 700; color: var(--warning); margin-bottom: 8px;">💡 使用小贴士</view>
-        <view style="font-size: 11px; color: var(--glass-text-muted-transparent); line-height: 1.8;">🎡 大转盘：视觉化随机抽取，超好玩</view>
-        <view style="font-size: 11px; color: var(--glass-text-muted-transparent); line-height: 1.8;">💘 卡片滑选：右滑喜欢/左滑不喜欢，探探同款</view>
-        <view style="font-size: 11px; color: var(--glass-text-muted-transparent); line-height: 1.8;">🚫 拉黑功能：不想看到的餐厅直接排雷</view>
-        <view style="font-size: 11px; color: var(--glass-text-muted-transparent); line-height: 1.8;">✍️ UGC录入：发现宝藏小店随时添加</view>
+      <view class="user-info">
+        <text class="user-name">{{userName}}</text>
+        <text class="user-bio">{{userBio}}</text>
       </view>
     </view>
   </view>
 
-  <!-- Add Restaurant Form -->
-  <view wx:if="{{showAddForm}}" class="add-form-container form-slide-in" style="position: absolute; inset: 0; z-index: 20; background: var(--color-background); display: flex; flex-direction: column;">
-    
-    <!-- Header -->
-    <view class="unified-topbar flex items-center px-4 pt-10 pb-4" style="background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 62%, var(--color-warning))); box-shadow: var(--glass-shadow-glow); padding-top: 48px;">
-      <view bindtap="closeAddForm" style="width: 24px;">
-        <view style="color: var(--primary-foreground); font-size: 22px;">✕</view>
+  <!-- Stats -->
+  <view class="stats px-4 mb-6">
+    <view class="stats-card">
+      <view class="stat-col">
+        <text class="stat-emoji">🍽️</text>
+        <text class="stat-value">{{totalCount}}</text>
+        <text class="stat-label">收录餐厅</text>
       </view>
-      <view style="color: var(--primary-foreground); font-size: 16px; font-weight: 700; flex: 1; text-align: left; margin-left: 12px;">添加新餐厅</view>
-      <view bindtap="handleSubmit" class="glass-chip glass-blur-sm px-4 py-1_5 rounded-full" style="background: var(--glass-surface-strong); color: var(--primary); font-size: 13px; font-weight: 700; border: 1px solid var(--glass-border-medium);">
-        发布
+      <view class="stat-col stat-divider">
+        <text class="stat-emoji">✍️</text>
+        <text class="stat-value">{{userAddedCount}}</text>
+        <text class="stat-label">我添加的</text>
+      </view>
+      <view class="stat-col stat-divider">
+        <text class="stat-emoji">✅</text>
+        <text class="stat-value">{{activeCount}}</text>
+        <text class="stat-label">当前可选</text>
       </view>
     </view>
-
-    <scroll-view scroll-y class="flex-1 px-4 py-4" style="height: 0; flex-grow: 1;">
-      
-      <!-- Image picker -->
-      <view class="mb-4">
-        <view style="font-size: 12px; color: var(--muted-foreground); margin-bottom: 8px;">选择封面图</view>
-        <scroll-view scroll-x class="pb-1">
-          <view class="flex gap-2" style="padding-bottom: 4px;">
-            <block wx:for="{{defaultImages}}" wx:key="*this">
-              <view bindtap="selectImage" data-img="{{item}}" style="flex-shrink: 0; position: relative; width: 64px; height: 64px; border-radius: 12px; overflow: hidden; border: 3px solid {{form.image === item ? 'var(--primary)' : 'transparent'}}; transition: border-color 0.2s;">
-                <image src="{{item}}" mode="aspectFill" style="width: 100%; height: 100%;"></image>
-                <view wx:if="{{form.image === item}}" style="position: absolute; inset: 0; background: color-mix(in srgb, var(--primary) 34%, transparent); display: flex; align-items: center; justify-content: center;">
-                  <view style="color: var(--primary-foreground); font-size: 20px;">✓</view>
-                </view>
-              </view>
-            </block>
-          </view>
-        </scroll-view>
-      </view>
-
-      <!-- Name -->
-      <view class="mb-4">
-        <view class="form-label">餐厅名称 <text style="color: var(--primary);">*</text></view>
-        <input class="form-input" style="{{errors.name ? 'border-color: var(--primary)' : ''}}" value="{{form.name}}" bindinput="onInput" data-field="name" placeholder="e.g. 老妈蹄花火锅"/>
-        <view wx:if="{{errors.name}}" class="error-text">{{errors.name}}</view>
-      </view>
-
-      <!-- Category -->
-      <view class="mb-4">
-        <view class="form-label">口味分类 <text style="color: var(--primary);">*</text></view>
-        <view class="flex flex-wrap gap-2">
-          <block wx:for="{{categoryOptions}}" wx:key="*this">
-            <view bindtap="selectCategory" data-cat="{{item}}" class="cat-pill {{form.category === item ? 'active' : ''}}">
-              {{item}}
-            </view>
-          </block>
-        </view>
-        <view wx:if="{{errors.category}}" class="error-text">{{errors.category}}</view>
-      </view>
-
-      <!-- Price level -->
-      <view class="mb-4">
-        <view class="form-label">人均消费</view>
-        <view class="flex gap-2">
-          <block wx:for="{{priceOptions}}" wx:key="value">
-            <view bindtap="selectPrice" data-val="{{item.value}}" class="flex-1 py-2 rounded-xl text-center price-pill {{form.priceLevel === item.value ? 'active' : ''}}">
-              {{item.label}}
-            </view>
-          </block>
-        </view>
-      </view>
-
-      <!-- Rating -->
-      <view class="mb-4">
-        <view class="form-label">给个评分：{{form.rating}} ⭐</view>
-        <view class="flex items-center gap-2">
-          <block wx:for="{{[1,2,3,4,5]}}" wx:key="*this">
-            <view bindtap="selectRating" data-rate="{{item}}" style="font-size: 24px; opacity: {{form.rating >= item ? 1 : 0.3}};">⭐</view>
-          </block>
-        </view>
-      </view>
-
-      <!-- Tags -->
-      <view class="mb-4">
-        <view class="form-label">标签（最多8个）</view>
-        <view class="flex flex-wrap gap-2 mb-2">
-          <block wx:for="{{presetTags}}" wx:key="*this">
-            <view bindtap="togglePresetTag" data-tag="{{item}}" class="tag-pill {{form.selectedTagsMap[item] ? 'active' : ''}}">
-              {{form.selectedTagsMap[item] ? '✓ ' : '+ '}}{{item}}
-            </view>
-          </block>
-        </view>
-        <view class="flex gap-2 items-center">
-          <input class="form-input flex-1" style="padding: 8px 12px; border-radius: 10px; font-size: 12px; margin: 0;" value="{{customTag}}" bindinput="onInputCustomTag" bindconfirm="addCustomTag" placeholder="自定义标签..."/>
-          <view bindtap="addCustomTag" class="px-3 py-2 rounded-xl text-center" style="background: var(--warning); color: var(--primary-foreground); font-size: 12px; font-weight: 600;">添加</view>
-        </view>
-        <view wx:if="{{form.selectedTags.length > 0}}" class="flex flex-wrap gap-1_5 mt-2">
-          <block wx:for="{{form.selectedTags}}" wx:key="*this">
-            <view class="flex items-center gap-1 px-2 py-0_5 rounded-full" style="background: color-mix(in srgb, var(--warning) 16%, var(--glass-surface-light)); color: var(--warning); font-size: 11px;">
-              #{{item}}
-              <view bindtap="togglePresetTag" data-tag="{{item}}" style="padding: 2px;">✕</view>
-            </view>
-          </block>
-        </view>
-      </view>
-
-      <!-- Address -->
-      <view class="mb-4">
-        <view class="form-label">地址 <text style="color: var(--primary);">*</text></view>
-        <input class="form-input" style="{{errors.address ? 'border-color: var(--primary)' : ''}}" value="{{form.address}}" bindinput="onInput" data-field="address" placeholder="e.g. 学生街18号"/>
-        <view wx:if="{{errors.address}}" class="error-text">{{errors.address}}</view>
-      </view>
-
-      <!-- Distance -->
-      <view class="mb-4">
-        <view class="form-label">距离（选填）</view>
-        <input class="form-input" value="{{form.distance}}" bindinput="onInput" data-field="distance" placeholder="e.g. 300m / 10分钟路程"/>
-      </view>
-
-      <!-- Description -->
-      <view class="mb-6">
-        <view class="form-label">种草一句话（选填）</view>
-        <textarea class="form-input" style="height: 70px; line-height: 1.5; resize: none;" value="{{form.description}}" bindinput="onInput" data-field="description" placeholder="分享你的吃饭体验，给同学们安利一下~"></textarea>
-      </view>
-
-      <!-- Submit -->
-      <view bindtap="handleSubmit" class="w-full py-4 rounded-2xl mb-6 text-center click-hover-lift" style="background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 62%, var(--warning))); color: var(--primary-foreground); font-size: 15px; font-weight: 700; box-shadow: var(--glass-shadow-glow);">
-        🍽️ 发布到食堂
-      </view>
-      <view style="height: 40px;"></view> <!-- Spacer -->
-    </scroll-view>
   </view>
 
-  <bottom-nav wx:if="{{!showAddForm}}" current="mine"></bottom-nav>
+  <!-- Add restaurant CTA -->
+  <view class="add-cta px-4 mt-6" bindtap="showAddForm">
+    <view class="cta-card">
+      <view class="cta-icon">
+        <text class="icon-plus">+</text>
+      </view>
+      <view class="cta-text">
+        <text class="cta-title">添加新餐厅</text>
+        <text class="cta-subtitle">分享你发现的美食宝藏</text>
+      </view>
+      <text class="cta-arrow">→</text>
+    </view>
+  </view>
+
+  <!-- My added restaurants -->
+  <view class="my-restaurants px-4 mt-6" wx:if="{{userAdded.length > 0}}">
+    <view class="section-header">
+      <text class="section-title">我添加的餐厅</text>
+      <text class="section-more" bindtap="goToRestaurants">管理 →</text>
+    </view>
+    <view class="restaurant-list">
+      <view class="restaurant-item" wx:for="{{userAdded}}" wx:key="id">
+        <image class="item-image" src="{{item.image}}" mode="aspectFill"></image>
+        <view class="item-info">
+          <text class="item-name">{{item.name}}</text>
+          <text class="item-meta">{{item.category}} · {{item.distance}}</text>
+        </view>
+        <view class="item-rating">
+          <text class="star">⭐</text>
+          <text class="rating-value">{{item.rating}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- Settings & About -->
+  <view class="menu-section px-4 mt-6">
+    <view class="menu-card">
+      <view class="menu-item" bindtap="goToSettings">
+        <view class="menu-left">
+          <view class="menu-icon settings-icon">
+            <text class="icon-text">⚙️</text>
+          </view>
+          <text class="menu-label">退出登录</text>
+        </view>
+        <text class="menu-arrow">›</text>
+      </view>
+      <view class="menu-divider"></view>
+      <view class="menu-item" bindtap="goToAbout">
+        <view class="menu-left">
+          <view class="menu-icon about-icon">
+            <text class="icon-text">ℹ️</text>
+          </view>
+          <text class="menu-label">关于</text>
+        </view>
+        <text class="menu-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Tips -->
+  <view class="tips px-4 mt-6 mb-6">
+    <view class="tips-card">
+      <text class="tips-title">💡 使用贴士</text>
+      <text class="tips-item">🎡 大转盘：视觉化随机抽取，超好玩</text>
+      <text class="tips-item">💘 卡片滑选：右滑喜欢/左滑不喜欢，探探同款</text>
+      <text class="tips-item">🚫 拉黑功能：不想看到的餐厅直接排雷</text>
+      <text class="tips-item">✍️ UGC录入：发现宝藏小店随时添加</text>
+    </view>
+  </view>
 </view>
