@@ -19,7 +19,8 @@ Page({
   },
 
   // 加载数据
-  loadData() {
+  async loadData() {
+    await app.bootstrapRestaurants();
     const restaurants = app.getActiveRestaurants();
     this.setData({
       restaurants,

@@ -1,10 +1,93 @@
-/**index.wxss**/
 page {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #fff6e9 0%, #ffe2bc 100%);
 }
-.scrollarea {
-  flex: 1;
-  overflow-y: hidden;
+
+.login-page {
+  min-height: 100vh;
+  padding: 80rpx 40rpx;
+  box-sizing: border-box;
+}
+
+.hero {
+  margin-top: 120rpx;
+}
+
+.hero-title {
+  display: block;
+  font-size: 64rpx;
+  color: #2a1a0e;
+  font-weight: 700;
+}
+
+.hero-subtitle {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 28rpx;
+  color: #6f4f35;
+}
+
+.login-card {
+  margin-top: 120rpx;
+  background: #ffffff;
+  border-radius: 36rpx;
+  padding: 48rpx 36rpx;
+  box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.08);
+}
+
+.card-title {
+  display: block;
+  font-size: 40rpx;
+  color: #2a1a0e;
+  font-weight: 700;
+}
+
+.card-desc {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  color: #7a6758;
+  line-height: 1.6;
+}
+
+.login-btn {
+  margin-top: 48rpx;
+  background: #f97316;
+  color: #fff;
+  border-radius: 999rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.hint {
+  display: block;
+  margin-top: 28rpx;
+  color: #9c8a7b;
+  font-size: 22rpx;
+  text-align: center;
+}
+
+.status,
+.error {
+  margin-top: 20rpx;
+  border-radius: 20rpx;
+  padding: 16rpx 20rpx;
+}
+
+.status {
+  background: #eef9ef;
+}
+
+.status-text {
+  color: #2c7a3f;
+  font-size: 24rpx;
+}
+
+.error {
+  background: #fff0ef;
+}
+
+.error-text {
+  color: #c23a2b;
+  font-size: 24rpx;
 }
