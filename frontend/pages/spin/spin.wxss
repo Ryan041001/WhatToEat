@@ -37,9 +37,41 @@
   margin-bottom: 48rpx;
 }
 
+.wheel-base {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%, #fff9ef 0%, #ffe8cb 68%, #ffd7a8 100%);
+  box-shadow: 0 20rpx 60rpx rgba(242, 153, 74, 0.2);
+}
+
 .wheel-canvas {
+  position: relative;
   width: 100%;
   height: 100%;
+  opacity: 0;
+  transition: opacity 320ms ease;
+}
+
+.wheel-canvas.show {
+  opacity: 1;
+}
+
+.wheel-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.wheel-loading-text {
+  font-size: 24rpx;
+  color: #B98A5B;
+  padding: 10rpx 22rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.86);
 }
 
 .wheel-pointer {
@@ -73,8 +105,16 @@
 }
 
 .spin-btn.spinning {
-  background: #ccc;
-  box-shadow: none;
+  background: #E9D6C1;
+  box-shadow: 0 8rpx 20rpx rgba(154, 107, 58, 0.18);
+}
+
+.spin-btn.spinning .spin-btn-text {
+  color: #8A5423;
+}
+
+.spin-btn[disabled] {
+  opacity: 1;
 }
 
 .spin-btn-text {

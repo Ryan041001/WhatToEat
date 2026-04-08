@@ -167,18 +167,22 @@
   gap: 16rpx;
   padding: 32rpx;
   border-radius: 48rpx;
+  border: 1px solid transparent;
 }
 
 .action-spin {
-  background: #4361EE;
+  background: #6C82E8;
+  border-color: #5B70D6;
 }
 
 .action-shake {
-  background: #F97316;
+  background: #E98A3F;
+  border-color: #D8782E;
 }
 
 .action-swipe {
-  background: #84A98C;
+  background: #6FA58C;
+  border-color: #5C947B;
 }
 
 .action-emoji {

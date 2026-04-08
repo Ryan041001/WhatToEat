@@ -94,6 +94,14 @@ Page({
     this.setData({ showSortModal: !this.data.showSortModal });
   },
 
+  // 点击空白区域关闭排序菜单
+  closeSortMenu() {
+    if (!this.data.showSortModal) {
+      return;
+    }
+    this.setData({ showSortModal: false });
+  },
+
   // 阻止冒泡
   stopPropagation() {},
 

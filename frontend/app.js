@@ -28,6 +28,24 @@ function extractRestaurantList(payload) {
 	return [];
 }
 
+function mergeWithMockRestaurants(list = [], minCount = 12) {
+	if (!Array.isArray(list)) {
+		return [];
+	}
+
+	if (list.length >= minCount) {
+		return list;
+	}
+
+	const existedKeys = new Set(list.map((item) => item.poiId || item.id));
+	const mockExtras = getMockRestaurants().filter((item) => {
+		const key = item.poiId || item.id;
+		return !existedKeys.has(key);
+	});
+
+	return [...list, ...mockExtras].slice(0, minCount);
+}
+
 App({
 	globalData: {
 		restaurants: [],
@@ -73,7 +91,7 @@ App({
 
 	async bootstrapRestaurants(options = {}) {
 		const { force = false } = options;
-		if (!force && this.globalData.restaurants.length > 0) {
+		if (!force && this.globalData.restaurants.length >= 12) {
 			return this.globalData.restaurants;
 		}
 
@@ -87,7 +105,10 @@ App({
 
 		try {
 			const response = await GetNearbyRestaurants(params);
-			const list = extractRestaurantList(response).map(mapApiRestaurantToCard);
+			const list = mergeWithMockRestaurants(
+				extractRestaurantList(response).map(mapApiRestaurantToCard),
+				12
+			);
 			if (list.length === 0) {
 				throw new Error('餐厅列表为空');
 			}
