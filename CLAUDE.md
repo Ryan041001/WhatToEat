@@ -161,6 +161,7 @@ npm run build    # 构建生产版本
 
 ### Documentation Rules
 
+- 每次开始处理任务前，必须先阅读 `README.md` 与 `docs/` 目录下相关文档内容
 - `docs/architecture.md` 是后端架构的真实来源
 - `docs/database.md` 必须与 Flyway SQL 保持一致
 - `docs/api.md` 应反映已暴露的后端接口
