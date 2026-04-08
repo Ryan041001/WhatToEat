@@ -45,7 +45,7 @@
 
 ## PR 链接
 
-- PR #8: https://github.com/Ryan041001/WhatToEat/pull/
+- PR #8: https://github.com/Ryan041001/WhatToEat/pull/13
 - 目标分支：`develop`
 - 当前功能分支：`feat/backend-homework-ShenZhewei-05`
 
