@@ -11,6 +11,15 @@ spring:
   flyway:
     enabled: false
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
 amap:
   key: test-key
   base-url: http://localhost:8089

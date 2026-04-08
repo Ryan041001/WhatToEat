@@ -3,6 +3,9 @@ package com.zjgsu.whattoeat.integration.amap;
 import com.zjgsu.whattoeat.common.error.BusinessException;
 import com.zjgsu.whattoeat.common.error.ErrorCode;
 import com.zjgsu.whattoeat.config.AmapProperties;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
@@ -21,9 +24,11 @@ public class AmapHttpClient implements AmapClient {
 
     private final RestClient restClient;
     private final AmapProperties props;
+    private final MeterRegistry meterRegistry;
 
-    public AmapHttpClient(RestClient.Builder builder, AmapProperties props) {
+    public AmapHttpClient(RestClient.Builder builder, AmapProperties props, MeterRegistry meterRegistry) {
         this.props = props;
+        this.meterRegistry = meterRegistry;
         this.restClient = builder
                 .baseUrl(props.baseUrl())
                 .build();
@@ -40,6 +45,8 @@ public class AmapHttpClient implements AmapClient {
     }
 
     private AmapSearchResult search(double longitude, double latitude, int radius, int page, int pageSize, String keyword) {
+        String operation = (keyword == null || keyword.isBlank()) ? "nearby" : "keyword";
+        Timer.Sample sample = Timer.start(meterRegistry);
         try {
             @SuppressWarnings("unchecked")
             Map<String, Object> body = restClient.get()
@@ -69,21 +76,34 @@ public class AmapHttpClient implements AmapClient {
 
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> pois = (List<Map<String, Object>>) body.get("pois");
-            if (pois == null || pois.isEmpty()) {
-                return new AmapSearchResult(Collections.emptyList(), total);
-            }
-
-            return new AmapSearchResult(pois.stream().map(this::toPoi).toList(), total);
+            AmapSearchResult result = (pois == null || pois.isEmpty())
+                    ? new AmapSearchResult(Collections.emptyList(), total)
+                    : new AmapSearchResult(pois.stream().map(this::toPoi).toList(), total);
+            incrementCallCounter(operation, "success");
+            return result;
         } catch (BusinessException e) {
+            incrementCallCounter(operation, e.getErrorCode().name());
             throw e;
         } catch (ResourceAccessException e) {
-            if (isTimeoutException(e)) {
-                throw new BusinessException(ErrorCode.AMAP_UPSTREAM_TIMEOUT, e.getMessage());
-            }
-            throw new BusinessException(ErrorCode.AMAP_UPSTREAM_ERROR, e.getMessage());
+            ErrorCode errorCode = isTimeoutException(e) ? ErrorCode.AMAP_UPSTREAM_TIMEOUT : ErrorCode.AMAP_UPSTREAM_ERROR;
+            incrementCallCounter(operation, errorCode.name());
+            throw new BusinessException(errorCode, e.getMessage());
         } catch (Exception e) {
+            incrementCallCounter(operation, ErrorCode.AMAP_UPSTREAM_ERROR.name());
             throw new BusinessException(ErrorCode.AMAP_UPSTREAM_ERROR, e.getMessage());
+        } finally {
+            sample.stop(Timer.builder("amap.client.latency")
+                    .tag("operation", operation)
+                    .register(meterRegistry));
         }
+    }
+
+    private void incrementCallCounter(String operation, String result) {
+        Counter.builder("amap.client.calls")
+                .tag("operation", operation)
+                .tag("result", result)
+                .register(meterRegistry)
+                .increment();
     }
 
     private boolean isTimeoutException(Throwable ex) {

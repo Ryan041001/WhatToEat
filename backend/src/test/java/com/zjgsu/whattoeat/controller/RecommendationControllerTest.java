@@ -8,6 +8,9 @@ import com.zjgsu.whattoeat.model.entity.UserBlacklistEntity;
 import com.zjgsu.whattoeat.model.entity.UserEntity;
 import com.zjgsu.whattoeat.repository.UserBlacklistRepository;
 import com.zjgsu.whattoeat.repository.UserRepository;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.search.Search;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -51,6 +55,9 @@ class RecommendationControllerTest {
     @Autowired
     private StubAmapClient amapClient;
 
+    @Autowired
+    private MeterRegistry meterRegistry;
+
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
@@ -74,6 +81,11 @@ class RecommendationControllerTest {
                 .andExpect(jsonPath("$.data.reason").value("符合筛选条件的随机结果"));
 
         assertEquals(List.of(1), amapClient.requestedPages());
+        assertNotNull(Search.in(meterRegistry).name("amap.client.calls").counter());
+        assertNotNull(Search.in(meterRegistry).name("recommendation.requests")
+                .tag("endpoint", "random")
+                .tag("result", "success")
+                .counter());
     }
 
     @Test
@@ -95,6 +107,10 @@ class RecommendationControllerTest {
                 .andExpect(jsonPath("$.data[0].poiId").value("poi-allowed"));
 
         assertEquals(List.of(1), amapClient.requestedPages());
+        assertNotNull(Search.in(meterRegistry).name("recommendation.requests")
+                .tag("endpoint", "cards")
+                .tag("result", "success")
+                .counter());
     }
 
     @Test
@@ -181,6 +197,11 @@ class RecommendationControllerTest {
                         .param("latitude", "30.31"))
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.code").value(3001));
+
+        assertNotNull(Search.in(meterRegistry).name("recommendation.requests")
+                .tag("endpoint", "random")
+                .tag("result", ErrorCode.AMAP_UPSTREAM_ERROR.name())
+                .counter());
     }
 
     @Test
@@ -193,6 +214,11 @@ class RecommendationControllerTest {
                         .param("size", "3"))
                 .andExpect(status().isGatewayTimeout())
                 .andExpect(jsonPath("$.code").value(3002));
+
+        assertNotNull(Search.in(meterRegistry).name("recommendation.requests")
+                .tag("endpoint", "cards")
+                .tag("result", ErrorCode.AMAP_UPSTREAM_TIMEOUT.name())
+                .counter());
     }
 
     @Test
@@ -206,6 +232,11 @@ class RecommendationControllerTest {
                         .param("latitude", "30.31"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value(1002));
+
+        assertNotNull(Search.in(meterRegistry).name("recommendation.requests")
+                .tag("endpoint", "random")
+                .tag("result", ErrorCode.USER_NOT_FOUND.name())
+                .counter());
     }
 
     @Test
@@ -238,17 +269,22 @@ class RecommendationControllerTest {
 
         @Bean
         @Primary
-        StubAmapClient amapClient() {
-            return new StubAmapClient();
+        StubAmapClient amapClient(MeterRegistry meterRegistry) {
+            return new StubAmapClient(meterRegistry);
         }
     }
 
     static class StubAmapClient implements AmapClient {
 
+        private final MeterRegistry meterRegistry;
         private final Map<Integer, AmapSearchResult> nearbyPages = new HashMap<>();
         private final Map<Integer, RuntimeException> nearbyFailures = new HashMap<>();
         private final List<Integer> requestedPages = new ArrayList<>();
         private final List<NearbyRequest> requestedSearches = new ArrayList<>();
+
+        StubAmapClient(MeterRegistry meterRegistry) {
+            this.meterRegistry = meterRegistry;
+        }
 
         void addNearbyPage(int page, AmapSearchResult result) {
             nearbyPages.put(page, result);
@@ -279,8 +315,20 @@ class RecommendationControllerTest {
             requestedSearches.add(new NearbyRequest(radius, page, pageSize));
             RuntimeException failure = nearbyFailures.get(page);
             if (failure != null) {
+                Counter.builder("amap.client.calls")
+                        .tag("operation", "nearby")
+                        .tag("result", failure instanceof BusinessException businessException
+                                ? businessException.getErrorCode().name()
+                                : ErrorCode.AMAP_UPSTREAM_ERROR.name())
+                        .register(meterRegistry)
+                        .increment();
                 throw failure;
             }
+            Counter.builder("amap.client.calls")
+                    .tag("operation", "nearby")
+                    .tag("result", "success")
+                    .register(meterRegistry)
+                    .increment();
             return nearbyPages.getOrDefault(page, new AmapSearchResult(List.of(), 0));
         }
 
