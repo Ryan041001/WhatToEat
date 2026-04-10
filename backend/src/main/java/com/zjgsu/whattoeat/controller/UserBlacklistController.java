@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -46,8 +47,17 @@ public class UserBlacklistController {
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @Valid @RequestBody AddBlacklistRequest request) {
         authorizeUser(userId, authorization);
-        userBlacklistApplicationService.addBlacklist(userId, request.poiId());
+        userBlacklistApplicationService.addBlacklist(userId, request.poiId(), request.reason());
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok());
+    }
+
+    @GetMapping("/{poiId}")
+    public ApiResponse<UserBlacklistApplicationService.BlacklistItem> getBlacklist(
+            @PathVariable Long userId,
+            @PathVariable @NotBlank @Size(max = 64) String poiId,
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+        authorizeUser(userId, authorization);
+        return ApiResponse.ok(userBlacklistApplicationService.getBlacklist(userId, poiId));
     }
 
     @DeleteMapping("/{poiId}")
@@ -57,6 +67,17 @@ public class UserBlacklistController {
             @RequestHeader(value = "Authorization", required = false) String authorization) {
         authorizeUser(userId, authorization);
         userBlacklistApplicationService.removeBlacklist(userId, poiId);
+        return ApiResponse.ok();
+    }
+
+    @PutMapping("/{poiId}")
+    public ApiResponse<Void> updateBlacklist(
+            @PathVariable Long userId,
+            @PathVariable @NotBlank @Size(max = 64) String poiId,
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @Valid @RequestBody UpdateBlacklistRequest request) {
+        authorizeUser(userId, authorization);
+        userBlacklistApplicationService.updateBlacklist(userId, poiId, request.reason());
         return ApiResponse.ok();
     }
 
@@ -89,6 +110,9 @@ public class UserBlacklistController {
         return token;
     }
 
-    public record AddBlacklistRequest(@NotBlank @Size(max = 64) String poiId) {
+    public record AddBlacklistRequest(@NotBlank @Size(max = 64) String poiId, @Size(max = 255) String reason) {
+    }
+
+    public record UpdateBlacklistRequest(@Size(max = 255) String reason) {
     }
 }

@@ -3,6 +3,8 @@ const app = getApp();
 
 Page({
   data: {
+    loading: false,
+    error: '',
     restaurants: [],
     filteredRestaurants: [],
     categories: ['川菜', '日料', '快餐', '烧烤', '米线', '面食', '韩餐', '西餐', '火锅', '小吃'],
@@ -21,16 +23,24 @@ Page({
   },
 
   // 加载数据
-  loadData() {
-    const restaurants = app.getRestaurants().map(r => ({
-      ...r,
-      priceText: '¥'.repeat(r.priceLevel),
-      distanceValue: this.parseDistance(r.distance)
-    }));
-    
-    this.setData({ restaurants }, () => {
-      this.filterRestaurants();
-    });
+  async loadData() {
+    this.setData({ loading: true, error: '' });
+    try {
+      await app.bootstrapRestaurants();
+      const restaurants = app.getRestaurants().map((r) => ({
+        ...r,
+        priceText: '¥'.repeat(r.priceLevel),
+        distanceValue: this.parseDistance(r.distance)
+      }));
+
+      this.setData({ restaurants }, () => {
+        this.filterRestaurants();
+      });
+    } catch (error) {
+      this.setData({ error: '加载餐厅失败，请稍后重试' });
+    } finally {
+      this.setData({ loading: false });
+    }
   },
 
   // 解析距离（用于排序）
@@ -84,8 +94,26 @@ Page({
     this.setData({ showSortModal: !this.data.showSortModal });
   },
 
+  // 点击空白区域关闭排序菜单
+  closeSortMenu() {
+    if (!this.data.showSortModal) {
+      return;
+    }
+    this.setData({ showSortModal: false });
+  },
+
   // 阻止冒泡
   stopPropagation() {},
+
+  openDetail(e) {
+    const id = e.currentTarget.dataset.id;
+    if (!id) {
+      return;
+    }
+    wx.navigateTo({
+      url: `/pages/detail/detail?id=${id}`
+    });
+  },
 
   // 改变排序
   changeSort(e) {
@@ -101,7 +129,7 @@ Page({
   // 切换拉黑状态
   toggleBlacklist(e) {
     const id = e.currentTarget.dataset.id;
-    const restaurant = this.data.restaurants.find(r => r.id === id);
+    const restaurant = this.data.restaurants.find(r => String(r.id) === String(id));
     
     if (!restaurant) return;
 

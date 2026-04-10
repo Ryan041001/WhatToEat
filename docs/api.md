@@ -252,6 +252,7 @@ curl 'http://127.0.0.1:8080/api/v1/restaurants/search?keyword=拉面&longitude=1
 - 必须为正整数，否则返回 `400 Bad Request` / `1001`
 - 对应用户必须存在，否则返回 `404 Not Found` / `1002`
 
+
 ### 8.1 随机推荐餐厅
 
 - 方法：`GET`

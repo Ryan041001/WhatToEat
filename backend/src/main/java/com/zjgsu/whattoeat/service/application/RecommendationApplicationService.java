@@ -7,6 +7,8 @@ import com.zjgsu.whattoeat.integration.amap.AmapPoi;
 import com.zjgsu.whattoeat.repository.UserBlacklistRepository;
 import com.zjgsu.whattoeat.repository.UserRepository;
 import com.zjgsu.whattoeat.service.domain.RecommendationDomainService;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -22,37 +24,67 @@ public class RecommendationApplicationService {
     private final UserRepository userRepository;
     private final UserBlacklistRepository userBlacklistRepository;
     private final RecommendationDomainService recommendationDomainService;
+    private final MeterRegistry meterRegistry;
 
     public RecommendationApplicationService(
             AmapClient amapClient,
             UserRepository userRepository,
             UserBlacklistRepository userBlacklistRepository,
-            RecommendationDomainService recommendationDomainService) {
+            RecommendationDomainService recommendationDomainService,
+            MeterRegistry meterRegistry) {
         this.amapClient = amapClient;
         this.userRepository = userRepository;
         this.userBlacklistRepository = userBlacklistRepository;
         this.recommendationDomainService = recommendationDomainService;
+        this.meterRegistry = meterRegistry;
     }
 
     /**
      * 根据用户位置和偏好，返回一个随机推荐餐厅
      */
     public RecommendationResult recommendRandom(Long userId, double longitude, double latitude, int radius) {
-        List<AmapPoi> candidates = loadCandidates(userId, longitude, latitude, radius, RANDOM_CANDIDATE_SIZE);
-        AmapPoi selected = recommendationDomainService.pickRandom(candidates);
-        return new RecommendationResult(
-                selected.poiId(),
-                selected.name(),
-                selected.address(),
-                selected.longitude(),
-                selected.latitude(),
-                selected.category(),
-                selected.distance(),
-                "符合筛选条件的随机结果");
+        try {
+            List<AmapPoi> candidates = loadCandidates(userId, longitude, latitude, radius, RANDOM_CANDIDATE_SIZE);
+            AmapPoi selected = recommendationDomainService.pickRandom(candidates);
+            incrementRequestCounter("random", "success");
+            return new RecommendationResult(
+                    selected.poiId(),
+                    selected.name(),
+                    selected.address(),
+                    selected.longitude(),
+                    selected.latitude(),
+                    selected.category(),
+                    selected.distance(),
+                    "符合筛选条件的随机结果");
+        } catch (BusinessException e) {
+            incrementRequestCounter("random", e.getErrorCode().name());
+            throw e;
+        } catch (RuntimeException e) {
+            incrementRequestCounter("random", ErrorCode.SYSTEM_ERROR.name());
+            throw e;
+        }
     }
 
     public List<AmapPoi> recommendCards(Long userId, double longitude, double latitude, int radius, int size) {
-        return loadCandidates(userId, longitude, latitude, radius, size);
+        try {
+            List<AmapPoi> result = loadCandidates(userId, longitude, latitude, radius, size);
+            incrementRequestCounter("cards", "success");
+            return result;
+        } catch (BusinessException e) {
+            incrementRequestCounter("cards", e.getErrorCode().name());
+            throw e;
+        } catch (RuntimeException e) {
+            incrementRequestCounter("cards", ErrorCode.SYSTEM_ERROR.name());
+            throw e;
+        }
+    }
+
+    private void incrementRequestCounter(String endpoint, String result) {
+        Counter.builder("recommendation.requests")
+                .tag("endpoint", endpoint)
+                .tag("result", result)
+                .register(meterRegistry)
+                .increment();
     }
 
     private List<AmapPoi> loadCandidates(Long userId, double longitude, double latitude, int radius, int size) {
@@ -97,6 +129,7 @@ public class RecommendationApplicationService {
                 .map(blacklist -> blacklist.getPoiId())
                 .collect(java.util.stream.Collectors.toSet());
     }
+
 
     public record RecommendationResult(
             String poiId,

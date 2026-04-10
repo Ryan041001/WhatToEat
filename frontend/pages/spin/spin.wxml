@@ -7,13 +7,17 @@
   </view>
 
   <!-- Canvas Wheel -->
-  <view class="wheel-wrapper">
-    <canvas canvas-id="wheelCanvas" class="wheel-canvas" disable-scroll="true"></canvas>
+  <view class="wheel-wrapper" wx:if="{{restaurants.length > 0}}" hidden="{{showResult}}">
+    <view class="wheel-base"></view>
+    <canvas type="2d" canvas-id="wheelCanvas" class="wheel-canvas {{wheelReady ? 'show' : ''}}" disable-scroll="true"></canvas>
+    <view class="wheel-loading" wx:if="{{!wheelReady && restaurants.length > 0}}">
+      <text class="wheel-loading-text">转盘加载中...</text>
+    </view>
     <view class="wheel-pointer">▼</view>
   </view>
 
   <!-- Spin Button -->
-  <view class="spin-btn-wrapper">
+  <view class="spin-btn-wrapper" wx:if="{{restaurants.length > 0}}" hidden="{{showResult}}">
     <button 
       class="spin-btn {{isSpinning ? 'spinning' : ''}}" 
       bindtap="handleSpin"

@@ -7,6 +7,15 @@
   background: #F8F7F4;
 }
 
+.error-banner {
+  margin: 20rpx 32rpx;
+  background: #fff0ef;
+  color: #b42318;
+  padding: 16rpx 20rpx;
+  border-radius: 18rpx;
+  font-size: 24rpx;
+}
+
 /* Filters */
 .filters {
   background: #fff;
@@ -82,6 +91,10 @@
   border-radius: 32rpx;
 }
 
+.sort-wrap {
+  position: relative;
+}
+
 .sort-text {
   font-size: 22rpx;
   color: #5C5C5C;
@@ -90,6 +103,11 @@
 .sort-arrow {
   font-size: 16rpx;
   color: #999;
+  transition: transform 0.2s ease;
+}
+
+.sort-arrow.open {
+  transform: rotate(180deg);
 }
 
 /* Restaurant List */
@@ -105,9 +123,9 @@
 .restaurant-card {
   position: relative;
   display: flex;
-  gap: 24rpx;
-  padding: 24rpx;
-  margin-bottom: 16rpx;
+  gap: 28rpx;
+  padding: 22rpx 24rpx;
+  margin-bottom: 20rpx;
   background: #fff;
   border-radius: 32rpx;
   box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
@@ -118,8 +136,8 @@
 }
 
 .card-image {
-  width: 160rpx;
-  height: 160rpx;
+  width: 180rpx;
+  height: 180rpx;
   border-radius: 24rpx;
   flex-shrink: 0;
 }
@@ -129,20 +147,22 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
+  gap: 12rpx;
+  padding-right: 4rpx;
 }
 
 .card-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  margin-bottom: 8rpx;
+  margin-top: 2rpx;
 }
 
 .card-name {
   flex: 1;
-  font-size: 28rpx;
+  font-size: 30rpx;
   font-weight: 600;
-  color: #5C5C5C;
+  color: #3F3F46;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -153,7 +173,10 @@
   align-items: center;
   gap: 4rpx;
   flex-shrink: 0;
-  margin-left: 8rpx;
+  margin-left: 12rpx;
+  padding: 4rpx 12rpx;
+  background: #FFF5E9;
+  border-radius: 999rpx;
 }
 
 .star {
@@ -161,7 +184,7 @@
 }
 
 .rating-value {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #F97316;
   font-weight: 600;
 }
@@ -170,55 +193,70 @@
   display: flex;
   align-items: center;
   gap: 8rpx;
-  margin-bottom: 8rpx;
+  flex-wrap: wrap;
+  margin-top: -2rpx;
 }
 
 .meta-item {
   font-size: 22rpx;
-  color: #999;
+  color: #6B7280;
 }
 
-.meta-divider {
-  font-size: 22rpx;
-  color: #ccc;
+.meta-chip {
+  font-size: 20rpx;
+  color: #78716C;
+  background: #F5F5F4;
+  padding: 4rpx 10rpx;
+  border-radius: 999rpx;
+}
+
+.meta-dot {
+  font-size: 20rpx;
+  color: #C4C4C4;
 }
 
 .card-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8rpx;
-  margin-bottom: 8rpx;
+  margin-top: -4rpx;
 }
 
 .tag {
-  padding: 2rpx 12rpx;
+  padding: 4rpx 12rpx;
   background: #FFF0ED;
   color: #F97316;
-  font-size: 20rpx;
-  border-radius: 8rpx;
+  font-size: 19rpx;
+  border-radius: 12rpx;
 }
 
 .card-desc {
-  font-size: 22rpx;
-  color: #888;
-  line-height: 1.6;
+  font-size: 21rpx;
+  color: #8C8C8C;
+  line-height: 1.7;
+  letter-spacing: 0.4rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
 }
 
-.card-action {
+.card-footer {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  margin-top: 2rpx;
 }
 
 .action-btn {
-  padding: 16rpx 24rpx;
-  font-size: 22rpx;
+  min-width: 114rpx;
+  height: 48rpx;
+  line-height: 48rpx;
+  padding: 0 16rpx;
+  font-size: 18rpx;
   font-weight: 600;
-  border-radius: 32rpx;
+  border-radius: 999rpx;
   border: none;
 }
 
@@ -227,13 +265,13 @@
 }
 
 .btn-block {
-  background: #FFE4CC;
-  color: #F97316;
+  background: #FFE9D2;
+  color: #EA6E13;
 }
 
 .btn-unblock {
-  background: #E8E8E8;
-  color: #5C5C5C;
+  background: #ECECEC;
+  color: #666;
 }
 
 .blacklist-overlay {
@@ -281,45 +319,24 @@
   color: #999;
 }
 
-/* Sort Modal */
-.sort-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
+.sort-menu {
+  position: absolute;
+  top: calc(100% + 10rpx);
   right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 999;
-  display: flex;
-  align-items: flex-end;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s;
-}
-
-.sort-modal.show {
-  opacity: 1;
-  pointer-events: all;
-}
-
-.sort-content {
-  width: 100%;
+  width: 200rpx;
   background: #fff;
-  border-radius: 48rpx 48rpx 0 0;
-  padding: 32rpx;
-  transform: translateY(100%);
-  transition: transform 0.3s;
-}
-
-.sort-modal.show .sort-content {
-  transform: translateY(0);
+  border-radius: 20rpx;
+  box-shadow: 0 12rpx 36rpx rgba(0, 0, 0, 0.14);
+  border: 1px solid #f1f1f1;
+  overflow: hidden;
+  z-index: 30;
 }
 
 .sort-option {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 32rpx 24rpx;
+  padding: 20rpx 22rpx;
   border-bottom: 1px solid #E8E8E8;
 }
 

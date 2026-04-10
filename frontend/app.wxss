@@ -1,10 +1,9 @@
-/**app.wxss**/
-.container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  padding: 200rpx 0;
-  box-sizing: border-box;
-} 
+/** app.wxss */
+page {
+  min-height: 100%;
+}
+
+/*
+ * 不在全局定义 .container，避免覆盖各页面自己的布局容器。
+ * 页面级容器样式应放在对应 pages/**.wxss 中。
+ */

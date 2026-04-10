@@ -3,6 +3,8 @@ const app = getApp();
 
 Page({
   data: {
+    loading: false,
+    error: '',
     totalCount: 0,
     activeCount: 0,
     blacklistedCount: 0,
@@ -20,50 +22,70 @@ Page({
   },
 
   // 加载数据
-  loadData() {
-    const restaurants = app.getRestaurants();
-    const actives = app.getActiveRestaurants();
-    const topRated = [...actives]
-      .sort((a, b) => b.rating - a.rating)
-      .slice(0, 3)
-      .map(r => ({
-        ...r,
-        priceText: '¥'.repeat(r.priceLevel)
-      }));
+  async loadData() {
+    this.setData({ loading: true, error: '' });
+    try {
+      await app.bootstrapRestaurants();
+      const restaurants = app.getRestaurants();
+      const actives = app.getActiveRestaurants();
+      const topRated = [...actives]
+        .sort((a, b) => b.rating - a.rating)
+        .slice(0, 3)
+        .map((r) => ({
+          ...r,
+          priceText: '¥'.repeat(r.priceLevel)
+        }));
 
-    this.setData({
-      totalCount: restaurants.length,
-      activeCount: actives.length,
-      blacklistedCount: restaurants.length - actives.length,
-      topRated
-    });
+      this.setData({
+        totalCount: restaurants.length,
+        activeCount: actives.length,
+        blacklistedCount: restaurants.length - actives.length,
+        topRated
+      });
+    } catch (error) {
+      this.setData({
+        error: '加载失败，请稍后再试'
+      });
+    } finally {
+      this.setData({ loading: false });
+    }
   },
 
   // 跳转到大转盘
   goToSpin() {
-    wx.switchTab({
+    wx.navigateTo({
       url: '/pages/spin/spin'
     });
   },
 
   // 跳转到卡片滑选
   goToSwipe() {
-    wx.switchTab({
+    wx.navigateTo({
       url: '/pages/swipe/swipe'
     });
   },
 
   // 跳转到餐厅列表
   goToRestaurants() {
-    wx.switchTab({
+    wx.navigateTo({
       url: '/pages/restaurants/restaurants'
     });
   },
 
   // 跳转到我的
   goToMine() {
-    wx.switchTab({
+    wx.navigateTo({
       url: '/pages/mine/mine'
+    });
+  },
+
+  goToDetail(e) {
+    const id = e.currentTarget.dataset.id;
+    if (!id) {
+      return;
+    }
+    wx.navigateTo({
+      url: `/pages/detail/detail?id=${id}`
     });
   },
 

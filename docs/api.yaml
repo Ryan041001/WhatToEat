@@ -79,32 +79,6 @@ paths:
                 $ref: '#/components/schemas/UserInfoSuccessResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
-  /api/v1/restaurants/nearby:
-    get:
-      tags: [Restaurants]
-      summary: 查询附近餐厅
-      operationId: getNearbyRestaurants
-      parameters:
-        - $ref: '#/components/parameters/Longitude'
-        - $ref: '#/components/parameters/Latitude'
-        - $ref: '#/components/parameters/Radius'
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Size'
-      responses:
-        '200':
-          description: 查询成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RestaurantPageSuccessResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/AmapNoResultNotFound'
-        '502':
-          $ref: '#/components/responses/AmapUpstreamError'
-        '504':
-          $ref: '#/components/responses/AmapUpstreamTimeout'
   /api/v1/restaurants/search:
     get:
       tags: [Restaurants]
@@ -242,6 +216,56 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
   /api/v1/users/{userId}/blacklist/{poiId}:
+    get:
+      tags: [Blacklist]
+      summary: 查询黑名单详情
+      operationId: getBlacklist
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/BlacklistPoiId'
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlacklistItemSuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/BlacklistNotFound'
+    put:
+      tags: [Blacklist]
+      summary: 更新黑名单
+      operationId: updateBlacklist
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/BlacklistPoiId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBlacklistRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/BlacklistNotFound'
     delete:
       tags: [Blacklist]
       summary: 移除黑名单
@@ -448,7 +472,7 @@ components:
       schema:
         type: number
         format: double
-      description: 必填；GCJ-02（火星坐标系）经度数值，不能只传参数名或传空值。
+      description: 必填；必须传具体经度数值，不能只传参数名或传空值。
       example: 120.35
     Latitude:
       name: latitude
@@ -457,7 +481,7 @@ components:
       schema:
         type: number
         format: double
-      description: 必填；GCJ-02（火星坐标系）纬度数值，不能只传参数名或传空值。
+      description: 必填；必须传具体纬度数值，不能只传参数名或传空值。
       example: 30.31
     Radius:
       name: radius
@@ -801,7 +825,18 @@ components:
           maxLength: 64
           pattern: .*(\S|[^\s]).*
           example: B0FF123456
+        reason:
+          type: string
+          maxLength: 255
+          example: 太辣了
       required: [poiId]
+    UpdateBlacklistRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 255
+          example: 环境太吵
     CreateNoteRequest:
       type: object
       properties:
@@ -832,6 +867,10 @@ components:
         poiId:
           type: string
           example: B0FF123456
+        reason:
+          type: string
+          nullable: true
+          example: 太辣了
         createdAt:
           type: string
           format: date-time
@@ -880,6 +919,18 @@ components:
           example: success
         data:
           $ref: '#/components/schemas/BlacklistPageResponse'
+      required: [code, message, data]
+    BlacklistItemSuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/BlacklistItem'
       required: [code, message, data]
     NotePageSuccessResponse:
       type: object

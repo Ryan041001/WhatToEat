@@ -1,0 +1,32 @@
+<view class="page">
+  <loading-spinner show="{{loading}}" message="正在加载详情..." />
+
+  <view class="error" wx:if="{{error}}">
+    <text>{{error}}</text>
+  </view>
+
+  <view class="content" wx:if="{{restaurant}}">
+    <image class="cover" src="{{restaurant.image}}" mode="aspectFill"></image>
+    <view class="panel">
+      <text class="name">{{restaurant.name}}</text>
+      <view class="meta-row">
+        <text class="meta">{{restaurant.category}}</text>
+        <text class="meta">📍 {{restaurant.distance}}</text>
+        <text class="meta">⭐ {{restaurant.rating}}</text>
+      </view>
+      <text class="address">地址：{{restaurant.address || '暂无地址'}}</text>
+      <text class="desc">{{restaurant.description || '暂无简介'}}</text>
+
+      <view class="tags" wx:if="{{restaurant.tags && restaurant.tags.length > 0}}">
+        <text class="tag" wx:for="{{restaurant.tags}}" wx:key="*this">{{item}}</text>
+      </view>
+
+      <view class="actions">
+        <button class="btn ghost" bindtap="goBack">返回</button>
+        <button class="btn primary" bindtap="toggleBlacklist">
+          {{restaurant.isBlacklisted ? '取消拉黑' : '加入黑名单'}}
+        </button>
+      </view>
+    </view>
+  </view>
+</view>

@@ -8,8 +8,8 @@
         <text class="avatar-emoji">🍚</text>
       </view>
       <view class="user-info">
-        <text class="user-name">干饭达人</text>
-        <text class="user-bio">每天不纠结，干饭好时光</text>
+        <text class="user-name">{{userName}}</text>
+        <text class="user-bio">{{userBio}}</text>
       </view>
     </view>
   </view>
@@ -78,7 +78,7 @@
           <view class="menu-icon settings-icon">
             <text class="icon-text">⚙️</text>
           </view>
-          <text class="menu-label">设置</text>
+          <text class="menu-label">退出登录</text>
         </view>
         <text class="menu-arrow">›</text>
       </view>

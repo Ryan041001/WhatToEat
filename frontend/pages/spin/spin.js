@@ -1,5 +1,6 @@
 // pages/spin/spin.js
 const app = getApp();
+const WHEEL_POOL_SIZE = 10;
 
 Page({
   data: {
@@ -7,33 +8,76 @@ Page({
     isSpinning: false,
     showResult: false,
     result: null,
-    currentRotation: 0
+    currentRotation: 0,
+    wheelReady: false
   },
 
   ctx: null,
   canvasWidth: 0,
   canvasHeight: 0,
+  revealTimer: null,
 
   onLoad() {
-    this.loadData();
-    this.initCanvas();
+    // 初次和回到页面统一在 onShow 中刷新本次转盘候选池
   },
 
   onShow() {
     this.loadData();
-    if (this.ctx) {
-      this.drawWheel();
+  },
+
+  onUnload() {
+    if (this.revealTimer) {
+      clearTimeout(this.revealTimer);
+      this.revealTimer = null;
     }
   },
 
   // 加载数据
-  loadData() {
-    const restaurants = app.getActiveRestaurants();
-    this.setData({ restaurants });
+  async loadData() {
+    await app.bootstrapRestaurants();
+    const allRestaurants = app.getActiveRestaurants();
+    const restaurants = this.pickRandomRestaurants(allRestaurants, WHEEL_POOL_SIZE);
+    this.setData({
+      restaurants,
+      wheelReady: false,
+      currentRotation: 0,
+      result: null,
+      showResult: false,
+      isSpinning: false
+    });
+
+    if (restaurants.length === 0) {
+      return;
+    }
+
+    wx.nextTick(() => {
+      if (!this.ctx) {
+        this.initCanvas();
+      } else {
+        this.refreshWheel();
+      }
+    });
+  },
+
+  // 每次进入页面从全部可选餐厅中随机挑选固定数量，作为本次转盘候选池
+  pickRandomRestaurants(list = [], count = WHEEL_POOL_SIZE) {
+    const source = Array.isArray(list) ? [...list] : [];
+    if (source.length <= count) {
+      return source;
+    }
+
+    for (let i = source.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const temp = source[i];
+      source[i] = source[j];
+      source[j] = temp;
+    }
+
+    return source.slice(0, count);
   },
 
   // 初始化Canvas
-  initCanvas() {
+  initCanvas(onReady, retryCount = 0) {
     const query = wx.createSelectorQuery();
     query.select('.wheel-canvas')
       .fields({ node: true, size: true })
@@ -51,10 +95,36 @@ Page({
           this.ctx = ctx;
           this.canvasWidth = res[0].width;
           this.canvasHeight = res[0].height;
-          
-          this.drawWheel();
+
+          this.refreshWheel();
+          if (typeof onReady === 'function') {
+            onReady();
+          }
+        } else if (retryCount < 3) {
+          setTimeout(() => {
+            this.initCanvas(onReady, retryCount + 1);
+          }, 60);
         }
       });
+  },
+
+  // 当背景先渲染后，再让转盘出现
+  refreshWheel() {
+    if (!this.ctx || this.data.restaurants.length === 0) return;
+
+    if (this.revealTimer) {
+      clearTimeout(this.revealTimer);
+      this.revealTimer = null;
+    }
+
+    this.drawWheel();
+    if (!this.data.wheelReady) {
+      // 先让底盘背景稳定显示，再揭示转盘内容，避免“转盘先出现”的观感
+      this.revealTimer = setTimeout(() => {
+        this.setData({ wheelReady: true });
+        this.revealTimer = null;
+      }, 220);
+    }
   },
 
   // 绘制转盘
@@ -121,6 +191,26 @@ Page({
   handleSpin() {
     if (this.data.isSpinning || this.data.restaurants.length === 0) return;
 
+    if (!this.ctx) {
+      this.initCanvas(() => {
+        if (!this.data.wheelReady) {
+          this.setData({ wheelReady: true }, () => {
+            this.drawWheel();
+            this.handleSpin();
+          });
+        } else {
+          this.drawWheel();
+          this.handleSpin();
+        }
+      });
+      return;
+    }
+
+    if (!this.data.wheelReady) {
+      this.setData({ wheelReady: true });
+      this.drawWheel();
+    }
+
     this.setData({ isSpinning: true });
 
     // 随机选择一个餐厅
@@ -151,7 +241,11 @@ Page({
       this.drawWheel();
 
       if (progress < 1) {
-        requestAnimationFrame(animate);
+        if (typeof requestAnimationFrame === 'function') {
+          requestAnimationFrame(animate);
+        } else {
+          setTimeout(animate, 16);
+        }
       } else {
         // 动画结束，显示结果
         this.setData({
@@ -170,10 +264,21 @@ Page({
 
   // 再转一次
   handleSpinAgain() {
-    this.setData({ showResult: false });
-    setTimeout(() => {
-      this.handleSpin();
-    }, 300);
+    this.setData({ showResult: false, isSpinning: false });
+    wx.nextTick(() => {
+      this.initCanvas(() => {
+        if (!this.data.wheelReady) {
+          this.setData({ wheelReady: true }, () => {
+            this.drawWheel();
+            this.handleSpin();
+          });
+          return;
+        }
+
+        this.drawWheel();
+        this.handleSpin();
+      });
+    });
   },
 
   // 关闭结果

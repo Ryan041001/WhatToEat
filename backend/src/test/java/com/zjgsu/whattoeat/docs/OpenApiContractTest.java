@@ -28,9 +28,6 @@ class OpenApiContractTest {
         assertTrue(contract.contains("/api/v1/auth/me:\n    get:"));
         assertTrue(contract.contains("'200':\n          description: 获取成功\n          content:\n            application/json:\n              schema:\n                $ref: '#/components/schemas/UserInfoSuccessResponse'"));
 
-        assertTrue(contract.contains("/api/v1/restaurants/nearby:\n    get:"));
-        assertTrue(contract.contains("'200':\n          description: 查询成功\n          content:\n            application/json:\n              schema:\n                $ref: '#/components/schemas/RestaurantPageSuccessResponse'"));
-
         assertTrue(contract.contains("/api/v1/restaurants/search:\n    get:"));
         assertTrue(contract.contains("'200':\n          description: 查询成功\n          content:\n            application/json:\n              schema:\n                $ref: '#/components/schemas/RestaurantPageSuccessResponse'"));
 
@@ -41,6 +38,8 @@ class OpenApiContractTest {
         assertTrue(contract.contains("'200':\n          description: 获取成功\n          content:\n            application/json:\n              schema:\n                $ref: '#/components/schemas/RecommendationCardListSuccessResponse'"));
 
         assertTrue(contract.contains("operationId: createBlacklist"));
+        assertTrue(contract.contains("operationId: getBlacklist"));
+        assertTrue(contract.contains("'200':\n          description: 查询成功\n          content:\n            application/json:\n              schema:\n                $ref: '#/components/schemas/BlacklistItemSuccessResponse'"));
         assertTrue(contract.contains("operationId: listBlacklist"));
         assertTrue(contract.contains("'200':\n          description: 查询成功\n          content:\n            application/json:\n              schema:\n                $ref: '#/components/schemas/BlacklistPageSuccessResponse'"));
 
