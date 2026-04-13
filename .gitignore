@@ -56,6 +56,7 @@ miniprogram_npm/
 # 本地 Claude Code 指南 
 .claude/
 .omx/
+.superpowers/
 
 # 本地辅助过程文件
 docs/superpowers/

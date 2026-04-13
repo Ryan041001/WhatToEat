@@ -56,7 +56,9 @@ class OpenApiContractTest {
     @Test
     void requestConstraintsAndNotFoundResponsesShouldMatchImplementedBehavior() {
         assertTrue(contract.contains("WechatLoginRequest:\n      type: object"));
-        assertTrue(contract.contains("code:\n          type: string\n          minLength: 10\n          pattern: ^mock-code-.*"));
+        assertTrue(contract.contains("summary: 微信登录"));
+        assertTrue(contract.contains("code:\n          type: string\n          minLength: 1"));
+        assertTrue(contract.contains("description: 小程序端 wx.login() 返回的 code；开发环境如启用 mock 登录，也可传 mock-code-*。"));
 
         assertTrue(contract.contains("summary: 按关键词搜索餐厅"));
         assertTrue(contract.contains("description: 搜索关键词（必填，且不能是空白字符串）"));

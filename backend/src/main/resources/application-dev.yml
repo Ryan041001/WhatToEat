@@ -25,3 +25,10 @@ amap:
   key: YOUR_AMAP_KEY_HERE
   base-url: https://restapi.amap.com
   timeout-seconds: 5
+
+wechat:
+  auth:
+    app-id: ${WECHAT_APP_ID:}
+    app-secret: ${WECHAT_APP_SECRET:}
+    base-url: ${WECHAT_AUTH_BASE_URL:https://api.weixin.qq.com}
+    mock-login-enabled: true
