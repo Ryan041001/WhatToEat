@@ -2,6 +2,8 @@ package com.zjgsu.whattoeat.service.application;
 
 import com.zjgsu.whattoeat.common.error.BusinessException;
 import com.zjgsu.whattoeat.common.error.ErrorCode;
+import com.zjgsu.whattoeat.config.WechatAuthProperties;
+import com.zjgsu.whattoeat.integration.wechat.WechatAuthGateway;
 import com.zjgsu.whattoeat.model.entity.UserEntity;
 import com.zjgsu.whattoeat.repository.UserRepository;
 import com.zjgsu.whattoeat.service.application.auth.InMemorySessionStore;
@@ -11,21 +13,31 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AuthApplicationService {
 
+    private static final String MOCK_CODE_PREFIX = "mock-code-";
+
     private final UserRepository userRepository;
     private final InMemorySessionStore sessionStore;
+    private final WechatAuthGateway wechatAuthGateway;
+    private final WechatAuthProperties wechatAuthProperties;
 
-    public AuthApplicationService(UserRepository userRepository, InMemorySessionStore sessionStore) {
+    public AuthApplicationService(
+            UserRepository userRepository,
+            InMemorySessionStore sessionStore,
+            WechatAuthGateway wechatAuthGateway,
+            WechatAuthProperties wechatAuthProperties) {
         this.userRepository = userRepository;
         this.sessionStore = sessionStore;
+        this.wechatAuthGateway = wechatAuthGateway;
+        this.wechatAuthProperties = wechatAuthProperties;
     }
 
     @Transactional
     public LoginResult wechatLogin(String code, String nickname) {
-        if (code == null || code.isBlank() || !code.startsWith("mock-code-")) {
+        if (code == null || code.isBlank()) {
             throw new BusinessException(ErrorCode.LOGIN_CODE_INVALID);
         }
 
-        String openid = "mock-openid-" + code;
+        String openid = resolveOpenid(code);
         UserEntity user = userRepository.findByOpenid(openid).orElseGet(() -> {
             UserEntity created = new UserEntity();
             created.setOpenid(openid);
@@ -42,6 +54,32 @@ public class AuthApplicationService {
         sessionStore.save(token, user.getId());
 
         return new LoginResult(token, user);
+    }
+
+    private String resolveOpenid(String code) {
+        if (code.startsWith(MOCK_CODE_PREFIX)) {
+            if (!wechatAuthProperties.mockLoginEnabled()) {
+                throw new BusinessException(ErrorCode.LOGIN_CODE_INVALID);
+            }
+            return "mock-openid-" + code;
+        }
+
+        if (!hasWechatCredentials()) {
+            if (wechatAuthProperties.mockLoginEnabled()) {
+                return "mock-openid-" + code;
+            }
+            throw new BusinessException(ErrorCode.LOGIN_CODE_INVALID);
+        }
+
+        return wechatAuthGateway.exchangeCode(code).openid();
+    }
+
+    private boolean hasWechatCredentials() {
+        return isNotBlank(wechatAuthProperties.appId()) && isNotBlank(wechatAuthProperties.appSecret());
+    }
+
+    private boolean isNotBlank(String value) {
+        return value != null && !value.isBlank();
     }
 
     public void logout(String token) {

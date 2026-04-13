@@ -48,12 +48,24 @@ class AuthControllerTest {
     }
 
     @Test
-    void wechatLoginShouldReturn400WhenCodeInvalid() throws Exception {
+    void wechatLoginShouldAcceptWxLoginCodeWhenMockLoginEnabledWithoutWechatCredentials() throws Exception {
         mockMvc.perform(post("/api/v1/auth/wechat-login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"code\":\"invalid\",\"nickname\":\"Alice\"}"))
+                        .content("{\"code\":\"wx-devtools-code-001\",\"nickname\":\"Alice\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.token").isString())
+                .andExpect(jsonPath("$.data.user.openid").value("mock-openid-wx-devtools-code-001"))
+                .andExpect(jsonPath("$.data.user.nickname").value("Alice"));
+    }
+
+    @Test
+    void wechatLoginShouldReturn400WhenCodeBlank() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/wechat-login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"code\":\"\",\"nickname\":\"Alice\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value(1004));
+                .andExpect(jsonPath("$.code").value(1001));
     }
 
     @Test
