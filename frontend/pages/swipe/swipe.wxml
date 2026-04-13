@@ -1,94 +1,146 @@
 <!--pages/swipe/swipe.wxml-->
 <view class="container">
-  <!-- Header -->
-  <view class="header">
-    <text class="header-title">💘 卡片滑选</text>
-    <text class="header-subtitle">右滑喜欢 · 左滑不喜欢</text>
-  </view>
+  <view class="swipe-hero warm-hero">
+    <view class="warm-hero__blob hero-blob-one"></view>
+    <view class="warm-hero__blob hero-blob-two"></view>
 
-  <!-- Card Stack -->
-  <view class="card-stack" wx:if="{{restaurants.length > 0 && !showResult}}">
-    <!-- Background cards -->
-    <view 
-      class="swipe-card card-{{index}}"
-      wx:for="{{visibleCards}}"
-      wx:key="id"
-      style="{{item.style}}"
-    >
-      <image class="card-bg" src="{{item.image}}" mode="aspectFill"></image>
-      <view class="card-overlay"></view>
-      <view class="card-content">
-        <text class="card-name">{{item.name}}</text>
-        <view class="card-info">
-          <text class="card-category">{{item.category}}</text>
-          <text class="card-distance">📍 {{item.distance}}</text>
+    <view class="hero-content">
+      <view class="hero-top">
+        <view class="hero-copy">
+          <text class="hero-eyebrow">{{showResult ? '滑选结果' : '卡片滑选'}}</text>
+          <text class="hero-title">{{showResult ? '今晚就吃它' : '探店雷达'}}</text>
+          <text class="hero-subtitle">{{showResult ? '根据你的右滑偏好给出最后推荐' : '左滑无感，右滑喜欢，让选择更凭直觉'}}</text>
         </view>
-        <view class="card-tags">
-          <text class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this" wx:if="{{tagIndex < 4}}" wx:for-index="tagIndex">{{tag}}</text>
+        <view class="surface-chip hero-chip">
+          <text class="hero-chip-text" wx:if="{{!showResult}}">{{restaurants.length}} 家待匹配</text>
+          <text class="hero-chip-text" wx:else>{{likedRestaurants.length}} 家入围</text>
         </view>
       </view>
 
-      <!-- Pass/Yep labels -->
-      <view class="label label-pass" wx:if="{{index === 0 && swipeDirection === 'left'}}">
-        <text class="label-text">PASS</text>
+      <view class="warm-hero__surface hero-surface" wx:if="{{!showResult}}">
+        <view class="hero-surface-icon"><view class="svg-icon icon-stars"></view></view>
+        <view class="hero-surface-copy">
+          <text class="hero-surface-title">向左跳过，向右收藏</text>
+          <text class="hero-surface-text">按直觉滑一滑，最后会从你喜欢的餐厅里选出今晚候选。</text>
+        </view>
       </view>
-      <view class="label label-yep" wx:if="{{index === 0 && swipeDirection === 'right'}}">
-        <text class="label-text">YEP</text>
-      </view>
-    </view>
 
-    <!-- Touch area for top card -->
-    <view 
-      class="touch-area"
-      bindtouchstart="onTouchStart"
-      bindtouchmove="onTouchMove"
-      bindtouchend="onTouchEnd"
-    ></view>
-  </view>
-
-  <!-- Action Buttons -->
-  <view class="action-buttons" wx:if="{{restaurants.length > 0 && !showResult}}">
-    <button class="action-btn btn-pass" bindtap="handlePass">
-      <text class="btn-icon">✗</text>
-    </button>
-    <button class="action-btn btn-like" bindtap="handleLike">
-      <text class="btn-icon">♥</text>
-    </button>
-  </view>
-
-  <!-- Progress -->
-  <view class="progress" wx:if="{{restaurants.length > 0 && !showResult}}">
-    <text class="progress-text">{{currentIndex + 1}} / {{restaurants.length}}</text>
-  </view>
-
-  <!-- Result -->
-  <view class="result-view" wx:if="{{showResult}}">
-    <text class="result-emoji">🎉</text>
-    <text class="result-title">滑选完成！</text>
-    <view class="result-card" wx:if="{{finalResult}}">
-      <image class="result-image" src="{{finalResult.image}}" mode="aspectFill"></image>
-      <text class="result-name">{{finalResult.name}}</text>
-      <text class="result-subtitle">根据你的喜好，推荐这家~</text>
-      <view class="result-meta">
-        <text class="meta-item">{{finalResult.category}}</text>
-        <text class="meta-item">📍 {{finalResult.distance}}</text>
-        <text class="meta-item">⭐ {{finalResult.rating}}</text>
+      <view class="warm-hero__surface hero-surface" wx:if="{{showResult}}">
+        <view class="hero-surface-icon"><view class="svg-icon icon-swipe"></view></view>
+        <view class="hero-surface-copy">
+          <text class="hero-surface-title">{{finalResult ? '推荐已经生成' : '这一轮暂时没有心动项'}}</text>
+          <text class="hero-surface-text">{{finalResult ? '继续查看推荐详情，或者重新滑一轮。' : '再试一次，也许下一轮就会遇到想吃的。'}}</text>
+        </view>
       </view>
     </view>
-    <view class="result-empty" wx:else>
-      <text class="empty-text">😅</text>
-      <text class="empty-label">你一个都没选...</text>
-      <text class="empty-tip">要不再试试？</text>
-    </view>
-    <button class="result-btn" bindtap="reset">
-      <text>再玩一次</text>
-    </button>
   </view>
 
-  <!-- Empty State -->
-  <view class="empty-state" wx:if="{{restaurants.length === 0}}">
-    <text class="empty-emoji">😕</text>
-    <text class="empty-text">还没有可选餐厅</text>
-    <text class="empty-tip">快去添加一些餐厅吧~</text>
+  <block wx:if="{{!showResult && restaurants.length > 0}}">
+    <view class="swipe-shell page-gutter">
+      <view class="hint-card glass-panel-soft">
+        <view class="hint-icon-wrapper"><view class="svg-icon icon-stars"></view></view>
+        <view class="hint-copy">
+          <text class="hint-title">滑完这一轮，会从右滑喜欢的餐厅里随机推荐一家</text>
+          <text class="hint-subtitle">不需要纠结，跟着感觉选就好。</text>
+        </view>
+      </view>
+
+      <view class="card-shell glass-panel-soft">
+        <view class="card-stack">
+          <block wx:for="{{visibleCards}}" wx:key="id">
+            <view class="swipe-card card-{{index}} {{index === 0 && !isSwiping ? 'card-transition' : ''}}" style="{{item.style}} {{index === 0 ? 'transform: translateX(' + translateX + 'px) translateY(' + translateY + 'px) rotate(' + rotation + 'deg);' : ''}}">
+              <image class="card-bg" src="{{item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=500&fit=crop'}}" mode="aspectFill"></image>
+
+              <block wx:if="{{index === 0}}">
+                <view class="label label-pass" wx:if="{{swipeDirection === 'left'}}">
+                  <text class="label-text">跳过</text>
+                </view>
+                <view class="label label-yep" wx:if="{{swipeDirection === 'right'}}">
+                  <text class="label-text">喜欢</text>
+                </view>
+              </block>
+
+              <view class="card-overlay"></view>
+              <view class="card-content">
+                <text class="card-name">{{item.name}}</text>
+                <view class="card-info">
+                  <text class="card-category">{{item.category || '美食'}}</text>
+                  <view class="card-distance">
+                    <view class="distance-icon-inline"><view class="svg-icon icon-location"></view></view>
+                    <text>{{item.distance || '0m'}}</text>
+                  </view>
+                </view>
+                <view class="card-tags" wx:if="{{item.tags && item.tags.length}}">
+                  <text class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this" wx:if="{{tagIndex < 4}}" wx:for-index="tagIndex">{{tag}}</text>
+                </view>
+              </view>
+            </view>
+          </block>
+
+          <view
+            class="touch-area"
+            bindtouchstart="onTouchStart"
+            bindtouchmove="onTouchMove"
+            bindtouchend="onTouchEnd"
+          ></view>
+        </view>
+      </view>
+
+      <view class="control-shell glass-panel">
+        <view class="action-buttons">
+          <button class="action-btn btn-pass" bindtap="handlePass" hover-class="none">
+            <view class="btn-icon btn-pass-icon"><view class="svg-icon icon-close"></view></view>
+          </button>
+          <button class="action-btn btn-like" bindtap="handleLike" hover-class="none">
+            <view class="btn-icon btn-like-icon"><view class="svg-icon icon-swipe"></view></view>
+          </button>
+        </view>
+
+        <view class="progress">
+          <text class="progress-text">{{currentIndex + 1}} / {{restaurants.length}}</text>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <view class="result-shell page-gutter" wx:if="{{showResult}}">
+    <view class="result-view">
+      <view class="result-heading glass-panel-soft">
+        <view class="result-icon-wrapper"><view class="svg-icon icon-stars"></view></view>
+        <text class="result-title">滑选完成</text>
+        <text class="result-heading-text">{{finalResult ? '以下是今晚的最终候选。' : '这一轮没有留下任何餐厅。'}}</text>
+      </view>
+
+      <view class="result-card glass-panel" wx:if="{{finalResult}}">
+        <image class="result-image" src="{{finalResult.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=500&fit=crop'}}" mode="aspectFill"></image>
+        <text class="result-name">{{finalResult.name}}</text>
+        <text class="result-subtitle">{{finalResult.category || '美食'}}</text>
+
+        <view class="result-meta">
+          <view class="meta-pill">
+            <view class="meta-icon-shell"><view class="svg-icon icon-location"></view></view>
+            <text class="meta-item">{{finalResult.distance || '0m'}}</text>
+          </view>
+          <view class="meta-pill meta-pill-star">
+            <view class="meta-icon-shell meta-star-shell"><view class="svg-icon icon-star"></view></view>
+            <text class="meta-item">{{finalResult.rating || '4.0'}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="empty-state result-empty glass-panel-soft" wx:else>
+        <view class="empty-icon-wrapper"><view class="svg-icon icon-error"></view></view>
+        <text class="empty-text">这一轮还没有心动选项</text>
+        <text class="empty-tip">再来一轮试试看</text>
+      </view>
+
+      <button class="result-btn" bindtap="reset" hover-class="button-hover">再来一轮</button>
+    </view>
+  </view>
+
+  <view class="empty-state page-gutter glass-panel" wx:if="{{restaurants.length === 0}}">
+    <view class="empty-icon-wrapper"><view class="svg-icon icon-error"></view></view>
+    <text class="empty-text">附近没有更多餐厅了</text>
+    <text class="empty-tip">尝试扩大搜索范围</text>
   </view>
 </view>

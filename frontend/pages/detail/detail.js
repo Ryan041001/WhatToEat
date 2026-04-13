@@ -18,19 +18,19 @@ Page({
     this.setData({ loading: true, error: '' });
     try {
       if (!this.data.id) {
-        throw new Error('缺少餐厅ID');
+        throw new Error('没有获取到餐厅信息');
       }
 
       await app.bootstrapRestaurants();
       const restaurant = app.getRestaurantById(this.data.id);
 
       if (!restaurant) {
-        throw new Error('未找到该餐厅');
+        throw new Error('这家餐厅暂时找不到了');
       }
 
       this.setData({ restaurant });
     } catch (error) {
-      this.setData({ error: error.message || '加载失败' });
+      this.setData({ error: error.message || '加载详情时出了点问题，请稍后再试' });
     } finally {
       this.setData({ loading: false });
     }
@@ -46,7 +46,7 @@ Page({
     this.setData({ restaurant: next });
 
     wx.showToast({
-      title: next && next.isBlacklisted ? '已拉黑' : '已取消拉黑',
+      title: next && next.isBlacklisted ? '已设为不感兴趣' : '已恢复展示',
       icon: 'none'
     });
   },

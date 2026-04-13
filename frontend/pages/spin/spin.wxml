@@ -1,63 +1,97 @@
 <!--pages/spin/spin.wxml-->
 <view class="container">
-  <!-- Header -->
-  <view class="header">
-    <text class="header-title">🎡 大转盘抽取</text>
-    <text class="header-subtitle">随机决定，告别纠结</text>
-  </view>
+  <view class="hero">
+    <view class="blob blob-1"></view>
+    <view class="blob blob-2"></view>
 
-  <!-- Canvas Wheel -->
-  <view class="wheel-wrapper" wx:if="{{restaurants.length > 0}}" hidden="{{showResult}}">
-    <view class="wheel-base"></view>
-    <canvas type="2d" canvas-id="wheelCanvas" class="wheel-canvas {{wheelReady ? 'show' : ''}}" disable-scroll="true"></canvas>
-    <view class="wheel-loading" wx:if="{{!wheelReady && restaurants.length > 0}}">
-      <text class="wheel-loading-text">转盘加载中...</text>
+    <view class="hero-content">
+      <view class="hero-top">
+        <view class="hero-copy">
+          <text class="hero-subtitle">今天吃什么？</text>
+          <text class="hero-title">转盘替你决定</text>
+        </view>
+        <view class="hero-badge">
+          <text class="hero-badge-text">{{restaurants.length}} 家候选</text>
+        </view>
+      </view>
+
+      <view class="hero-card">
+        <view class="hero-icon-shell"><view class="svg-icon icon-wheel"></view></view>
+        <view class="hero-card-copy">
+          <text class="hero-card-title">顶部指针停住的位置，就是今天的答案</text>
+          <text class="hero-card-tip">结果会直接在下方展开，不打断转盘体验</text>
+        </view>
+      </view>
     </view>
-    <view class="wheel-pointer">▼</view>
+
   </view>
 
-  <!-- Spin Button -->
-  <view class="spin-btn-wrapper" wx:if="{{restaurants.length > 0}}" hidden="{{showResult}}">
-    <button 
-      class="spin-btn {{isSpinning ? 'spinning' : ''}}" 
-      bindtap="handleSpin"
-      disabled="{{isSpinning}}"
-    >
-      <text class="spin-btn-text">{{isSpinning ? '正在转...' : '开始抽取'}}</text>
-    </button>
-  </view>
+  <view class="content" wx:if="{{restaurants.length > 0}}">
+    <view class="wheel-panel glass-card">
+      <view class="wheel-panel-head">
+        <text class="wheel-panel-title">当前转盘</text>
+        <text class="wheel-panel-tip">抽中后会高亮命中扇区</text>
+      </view>
 
-  <!-- Result Card -->
-  <view class="result-overlay {{showResult ? 'show' : ''}}">
-    <view class="result-card">
-      <text class="result-emoji">🎉</text>
-      <text class="result-label">恭喜抽中</text>
-      <view class="result-info" wx:if="{{result}}">
+      <view class="wheel-stage">
+        <view class="wheel-base"></view>
+        <canvas type="2d" canvas-id="wheelCanvas" class="wheel-canvas {{wheelReady ? 'show' : ''}}" disable-scroll="true"></canvas>
+        <view class="wheel-loading" wx:if="{{!wheelReady && restaurants.length > 0}}">
+          <text class="wheel-loading-text">转盘准备中...</text>
+        </view>
+        <view class="wheel-pointer">
+          <view class="svg-icon icon-pointer"></view>
+        </view>
+      </view>
+    </view>
+
+    <view class="action-row">
+      <button
+        class="spin-btn {{isSpinning ? 'spinning' : ''}} {{showResult && !isSpinning ? 'again' : ''}}"
+        bindtap="handlePrimaryAction"
+        disabled="{{isSpinning}}"
+      >
+        <text class="spin-btn-text">{{isSpinning ? '正在转动...' : showResult ? '再转一次' : '开始抽取'}}</text>
+      </button>
+      <button class="action-ghost" wx:if="{{showResult && !isSpinning}}" bindtap="closeResult">
+        <text class="action-ghost-text">收起结果</text>
+      </button>
+    </view>
+
+    <view class="result-card glass-card {{showResult ? 'show' : ''}}" wx:if="{{result}}">
+      <view class="result-head">
+        <view class="result-icon-shell"><view class="svg-icon icon-tada"></view></view>
+        <view class="result-copy">
+          <text class="result-label">转盘决定：今天就吃</text>
+          <text class="result-name" style="color: {{resultAccent}};">{{result.displayName}}</text>
+          <text class="result-full-name" wx:if="{{result.showFullName}}">{{result.fullName}}</text>
+        </view>
+        <view class="result-chip" style="color: {{resultAccent}}; border-color: {{resultAccent}};">
+          <text class="result-chip-text">命中扇区</text>
+        </view>
+      </view>
+
+      <view class="result-info">
         <image class="result-image" src="{{result.image}}" mode="aspectFill"></image>
-        <text class="result-name">{{result.name}}</text>
-        <view class="result-meta">
-          <text class="result-category">{{result.category}}</text>
-          <text class="result-distance">📍 {{result.distance}}</text>
+        <view class="result-body">
+          <view class="result-meta">
+            <text class="result-category">{{result.category}}</text>
+            <view class="result-distance">
+              <view class="result-distance-icon"><view class="svg-icon icon-pin"></view></view>
+              <text class="result-distance-text">{{result.distance}}</text>
+            </view>
+          </view>
+          <view class="result-tags">
+            <text class="tag" wx:for="{{result.tags}}" wx:key="*this">{{item}}</text>
+          </view>
         </view>
-        <view class="result-tags">
-          <text class="tag" wx:for="{{result.tags}}" wx:key="*this">{{item}}</text>
-        </view>
-      </view>
-      <view class="result-actions">
-        <button class="result-btn result-btn-secondary" bindtap="handleSpinAgain">
-          <text>再转一次</text>
-        </button>
-        <button class="result-btn result-btn-primary" bindtap="closeResult">
-          <text>就这家了</text>
-        </button>
       </view>
     </view>
   </view>
 
-  <!-- Empty State -->
-  <view class="empty-state" wx:if="{{restaurants.length === 0}}">
-    <text class="empty-emoji">😕</text>
-    <text class="empty-text">还没有可选餐厅</text>
-    <text class="empty-tip">快去添加一些餐厅吧~</text>
+  <view class="empty-state glass-card" wx:if="{{restaurants.length === 0}}">
+    <view class="empty-icon-wrapper"><view class="svg-icon icon-sad"></view></view>
+    <text class="empty-text">暂时没有可选餐厅</text>
+    <text class="empty-tip">先去添加几家餐厅，再回来转一转</text>
   </view>
 </view>

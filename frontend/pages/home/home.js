@@ -44,7 +44,7 @@ Page({
       });
     } catch (error) {
       this.setData({
-        error: '加载失败，请稍后再试'
+        error: '餐厅数据暂时没加载出来，请稍后再试'
       });
     } finally {
       this.setData({ loading: false });
@@ -96,7 +96,7 @@ Page({
     const actives = app.getActiveRestaurants();
     if (actives.length === 0) {
       wx.showToast({
-        title: '没有可选餐厅',
+        title: '暂时没有可选餐厅',
         icon: 'none'
       });
       return;

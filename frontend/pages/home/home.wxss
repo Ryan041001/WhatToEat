@@ -13,7 +13,12 @@
 .header {
   position: relative;
   padding: 32rpx 40rpx 48rpx;
-  background: #F97316;
+  /* 调整主色调为活力美食风橘红 #FF6B6B */
+  background: linear-gradient(135deg, #FF6B6B 0%, #FF9E2A 100%);
+  border-bottom-left-radius: 48rpx;
+  border-bottom-right-radius: 48rpx;
+  box-shadow: 0 16rpx 48rpx rgba(255, 107, 107, 0.2);
+  margin-bottom: 32rpx;
   overflow: hidden;
 }
 
@@ -112,8 +117,17 @@
   gap: 24rpx;
 }
 
-.pick-emoji {
-  font-size: 48rpx;
+.pick-icon-shell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80rpx;
+  height: 80rpx;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 24rpx;
+  box-shadow: 0 4rpx 12rpx rgba(255, 107, 107, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .pick-text {
@@ -134,29 +148,34 @@
 }
 
 .pick-btn {
-  padding: 8rpx 24rpx;
+  padding: 10rpx 28rpx;
   border-radius: 100rpx;
   background: #fff;
+  box-shadow: 0 4rpx 16rpx rgba(255, 107, 107, 0.2);
 }
 
 .pick-btn-text {
-  color: #F97316;
+  color: #FF6B6B;
   font-size: 24rpx;
   font-weight: 700;
 }
 
 /* Quick actions */
 .quick-actions {
-  margin-bottom: 48rpx;
+  margin: 0 48rpx 48rpx 48rpx;
 }
 
 .actions-card {
   display: flex;
   gap: 24rpx;
   padding: 32rpx;
-  background: #fff;
+  /* 应用玻璃拟态 */
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 48rpx;
-  box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8rpx 32rpx rgba(255, 107, 107, 0.08);
 }
 
 .action-btn {
@@ -165,31 +184,36 @@
   flex-direction: column;
   align-items: center;
   gap: 16rpx;
-  padding: 32rpx;
+  padding: 32rpx 16rpx;
   border-radius: 48rpx;
-  border: 1px solid transparent;
+  /* 更精细的玻璃质感边框和投影 */
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: inset 0 2rpx 8rpx rgba(255, 255, 255, 0.5);
 }
 
 .action-spin {
-  background: #6C82E8;
-  border-color: #5B70D6;
+  background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
 }
 
 .action-shake {
-  background: #E98A3F;
-  border-color: #D8782E;
+  background: linear-gradient(135deg, #FF9E2A 0%, #FFC837 100%);
 }
 
 .action-swipe {
-  background: #6FA58C;
-  border-color: #5C947B;
+  background: linear-gradient(135deg, #20C997 0%, #48D1CC 100%);
 }
 
-.action-emoji {
-  font-size: 56rpx;
+.action-icon-shell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 96rpx;
+  height: 96rpx;
+  margin-bottom: 8rpx;
+  color: #fff;
 }
 
-.action-emoji.shaking {
+.action-icon-shell.shaking {
   animation: shake 0.8s ease-in-out;
 }
 
@@ -238,9 +262,11 @@
   max-width: 560rpx;
 }
 
-.shake-emoji {
-  font-size: 96rpx;
+.shake-icon-shell {
+  width: 96rpx;
+  height: 96rpx;
   margin-bottom: 16rpx;
+  color: #fff;
 }
 
 .shake-label {
@@ -266,7 +292,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16rpx;
-  margin-bottom: 48rpx;
+  margin: 0 48rpx 48rpx 48rpx;
 }
 
 .stat-item {
@@ -274,14 +300,34 @@
   flex-direction: column;
   align-items: center;
   padding: 24rpx;
-  background: #fff;
   border-radius: 32rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  /* 玻璃拟态 */
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8rpx 32rpx rgba(255, 107, 107, 0.05);
 }
 
-.stat-emoji {
-  font-size: 36rpx;
-  margin-bottom: 4rpx;
+.stat-icon-shell {
+  margin-bottom: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64rpx;
+  height: 64rpx;
+}
+
+.stat-icon-total {
+  color: #FF6B6B;
+}
+
+.stat-icon-available {
+  color: #20C997;
+}
+
+.stat-icon-blocked {
+  color: #A0A0A0;
 }
 
 .stat-value {
@@ -299,7 +345,7 @@
 
 /* Hot picks */
 .hot-picks {
-  margin-bottom: 48rpx;
+  margin: 0 48rpx 48rpx 48rpx;
 }
 
 .picks-header {
@@ -315,20 +361,43 @@
   gap: 12rpx;
 }
 
-.title-icon {
-  width: 28rpx;
-  height: 28rpx;
+.title-icon-shell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52rpx;
+  height: 52rpx;
+  color: #FF6B6B;
 }
 
 .picks-text {
-  font-size: 28rpx;
-  font-weight: 700;
-  color: #5C5C5C;
+  font-size: 32rpx;
+  font-weight: 800;
+  color: #333;
 }
 
 .picks-more {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  color: #FF6B6B;
+  font-weight: 600;
+  padding: 8rpx 16rpx;
+  background: rgba(255, 107, 107, 0.1);
+  border-radius: 100rpx;
+}
+
+.picks-more-text {
   font-size: 24rpx;
-  color: #F97316;
+  color: inherit;
+}
+
+.picks-more-icon {
+  width: 24rpx;
+  height: 24rpx;
+  display: block;
+  flex-shrink: 0;
+  color: inherit;
 }
 
 .picks-list {
@@ -342,9 +411,13 @@
   align-items: center;
   gap: 24rpx;
   padding: 24rpx;
-  background: #fff;
   border-radius: 32rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  /* 玻璃拟态 */
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8rpx 32rpx rgba(255, 107, 107, 0.05);
 }
 
 .pick-image-wrapper {
@@ -374,15 +447,18 @@
 }
 
 .rank-0 {
-  background: #F97316;
+  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+  box-shadow: 0 4rpx 12rpx rgba(255, 107, 107, 0.4);
 }
 
 .rank-1 {
-  background: #84A98C;
+  background: linear-gradient(135deg, #FF9E2A, #FFC837);
+  box-shadow: 0 4rpx 12rpx rgba(255, 158, 42, 0.4);
 }
 
 .rank-2 {
-  background: #a0a0a0;
+  background: linear-gradient(135deg, #20C997, #48D1CC);
+  box-shadow: 0 4rpx 12rpx rgba(32, 201, 151, 0.4);
 }
 
 .pick-info {
@@ -411,14 +487,17 @@
   gap: 4rpx;
 }
 
-.star {
-  font-size: 20rpx;
+.star-icon-shell {
+  width: 28rpx;
+  height: 28rpx;
+  display: block;
+  color: #FF9E2A;
 }
 
 .rating-value {
   font-size: 22rpx;
-  color: #F97316;
-  font-weight: 600;
+  color: #FF9E2A; /* 评分用暖黄更合适 */
+  font-weight: 700;
 }
 
 .distance {
@@ -427,8 +506,11 @@
   gap: 4rpx;
 }
 
-.distance-icon {
-  font-size: 18rpx;
+.distance-icon-shell {
+  width: 28rpx;
+  height: 28rpx;
+  display: block;
+  color: #999;
 }
 
 .distance-text {
@@ -449,15 +531,16 @@
 
 .pick-tags .tag {
   font-size: 18rpx;
-  padding: 2rpx 10rpx;
-  background: #FFF0ED;
-  color: #F97316;
-  border-radius: 8rpx;
+  padding: 4rpx 12rpx;
+  background: rgba(255, 107, 107, 0.08); /* 淡红底色 */
+  color: #FF6B6B;
+  border-radius: 12rpx;
+  font-weight: 500;
 }
 
 /* Add button */
 .add-btn-wrapper {
-  margin-bottom: 48rpx;
+  margin: 0 48rpx 48rpx 48rpx;
 }
 
 .add-btn {
@@ -466,18 +549,28 @@
   justify-content: center;
   gap: 16rpx;
   padding: 24rpx;
-  background: transparent;
-  border: 4rpx dashed #F97316;
+  /* 玻璃底搭配实线边框，视觉更现代 */
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 107, 107, 0.5);
   border-radius: 48rpx;
-  color: #F97316;
+  color: #FF6B6B;
 }
 
-.add-icon {
-  font-size: 32rpx;
-  font-weight: 600;
+.add-icon-shell {
+  width: 40rpx;
+  height: 40rpx;
+  display: block;
+  color: #FF6B6B;
 }
 
 .add-text {
   font-size: 26rpx;
   font-weight: 600;
+}
+
+/* 底部安全区留白 */
+.container {
+  padding-bottom: calc(60rpx + env(safe-area-inset-bottom));
 }

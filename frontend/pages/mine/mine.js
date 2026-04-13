@@ -25,7 +25,7 @@ Page({
 
     this.setData({
       userName: (user && (user.nickname || user.nickName)) || '游客',
-      userBio: app.globalData.useMockData ? '当前使用 Mock 数据模式' : '已连接后端接口',
+      userBio: app.globalData.useMockData ? '当前为你展示精选餐厅内容' : '餐厅信息已同步完成',
       totalCount: restaurants.length,
       userAddedCount: userAdded.length,
       activeCount: actives.length,
@@ -36,7 +36,7 @@ Page({
   // 显示添加表单
   showAddForm() {
     wx.showToast({
-      title: '可在列表页维护餐厅',
+      title: '去餐厅列表即可添加和管理',
       icon: 'none'
     });
   },
@@ -62,7 +62,7 @@ Page({
   goToAbout() {
     wx.showModal({
       title: '关于项目',
-      content: '今天吃什么 v1.0.0\n微信小程序前端实践作业版本',
+      content: '今天吃什么 v1.0.0\n帮你更轻松地决定每一餐',
       showCancel: false
     });
   }

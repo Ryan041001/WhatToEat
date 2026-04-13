@@ -71,10 +71,10 @@ Page({
 			// API 不可用时，走本地 Mock 会话，保证开发流程可继续。
 			app.createMockSession();
 			await app.bootstrapRestaurants({ force: true });
-			this.setData({ usingMockLogin: true, loginError: error.message || '登录失败' });
+			this.setData({ usingMockLogin: true, loginError: '登录遇到一点问题，已为你切换到便捷体验模式' });
 
 			wx.showToast({
-				title: '已切换 Mock 登录',
+				title: '已切换便捷体验模式',
 				icon: 'none'
 			});
 			wx.redirectTo({ url: '/pages/home/home' });

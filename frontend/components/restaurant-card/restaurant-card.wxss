@@ -34,14 +34,26 @@
 .restaurant-meta {
   display: flex;
   align-items: center;
+  gap: 24rpx;
   font-size: 24rpx;
   color: #666;
   margin-bottom: 8rpx;
 }
 
 .restaurant-rating {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
   color: #ff9800;
-  margin-right: 24rpx;
+}
+
+.rating-icon {
+  width: 24rpx;
+  height: 24rpx;
+}
+
+.rating-text {
+  color: inherit;
 }
 
 .restaurant-desc {

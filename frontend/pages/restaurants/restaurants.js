@@ -37,7 +37,7 @@ Page({
         this.filterRestaurants();
       });
     } catch (error) {
-      this.setData({ error: '加载餐厅失败，请稍后重试' });
+      this.setData({ error: '餐厅列表暂时没加载出来，请稍后重试' });
     } finally {
       this.setData({ loading: false });
     }
@@ -134,15 +134,15 @@ Page({
     if (!restaurant) return;
 
     wx.showModal({
-      title: '提示',
-      content: restaurant.isBlacklisted ? '确定要取消拉黑吗？' : '确定要拉黑这家餐厅吗？',
+      title: '确认操作',
+      content: restaurant.isBlacklisted ? '要把这家餐厅移出不感兴趣吗？' : '要暂时不看这家餐厅吗？',
       success: (res) => {
         if (res.confirm) {
           app.toggleBlacklist(id);
           this.loadData();
           
           wx.showToast({
-            title: restaurant.isBlacklisted ? '已取消拉黑' : '已拉黑',
+            title: restaurant.isBlacklisted ? '已恢复展示' : '已设为不感兴趣',
             icon: 'success'
           });
         }

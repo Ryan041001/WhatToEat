@@ -56,7 +56,7 @@ const request = (url, method = 'GET', data = {}, options = {}) => {
       fail: (err) => {
         const message = (err && err.errMsg) ? err.errMsg : '网络请求异常';
         wx.showToast({
-          title: '请求失败，请看控制台',
+          title: '网络开小差了，请稍后重试',
           icon: 'none'
         });
         console.error('请求失败详情:', message, err);

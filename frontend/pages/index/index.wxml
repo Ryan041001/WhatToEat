@@ -15,7 +15,7 @@
     <text class="hint">登录即表示你同意服务协议与隐私政策</text>
 
     <view class="status" wx:if="{{usingMockLogin}}">
-      <text class="status-text">当前使用 Mock 登录（后端不可达时自动兜底）</text>
+      <text class="status-text">网络有点忙，已为你开启便捷体验模式</text>
     </view>
     <view class="error" wx:if="{{loginError}}">
       <text class="error-text">{{loginError}}</text>

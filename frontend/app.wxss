@@ -1,9 +1,102 @@
 /** app.wxss */
+@import "./styles/icons.wxss";
+
 page {
   min-height: 100%;
+  background-color: #F8F9FA;
+  /* 全局的弥散光光斑背景 */
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(255, 107, 107, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 90% 80%, rgba(255, 158, 42, 0.15) 0%, transparent 50%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  color: #333333;
 }
 
 /*
  * 不在全局定义 .container，避免覆盖各页面自己的布局容器。
  * 页面级容器样式应放在对应 pages/**.wxss 中。
  */
+
+/* 统一的玻璃态卡片公用样式 */
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 16rpx 48rpx rgba(255, 107, 107, 0.12);
+  border-radius: 40rpx;
+}
+
+/* 视觉统一使用的可选原语，仅在目标页面显式启用 */
+.page-gutter {
+  margin-left: 48rpx;
+  margin-right: 48rpx;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.64);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  box-shadow: 0 16rpx 48rpx rgba(255, 107, 107, 0.08);
+  border-radius: 40rpx;
+}
+
+.glass-panel-soft {
+  background: rgba(255, 255, 255, 0.52);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow: 0 12rpx 36rpx rgba(255, 107, 107, 0.06);
+  border-radius: 32rpx;
+}
+
+.warm-hero {
+  position: relative;
+  padding: 32rpx 40rpx 48rpx;
+  background: linear-gradient(135deg, #FF6B6B 0%, #FF9E2A 100%);
+  border-bottom-left-radius: 48rpx;
+  border-bottom-right-radius: 48rpx;
+  box-shadow: 0 16rpx 48rpx rgba(255, 107, 107, 0.2);
+  overflow: hidden;
+}
+
+.warm-hero__blob {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.warm-hero__surface {
+  position: relative;
+  z-index: 1;
+  padding: 24rpx 28rpx;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 40rpx;
+}
+
+.surface-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8rpx 22rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+}
+
+.warm-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6rpx 16rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 107, 107, 0.1);
+  color: #FF6B6B;
+  font-size: 20rpx;
+  font-weight: 600;
+}
