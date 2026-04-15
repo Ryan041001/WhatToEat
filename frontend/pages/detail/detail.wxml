@@ -55,6 +55,48 @@
         </view>
       </view>
 
+      <view class="comment-card glass-panel-soft">
+        <view class="comment-head">
+          <text class="section-label">用户评论</text>
+          <text class="comment-count">{{comments.length}} 条</text>
+        </view>
+
+        <view class="comment-editor">
+          <textarea
+            class="comment-input"
+            placeholder="说说你对这家店的看法..."
+            maxlength="120"
+            auto-height
+            value="{{commentInput}}"
+            bindinput="onCommentInput"
+          ></textarea>
+          <button class="comment-submit" disabled="{{!canSubmitComment}}" bindtap="submitComment">发布</button>
+        </view>
+
+        <view class="comment-empty" wx:if="{{comments.length === 0}}">
+          <text>还没有评论，来抢个沙发吧</text>
+        </view>
+
+        <view class="comment-list" wx:else>
+          <view class="comment-item" wx:for="{{visibleComments}}" wx:key="id">
+            <view class="comment-meta">
+              <text class="comment-author">{{item.author}}</text>
+              <text class="comment-time">{{item.createdAt}}</text>
+            </view>
+            <text class="comment-content">{{item.content}}</text>
+          </view>
+
+          <view class="comment-fold-wrap" wx:if="{{comments.length > collapseThreshold}}">
+            <button class="comment-fold-btn" bindtap="toggleCommentFold">
+              {{commentsCollapsed ? '展开更多评论' : '收起评论'}}
+            </button>
+            <text class="comment-fold-tip" wx:if="{{commentsCollapsed}}">
+              还有 {{comments.length - visibleComments.length}} 条未显示
+            </text>
+          </view>
+        </view>
+      </view>
+
       <view class="actions glass-panel-soft">
         <button class="btn ghost" bindtap="goBack">返回</button>
         <button class="btn primary" bindtap="toggleBlacklist">

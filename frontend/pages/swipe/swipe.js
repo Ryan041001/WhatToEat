@@ -1,14 +1,16 @@
 // pages/swipe/swipe.js
 const app = getApp();
+const SWIPE_RESULT_CACHE_KEY = 'swipe_result_snapshot';
 
 Page({
+  shouldPreserveOnShow: false,
+
   data: {
     restaurants: [],
     visibleCards: [],
     currentIndex: 0,
     likedRestaurants: [],
     showResult: false,
-    finalResult: null,
     
     // 手势滑动的状态
     swipeDirection: '',
@@ -22,26 +24,42 @@ Page({
   },
 
   onShow() {
+    const restored = this.consumeResultSnapshot();
+    if (restored) {
+      this.setData(restored);
+      this.shouldPreserveOnShow = false;
+      return;
+    }
+
+    if (this.shouldPreserveOnShow) {
+      this.shouldPreserveOnShow = false;
+      return;
+    }
     this.loadData();
   },
 
   // 加载数据
   async loadData() {
     try {
+      wx.removeStorageSync(SWIPE_RESULT_CACHE_KEY);
       await app.bootstrapRestaurants();
       const restaurants = app.getActiveRestaurants();
       this.setData({
         restaurants,
         currentIndex: 0,
         likedRestaurants: [],
-        showResult: false,
-        finalResult: null
+        showResult: false
       }, () => {
         this.updateVisibleCards();
       });
     } catch (err) {
       console.error(err);
     }
+  },
+
+  // 结算按钮：直接展示结果
+  handleSettle() {
+    this.setData({ showResult: true });
   },
 
   // 更新可见卡片
@@ -167,19 +185,19 @@ Page({
     if (currentIndex >= restaurants.length) return;
     
     // 记录喜欢的餐厅
-    if (isLike) {
-      likedRestaurants.push(restaurants[currentIndex]);
-    }
+    const nextLikedRestaurants = isLike
+      ? [...likedRestaurants, restaurants[currentIndex]]
+      : likedRestaurants;
     
     const newIndex = currentIndex + 1;
     
     // 检查是否完成
     if (newIndex >= restaurants.length) {
-      this.showFinalResult();
+      this.showFinalResult(nextLikedRestaurants);
     } else {
       this.setData({
         currentIndex: newIndex,
-        likedRestaurants,
+        likedRestaurants: nextLikedRestaurants,
       }, () => {
         this.updateVisibleCards();
       });
@@ -187,23 +205,58 @@ Page({
   },
 
   // 显示最终结果
-  showFinalResult() {
-    const { likedRestaurants } = this.data;
-    let finalResult = null;
-    
-    if (likedRestaurants.length > 0) {
-      // 随机选择一个喜欢的餐厅
-      const randomIndex = Math.floor(Math.random() * likedRestaurants.length);
-      finalResult = likedRestaurants[randomIndex];
-    }
-    
+  showFinalResult(likedRestaurants = []) {
     this.setData({
       showResult: true,
-      finalResult
+      likedRestaurants
     });
 
     // 震动反馈
     wx.vibrateShort({ type: 'medium' });
+  },
+
+  saveResultSnapshot() {
+    if (!this.data.showResult) {
+      return;
+    }
+
+    wx.setStorageSync(SWIPE_RESULT_CACHE_KEY, {
+      showResult: true,
+      likedRestaurants: this.data.likedRestaurants || [],
+      restaurants: this.data.restaurants || [],
+      visibleCards: [],
+      currentIndex: this.data.currentIndex,
+      translateX: 0,
+      translateY: 0,
+      rotation: 0,
+      absX: 0,
+      swipeDirection: '',
+      isSwiping: false
+    });
+  },
+
+  consumeResultSnapshot() {
+    const snapshot = wx.getStorageSync(SWIPE_RESULT_CACHE_KEY);
+    if (!snapshot || !snapshot.showResult) {
+      return null;
+    }
+
+    wx.removeStorageSync(SWIPE_RESULT_CACHE_KEY);
+    return snapshot;
+  },
+
+  openDetail(e) {
+    const id = e.currentTarget.dataset.id;
+    if (!id) {
+      return;
+    }
+
+    this.saveResultSnapshot();
+    this.shouldPreserveOnShow = true;
+
+    wx.navigateTo({
+      url: `/pages/detail/detail?id=${id}`
+    });
   },
 
   // 重置

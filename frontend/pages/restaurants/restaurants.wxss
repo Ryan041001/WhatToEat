@@ -3,9 +3,9 @@
 .container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  min-height: 100vh;
   background: transparent;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .error-banner,
@@ -24,7 +24,21 @@
 }
 
 .restaurants-hero {
+  margin-bottom: 0;
+}
+
+.hero-shell {
+  overflow: hidden;
+  max-height: 520rpx;
   margin-bottom: 24rpx;
+  opacity: 1;
+  transition: max-height 0.28s ease, margin 0.28s ease, opacity 0.24s ease;
+}
+
+.hero-shell.collapsed {
+  max-height: 0;
+  margin-bottom: 0;
+  opacity: 0;
 }
 
 .hero-blob-one {
@@ -308,8 +322,8 @@
 }
 
 .restaurant-list {
-  flex: 1;
-  min-height: 0;
+  flex: none;
+  min-height: auto;
 }
 
 .list-content {
@@ -459,6 +473,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: 10rpx;
   margin-top: auto;
 }
 
@@ -480,6 +495,11 @@
 .btn-block {
   background: rgba(255, 107, 107, 0.12);
   color: #FF6B6B;
+}
+
+.btn-detail {
+  background: rgba(255, 158, 42, 0.14);
+  color: #C56A12;
 }
 
 .btn-unblock {

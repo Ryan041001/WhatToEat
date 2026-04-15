@@ -363,6 +363,24 @@
   font-weight: 500;
 }
 
+.result-detail-btn {
+  margin-top: 16rpx;
+  width: 180rpx;
+  height: 58rpx;
+  line-height: 58rpx;
+  padding: 0;
+  border-radius: 999rpx;
+  border: none;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+  background: linear-gradient(135deg, #FF8E53 0%, #FFC857 100%);
+}
+
+.result-detail-btn::after {
+  border: none;
+}
+
 .action-row {
   display: flex;
   align-items: center;

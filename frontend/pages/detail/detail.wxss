@@ -164,6 +164,138 @@
   padding: 8rpx 16rpx;
 }
 
+.comment-card {
+  padding: 24rpx;
+}
+
+.comment-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+}
+
+.comment-count {
+  font-size: 22rpx;
+  color: #98A2B3;
+}
+
+.comment-editor {
+  padding: 16rpx;
+  border-radius: 24rpx;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(255, 107, 107, 0.1);
+}
+
+.comment-input {
+  width: 100%;
+  min-height: 120rpx;
+  color: #344054;
+  font-size: 26rpx;
+  line-height: 1.6;
+}
+
+.comment-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 12rpx;
+  border-radius: 999rpx;
+  height: 68rpx;
+  line-height: 1;
+  padding: 0;
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #FFFFFF;
+  background: linear-gradient(135deg, #FF6B6B 0%, #FF9E2A 100%);
+}
+
+.comment-submit[disabled] {
+  color: #FFFFFF;
+  opacity: 0.58;
+}
+
+.comment-submit::after {
+  border: none;
+}
+
+.comment-empty {
+  margin-top: 18rpx;
+  padding: 18rpx;
+  border-radius: 18rpx;
+  background: rgba(255, 255, 255, 0.45);
+  color: #98A2B3;
+  font-size: 24rpx;
+  text-align: center;
+}
+
+.comment-list {
+  margin-top: 18rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+}
+
+.comment-item {
+  padding: 18rpx;
+  border-radius: 20rpx;
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.comment-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+
+.comment-author {
+  color: #475467;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.comment-time {
+  color: #98A2B3;
+  font-size: 20rpx;
+}
+
+.comment-content {
+  display: block;
+  margin-top: 8rpx;
+  color: #344054;
+  font-size: 24rpx;
+  line-height: 1.6;
+}
+
+.comment-fold-wrap {
+  margin-top: 4rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.comment-fold-btn {
+  height: 58rpx;
+  line-height: 58rpx;
+  padding: 0 28rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #FF6B6B;
+  background: rgba(255, 107, 107, 0.12);
+}
+
+.comment-fold-btn::after {
+  border: none;
+}
+
+.comment-fold-tip {
+  color: #98A2B3;
+  font-size: 20rpx;
+}
+
 .actions {
   display: flex;
   gap: 16rpx;

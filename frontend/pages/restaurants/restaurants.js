@@ -15,7 +15,15 @@ Page({
       rating: '按评分',
       distance: '按距离'
     },
-    showSortModal: false
+    showSortModal: false,
+    heroCollapsed: false
+  },
+
+  onPageScroll(e) {
+    const shouldCollapse = (e && e.scrollTop ? e.scrollTop : 0) > 72;
+    if (shouldCollapse !== this.data.heroCollapsed) {
+      this.setData({ heroCollapsed: shouldCollapse });
+    }
   },
 
   onShow() {

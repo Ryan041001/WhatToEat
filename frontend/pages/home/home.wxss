@@ -279,12 +279,58 @@
   color: #fff;
   font-size: 44rpx;
   font-weight: 700;
-  margin-bottom: 16rpx;
+}
+
+.shake-card {
+  margin-top: 10rpx;
+  width: 100%;
+  border-radius: 28rpx;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.shake-card-image {
+  width: 100%;
+  height: 200rpx;
+}
+
+.shake-card-body {
+  padding: 18rpx 20rpx 20rpx;
+}
+
+.shake-card-meta {
+  margin-top: 10rpx;
+  display: flex;
+  align-items: center;
+  gap: 22rpx;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 24rpx;
+}
+
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6rpx;
+}
+
+.meta-icon {
+  width: 24rpx;
+  height: 24rpx;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.shake-card-tip {
+  display: block;
+  margin-top: 12rpx;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 22rpx;
 }
 
 .shake-tip {
   color: rgba(255, 255, 255, 0.7);
   font-size: 24rpx;
+  margin-top: 14rpx;
 }
 
 /* Stats row */

@@ -312,12 +312,12 @@
 
 .label-yep {
   left: 48rpx;
-  border-color: #FF9E2A;
+  border-color: #20C997;
   transform: rotate(-12deg);
 }
 
 .label-yep .label-text {
-  color: #FF9E2A;
+  color: #20C997;
 }
 
 .label-text {
@@ -341,14 +341,22 @@
   width: 100%;
 }
 
+.action-buttons-top {
+  gap: 36rpx;
+}
+
+.action-buttons-bottom {
+  justify-content: center;
+}
+
 .action-btn {
-  width: 132rpx;
-  height: 132rpx;
-  border-radius: 50%;
+  min-width: 156rpx;
+  height: 104rpx;
+  padding: 0 34rpx;
+  border-radius: 999rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
   margin: 0;
   border: none;
   background: rgba(255, 255, 255, 0.92);
@@ -366,29 +374,42 @@
 }
 
 .btn-pass {
-  border: 2rpx solid rgba(255, 107, 107, 0.26);
-  box-shadow: 0 16rpx 40rpx rgba(255, 107, 107, 0.16);
+  background: linear-gradient(135deg, #FF5F5F 0%, #FF8A80 100%);
+  box-shadow: 0 20rpx 48rpx rgba(255, 95, 95, 0.24);
 }
 
 .btn-like {
+  background: linear-gradient(135deg, #20C997 0%, #52D4A8 100%);
+  box-shadow: 0 20rpx 48rpx rgba(32, 201, 151, 0.24);
+}
+
+.btn-settle {
   background: linear-gradient(135deg, #FF6B6B 0%, #FF9E2A 100%);
   box-shadow: 0 20rpx 48rpx rgba(255, 107, 107, 0.24);
 }
 
-.btn-icon {
-  width: 60rpx;
-  height: 60rpx;
+.settle-shell {
   display: flex;
-  align-items: center;
   justify-content: center;
+  padding: 24rpx 24rpx 8rpx;
 }
 
-.btn-pass-icon {
-  color: #FF6B6B;
+.settle-btn {
+  width: 100%;
+  max-width: 360rpx;
 }
 
-.btn-like-icon {
+.action-buttons-bottom .action-btn {
+  width: 100%;
+  max-width: 360rpx;
+}
+
+.action-btn-text {
+  font-size: 28rpx;
+  line-height: 1;
+  font-weight: 700;
   color: #FFFFFF;
+  letter-spacing: 2rpx;
 }
 
 .progress {
@@ -415,6 +436,12 @@
   display: flex;
   flex-direction: column;
   gap: 24rpx;
+}
+
+.result-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
 }
 
 .result-heading {
@@ -452,6 +479,10 @@
   flex-direction: column;
   align-items: center;
   padding: 28rpx;
+}
+
+.result-card:active {
+  transform: scale(0.995);
 }
 
 .result-image {
@@ -512,6 +543,13 @@
   font-size: 22rpx;
   color: #556070;
   font-weight: 600;
+}
+
+.result-detail-tip {
+  display: block;
+  margin-top: 14rpx;
+  font-size: 22rpx;
+  color: #8B93A6;
 }
 
 .result-btn {

@@ -8,8 +8,8 @@
       <view class="hero-top">
         <view class="hero-copy">
           <text class="hero-eyebrow">{{showResult ? '滑选结果' : '卡片滑选'}}</text>
-          <text class="hero-title">{{showResult ? '今晚就吃它' : '探店雷达'}}</text>
-          <text class="hero-subtitle">{{showResult ? '根据你的右滑偏好给出最后推荐' : '左滑无感，右滑喜欢，让选择更凭直觉'}}</text>
+          <text class="hero-title">{{showResult ? '今晚候选清单' : '探店雷达'}}</text>
+          <text class="hero-subtitle">{{showResult ? '以下是你右滑保留下来的餐厅，按你的偏好全部展示。' : '左滑无感，右滑喜欢，让选择更凭直觉'}}</text>
         </view>
         <view class="surface-chip hero-chip">
           <text class="hero-chip-text" wx:if="{{!showResult}}">{{restaurants.length}} 家待匹配</text>
@@ -28,8 +28,8 @@
       <view class="warm-hero__surface hero-surface" wx:if="{{showResult}}">
         <view class="hero-surface-icon"><view class="svg-icon icon-swipe"></view></view>
         <view class="hero-surface-copy">
-          <text class="hero-surface-title">{{finalResult ? '推荐已经生成' : '这一轮暂时没有心动项'}}</text>
-          <text class="hero-surface-text">{{finalResult ? '继续查看推荐详情，或者重新滑一轮。' : '再试一次，也许下一轮就会遇到想吃的。'}}</text>
+          <text class="hero-surface-title">{{likedRestaurants.length > 0 ? '推荐清单已经生成' : '这一轮暂时没有心动项'}}</text>
+          <text class="hero-surface-text">{{likedRestaurants.length > 0 ? '可逐个查看详情，或重新滑一轮。' : '再试一次，也许下一轮就会遇到想吃的。'}}</text>
         </view>
       </view>
     </view>
@@ -87,18 +87,24 @@
       </view>
 
       <view class="control-shell glass-panel">
-        <view class="action-buttons">
+        <view class="action-buttons action-buttons-top">
           <button class="action-btn btn-pass" bindtap="handlePass" hover-class="none">
-            <view class="btn-icon btn-pass-icon"><view class="svg-icon icon-close"></view></view>
+            <text class="action-btn-text">跳过</text>
           </button>
           <button class="action-btn btn-like" bindtap="handleLike" hover-class="none">
-            <view class="btn-icon btn-like-icon"><view class="svg-icon icon-swipe"></view></view>
+            <text class="action-btn-text">喜欢</text>
           </button>
         </view>
 
         <view class="progress">
           <text class="progress-text">{{currentIndex + 1}} / {{restaurants.length}}</text>
         </view>
+      </view>
+
+      <view class="settle-shell glass-panel-soft">
+        <button class="action-btn btn-settle settle-btn" bindtap="handleSettle" hover-class="none">
+          <text class="action-btn-text">结算</text>
+        </button>
       </view>
     </view>
   </block>
@@ -108,23 +114,27 @@
       <view class="result-heading glass-panel-soft">
         <view class="result-icon-wrapper"><view class="svg-icon icon-stars"></view></view>
         <text class="result-title">滑选完成</text>
-        <text class="result-heading-text">{{finalResult ? '以下是今晚的最终候选。' : '这一轮没有留下任何餐厅。'}}</text>
+        <text class="result-heading-text">{{likedRestaurants.length > 0 ? '以下是本轮右滑保留的餐厅。' : '这一轮没有留下任何餐厅。'}}</text>
       </view>
 
-      <view class="result-card glass-panel" wx:if="{{finalResult}}">
-        <image class="result-image" src="{{finalResult.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=500&fit=crop'}}" mode="aspectFill"></image>
-        <text class="result-name">{{finalResult.name}}</text>
-        <text class="result-subtitle">{{finalResult.category || '美食'}}</text>
+      <view class="result-list" wx:if="{{likedRestaurants.length > 0}}">
+        <view class="result-card glass-panel" wx:for="{{likedRestaurants}}" wx:key="id" bindtap="openDetail" data-id="{{item.id}}">
+          <image class="result-image" src="{{item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=500&fit=crop'}}" mode="aspectFill"></image>
+          <text class="result-name">{{item.name}}</text>
+          <text class="result-subtitle">{{item.category || '美食'}}</text>
 
-        <view class="result-meta">
-          <view class="meta-pill">
-            <view class="meta-icon-shell"><view class="svg-icon icon-location"></view></view>
-            <text class="meta-item">{{finalResult.distance || '0m'}}</text>
+          <view class="result-meta">
+            <view class="meta-pill">
+              <view class="meta-icon-shell"><view class="svg-icon icon-location"></view></view>
+              <text class="meta-item">{{item.distance || '0m'}}</text>
+            </view>
+            <view class="meta-pill meta-pill-star">
+              <view class="meta-icon-shell meta-star-shell"><view class="svg-icon icon-star"></view></view>
+              <text class="meta-item">{{item.rating || '4.0'}}</text>
+            </view>
           </view>
-          <view class="meta-pill meta-pill-star">
-            <view class="meta-icon-shell meta-star-shell"><view class="svg-icon icon-star"></view></view>
-            <text class="meta-item">{{finalResult.rating || '4.0'}}</text>
-          </view>
+
+          <text class="result-detail-tip">点击查看详情</text>
         </view>
       </view>
 

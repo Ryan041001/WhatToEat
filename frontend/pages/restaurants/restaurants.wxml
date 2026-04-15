@@ -5,27 +5,29 @@
     <text>{{error}}</text>
   </view>
 
-  <view class="restaurants-hero warm-hero">
-    <view class="warm-hero__blob hero-blob-one"></view>
-    <view class="warm-hero__blob hero-blob-two"></view>
+  <view class="hero-shell {{heroCollapsed ? 'collapsed' : ''}}">
+    <view class="restaurants-hero warm-hero">
+      <view class="warm-hero__blob hero-blob-one"></view>
+      <view class="warm-hero__blob hero-blob-two"></view>
 
-    <view class="hero-content">
-      <view class="hero-top">
-        <view class="hero-copy">
-          <text class="hero-eyebrow">餐厅列表</text>
-          <text class="hero-title">挑到合胃口的那一家</text>
-          <text class="hero-subtitle">按口味、价位和距离筛一筛，更快找到想吃的。</text>
+      <view class="hero-content">
+        <view class="hero-top">
+          <view class="hero-copy">
+            <text class="hero-eyebrow">餐厅列表</text>
+            <text class="hero-title">挑到合胃口的那一家</text>
+            <text class="hero-subtitle">按口味、价位和距离筛一筛，更快找到想吃的。</text>
+          </view>
+          <view class="surface-chip hero-chip">
+            <text class="hero-chip-text">{{filteredRestaurants.length}} / {{restaurants.length}} 家</text>
+          </view>
         </view>
-        <view class="surface-chip hero-chip">
-          <text class="hero-chip-text">{{filteredRestaurants.length}} / {{restaurants.length}} 家</text>
-        </view>
-      </view>
 
-      <view class="warm-hero__surface hero-surface">
-        <view class="hero-surface-icon"><view class="app-icon icon-star icon-fill"></view></view>
-        <view class="hero-surface-copy">
-          <text class="hero-surface-title">筛选很简单，选择更轻松</text>
-          <text class="hero-surface-text">点选分类、价位或排序方式，结果会立即更新。</text>
+        <view class="warm-hero__surface hero-surface">
+          <view class="hero-surface-icon"><view class="app-icon icon-star icon-fill"></view></view>
+          <view class="hero-surface-copy">
+            <text class="hero-surface-title">筛选很简单，选择更轻松</text>
+            <text class="hero-surface-text">点选分类、价位或排序方式，结果会立即更新。</text>
+          </view>
         </view>
       </view>
     </view>
@@ -125,7 +127,7 @@
     </view>
   </view>
 
-  <scroll-view class="restaurant-list" scroll-y>
+  <view class="restaurant-list">
     <view class="list-content page-gutter">
       <view class="list-header" wx:if="{{filteredRestaurants.length > 0}}">
         <view>
@@ -163,6 +165,13 @@
           <text class="card-desc" wx:if="{{item.description}}">{{item.description}}</text>
           <view class="card-footer">
             <button
+              class="action-btn btn-detail"
+              catchtap="openDetail"
+              data-id="{{item.id}}"
+            >
+              查看详情
+            </button>
+            <button
               class="action-btn {{item.isBlacklisted ? 'btn-unblock' : 'btn-block'}}"
               catchtap="toggleBlacklist"
               data-id="{{item.id}}"
@@ -184,5 +193,5 @@
         <text class="empty-tip">换个筛选条件再试试</text>
       </view>
     </view>
-  </scroll-view>
+  </view>
 </view>

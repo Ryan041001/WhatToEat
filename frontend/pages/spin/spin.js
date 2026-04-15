@@ -363,5 +363,16 @@ Page({
 
   closeResult() {
     this.setData({ showResult: false });
+  },
+
+  goToResultDetail() {
+    const { result } = this.data;
+    if (!result || !result.id) {
+      return;
+    }
+
+    wx.navigateTo({
+      url: `/pages/detail/detail?id=${result.id}`
+    });
   }
 });

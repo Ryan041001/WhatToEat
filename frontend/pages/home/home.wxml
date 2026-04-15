@@ -12,8 +12,8 @@
     <view class="header-content">
       <view class="header-top">
         <view class="header-left">
-          <text class="header-subtitle">今天吃什么？</text>
-          <text class="header-title">干饭防纠结</text>
+          <text class="header-subtitle">干饭防纠结</text>
+          <text class="header-title">今天吃什么？</text>
         </view>
         <view class="header-right">
           <view class="header-badge">
@@ -62,11 +62,29 @@
   </view>
 
   <view class="shake-result {{shakeResult ? 'show' : ''}}" bindtap="closeShakeResult">
-    <view class="shake-content">
+    <view class="shake-content" catchtap="noop">
       <view class="shake-icon-shell"><view class="svg-icon icon-tada"></view></view>
       <text class="shake-label">摇到了！就吃</text>
-      <text class="shake-name">{{shakeResult}}</text>
-      <text class="shake-tip">点击关闭</text>
+
+      <view class="shake-card" bindtap="goToShakeDetail">
+        <image class="shake-card-image" src="{{shakeResult.image}}" mode="aspectFill"></image>
+        <view class="shake-card-body">
+          <text class="shake-name">{{shakeResult.name}}</text>
+          <view class="shake-card-meta">
+            <view class="meta-item">
+              <view class="meta-icon"><view class="svg-icon icon-star"></view></view>
+              <text>{{shakeResult.rating}}</text>
+            </view>
+            <view class="meta-item">
+              <view class="meta-icon"><view class="svg-icon icon-pin"></view></view>
+              <text>{{shakeResult.distance}}</text>
+            </view>
+          </view>
+          <text class="shake-card-tip">点击卡片查看详情</text>
+        </view>
+      </view>
+
+      <text class="shake-tip">点击空白处关闭</text>
     </view>
   </view>
 
