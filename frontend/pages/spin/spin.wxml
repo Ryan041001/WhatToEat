@@ -47,14 +47,14 @@
 
     <view class="action-row">
       <button
-        class="spin-btn {{isSpinning ? 'spinning' : ''}} {{showResult && !isSpinning ? 'again' : ''}}"
+        class="spin-btn {{isSpinning ? 'spinning' : ''}} {{result && !isSpinning ? 'again' : ''}}"
         bindtap="handlePrimaryAction"
         disabled="{{isSpinning}}"
       >
-        <text class="spin-btn-text">{{isSpinning ? '正在转动...' : showResult ? '再转一次' : '开始抽取'}}</text>
+        <text class="spin-btn-text">{{isSpinning ? '正在转动...' : result ? '再转一次' : '开始抽取'}}</text>
       </button>
-      <button class="action-ghost" wx:if="{{showResult && !isSpinning}}" bindtap="closeResult">
-        <text class="action-ghost-text">收起结果</text>
+      <button class="action-ghost" wx:if="{{result && !isSpinning}}" bindtap="toggleResult">
+        <text class="action-ghost-text">{{showResult ? '收起结果' : '展开结果'}}</text>
       </button>
     </view>
 

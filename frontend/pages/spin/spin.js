@@ -261,7 +261,7 @@ Page({
   },
 
   handlePrimaryAction() {
-    if (this.data.showResult) {
+    if (this.data.result) {
       this.handleSpinAgain();
       return;
     }
@@ -363,6 +363,14 @@ Page({
 
   closeResult() {
     this.setData({ showResult: false });
+  },
+
+  toggleResult() {
+    if (!this.data.result || this.data.isSpinning) {
+      return;
+    }
+
+    this.setData({ showResult: !this.data.showResult });
   },
 
   goToResultDetail() {
