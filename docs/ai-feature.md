@@ -11,6 +11,10 @@
 
 本文档描述的是 **当前真实实现**，不是未来规划。
 
+关联 PR：
+
+- https://github.com/Ryan041001/WhatToEat/pull/16
+
 ---
 
 ## 2. 当前 AI 架构

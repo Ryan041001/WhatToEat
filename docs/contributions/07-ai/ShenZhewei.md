@@ -176,7 +176,7 @@
 
 ## PR 链接
 
-- PR #X：待创建后补充
+- PR #16：https://github.com/Ryan041001/WhatToEat/pull/16
 
 ---
 
