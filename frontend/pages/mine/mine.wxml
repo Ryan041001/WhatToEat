@@ -1,108 +1,136 @@
 <!--pages/mine/mine.wxml-->
 <view class="container">
-  <!-- Header -->
-  <view class="header">
-    <view class="blob"></view>
-    <view class="header-content">
-      <view class="avatar">
-        <text class="avatar-emoji">🍚</text>
+  <view class="mine-hero warm-hero">
+    <view class="warm-hero__blob hero-blob-one"></view>
+    <view class="warm-hero__blob hero-blob-two"></view>
+
+    <view class="hero-content">
+      <view class="hero-top">
+        <view class="avatar">
+          <view class="avatar-icon-shell"><view class="app-icon icon-user icon-fill"></view></view>
+        </view>
+        <view class="hero-copy">
+          <text class="hero-eyebrow">个人中心</text>
+          <text class="hero-title">{{userName}}</text>
+          <text class="hero-subtitle">{{userBio}}</text>
+        </view>
+        <view class="surface-chip hero-chip">
+          <text class="hero-chip-text">{{activeCount}} 家可选</text>
+        </view>
       </view>
-      <view class="user-info">
-        <text class="user-name">{{userName}}</text>
-        <text class="user-bio">{{userBio}}</text>
+
+      <view class="warm-hero__surface hero-surface">
+        <view class="hero-surface-icon"><view class="app-icon icon-plus icon-fill"></view></view>
+        <view class="hero-surface-copy">
+          <text class="hero-surface-title">你的偏好都在这里</text>
+          <text class="hero-surface-text">可管理餐厅、调整不感兴趣内容，也能随时查看账号信息。</text>
+        </view>
       </view>
     </view>
   </view>
 
-  <!-- Stats -->
-  <view class="stats px-4 mb-6">
-    <view class="stats-card">
+  <view class="stats-section page-gutter">
+    <view class="stats-card glass-panel">
       <view class="stat-col">
-        <text class="stat-emoji">🍽️</text>
+        <view class="stat-icon-shell stat-icon-total"><view class="app-icon icon-utensils icon-fill"></view></view>
         <text class="stat-value">{{totalCount}}</text>
         <text class="stat-label">收录餐厅</text>
       </view>
       <view class="stat-col stat-divider">
-        <text class="stat-emoji">✍️</text>
+        <view class="stat-icon-shell stat-icon-added"><view class="app-icon icon-plus icon-fill"></view></view>
         <text class="stat-value">{{userAddedCount}}</text>
         <text class="stat-label">我添加的</text>
       </view>
       <view class="stat-col stat-divider">
-        <text class="stat-emoji">✅</text>
+        <view class="stat-icon-shell stat-icon-available"><view class="app-icon icon-check icon-fill"></view></view>
         <text class="stat-value">{{activeCount}}</text>
         <text class="stat-label">当前可选</text>
       </view>
     </view>
   </view>
 
-  <!-- Add restaurant CTA -->
-  <view class="add-cta px-4 mt-6" bindtap="showAddForm">
+  <view class="section-block page-gutter" bindtap="showAddForm">
     <view class="cta-card">
       <view class="cta-icon">
-        <text class="icon-plus">+</text>
+        <view class="app-icon icon-plus icon-fill"></view>
       </view>
       <view class="cta-text">
         <text class="cta-title">添加新餐厅</text>
         <text class="cta-subtitle">分享你发现的美食宝藏</text>
       </view>
-      <text class="cta-arrow">→</text>
+      <view class="cta-arrow-shell"><view class="app-icon icon-arrow-right icon-fill"></view></view>
     </view>
   </view>
 
-  <!-- My added restaurants -->
-  <view class="my-restaurants px-4 mt-6" wx:if="{{userAdded.length > 0}}">
+  <view class="section-block page-gutter" wx:if="{{userAdded.length > 0}}">
     <view class="section-header">
       <text class="section-title">我添加的餐厅</text>
-      <text class="section-more" bindtap="goToRestaurants">管理 →</text>
+      <view class="section-more" bindtap="goToRestaurants">
+        <text class="section-more-text">管理</text>
+        <view class="app-icon icon-arrow-right icon-sm"></view>
+      </view>
     </view>
     <view class="restaurant-list">
-      <view class="restaurant-item" wx:for="{{userAdded}}" wx:key="id">
+      <view class="restaurant-item glass-panel-soft" wx:for="{{userAdded}}" wx:key="id">
         <image class="item-image" src="{{item.image}}" mode="aspectFill"></image>
         <view class="item-info">
           <text class="item-name">{{item.name}}</text>
           <text class="item-meta">{{item.category}} · {{item.distance}}</text>
         </view>
         <view class="item-rating">
-          <text class="star">⭐</text>
+          <view class="rating-icon-shell"><view class="app-icon icon-star icon-fill"></view></view>
           <text class="rating-value">{{item.rating}}</text>
         </view>
       </view>
     </view>
   </view>
 
-  <!-- Settings & About -->
-  <view class="menu-section px-4 mt-6">
-    <view class="menu-card">
+  <view class="section-block page-gutter">
+    <view class="menu-card glass-panel-soft">
       <view class="menu-item" bindtap="goToSettings">
         <view class="menu-left">
           <view class="menu-icon settings-icon">
-            <text class="icon-text">⚙️</text>
+            <view class="app-icon icon-settings icon-fill"></view>
           </view>
           <text class="menu-label">退出登录</text>
         </view>
-        <text class="menu-arrow">›</text>
+        <view class="menu-arrow-shell"><view class="app-icon icon-chevron-right icon-fill"></view></view>
       </view>
       <view class="menu-divider"></view>
       <view class="menu-item" bindtap="goToAbout">
         <view class="menu-left">
           <view class="menu-icon about-icon">
-            <text class="icon-text">ℹ️</text>
+            <view class="app-icon icon-info icon-fill"></view>
           </view>
           <text class="menu-label">关于</text>
         </view>
-        <text class="menu-arrow">›</text>
+        <view class="menu-arrow-shell"><view class="app-icon icon-chevron-right icon-fill"></view></view>
       </view>
     </view>
   </view>
 
-  <!-- Tips -->
-  <view class="tips px-4 mt-6 mb-6">
-    <view class="tips-card">
-      <text class="tips-title">💡 使用贴士</text>
-      <text class="tips-item">🎡 大转盘：视觉化随机抽取，超好玩</text>
-      <text class="tips-item">💘 卡片滑选：右滑喜欢/左滑不喜欢，探探同款</text>
-      <text class="tips-item">🚫 拉黑功能：不想看到的餐厅直接排雷</text>
-      <text class="tips-item">✍️ UGC录入：发现宝藏小店随时添加</text>
+  <view class="section-block page-gutter section-last">
+    <view class="tips-card glass-panel-soft">
+      <view class="tips-title-row">
+        <view class="tips-title-icon"><view class="app-icon icon-sparkles icon-fill"></view></view>
+        <text class="tips-title">使用贴士</text>
+      </view>
+      <view class="tips-item-row">
+        <view class="tips-item-icon"><view class="app-icon icon-wheel icon-fill"></view></view>
+        <text class="tips-item">大转盘：视觉化随机抽取，超好玩</text>
+      </view>
+      <view class="tips-item-row">
+        <view class="tips-item-icon"><view class="app-icon icon-swipe icon-fill"></view></view>
+        <text class="tips-item">卡片滑选：右滑喜欢 / 左滑不喜欢，像刷卡片一样直观</text>
+      </view>
+      <view class="tips-item-row">
+        <view class="tips-item-icon"><view class="app-icon icon-ban icon-fill"></view></view>
+        <text class="tips-item">不感兴趣：不想看的餐厅先隐藏起来</text>
+      </view>
+      <view class="tips-item-row">
+        <view class="tips-item-icon"><view class="app-icon icon-plus icon-fill"></view></view>
+        <text class="tips-item">发现宝藏小店：随手添加到你的餐厅库</text>
+      </view>
     </view>
   </view>
 </view>

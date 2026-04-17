@@ -1,30 +1,106 @@
 <view class="page">
-  <loading-spinner show="{{loading}}" message="正在加载详情..." />
+  <loading-spinner show="{{loading}}" message="正在准备餐厅详情..." />
 
-  <view class="error" wx:if="{{error}}">
+  <view class="error page-gutter glass-panel-soft" wx:if="{{error}}">
     <text>{{error}}</text>
   </view>
 
   <view class="content" wx:if="{{restaurant}}">
-    <image class="cover" src="{{restaurant.image}}" mode="aspectFill"></image>
-    <view class="panel">
-      <text class="name">{{restaurant.name}}</text>
-      <view class="meta-row">
-        <text class="meta">{{restaurant.category}}</text>
-        <text class="meta">📍 {{restaurant.distance}}</text>
-        <text class="meta">⭐ {{restaurant.rating}}</text>
-      </view>
-      <text class="address">地址：{{restaurant.address || '暂无地址'}}</text>
-      <text class="desc">{{restaurant.description || '暂无简介'}}</text>
+    <view class="detail-hero warm-hero">
+      <view class="warm-hero__blob hero-blob-one"></view>
+      <view class="warm-hero__blob hero-blob-two"></view>
 
-      <view class="tags" wx:if="{{restaurant.tags && restaurant.tags.length > 0}}">
-        <text class="tag" wx:for="{{restaurant.tags}}" wx:key="*this">{{item}}</text>
+      <view class="hero-content">
+        <view class="hero-top">
+          <text class="hero-eyebrow">餐厅详情</text>
+          <view class="surface-chip hero-chip">
+            <text class="hero-chip-text">{{restaurant.category}}</text>
+          </view>
+        </view>
+        <text class="hero-title">{{restaurant.name}}</text>
+
+        <view class="hero-meta-row">
+          <view class="hero-meta">
+            <view class="meta-icon-shell"><view class="app-icon icon-pin icon-fill"></view></view>
+            <text class="hero-meta-text">{{restaurant.distance}}</text>
+          </view>
+          <view class="hero-meta hero-meta-star">
+            <view class="meta-icon-shell meta-icon-star"><view class="app-icon icon-star icon-fill"></view></view>
+            <text class="hero-meta-text">{{restaurant.rating}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="detail-body page-gutter">
+      <view class="cover-card glass-panel">
+        <image class="cover" src="{{restaurant.image}}" mode="aspectFill"></image>
       </view>
 
-      <view class="actions">
+      <view class="info-card glass-panel-soft">
+        <text class="section-label">到店信息</text>
+
+        <view class="info-block">
+          <text class="info-title">地址</text>
+          <text class="info-text">{{restaurant.address || '地址信息待补充'}}</text>
+        </view>
+
+        <view class="info-block">
+          <text class="info-title">简介</text>
+          <text class="info-text">{{restaurant.description || '这家餐厅还没有简介'}}</text>
+        </view>
+
+        <view class="tags" wx:if="{{restaurant.tags && restaurant.tags.length > 0}}">
+          <text class="tag" wx:for="{{restaurant.tags}}" wx:key="*this">{{item}}</text>
+        </view>
+      </view>
+
+      <view class="comment-card glass-panel-soft">
+        <view class="comment-head">
+          <text class="section-label">用户评论</text>
+          <text class="comment-count">{{comments.length}} 条</text>
+        </view>
+
+        <view class="comment-editor">
+          <textarea
+            class="comment-input"
+            placeholder="说说你对这家店的看法..."
+            maxlength="120"
+            auto-height
+            value="{{commentInput}}"
+            bindinput="onCommentInput"
+          ></textarea>
+          <button class="comment-submit" disabled="{{!canSubmitComment}}" bindtap="submitComment">发布</button>
+        </view>
+
+        <view class="comment-empty" wx:if="{{comments.length === 0}}">
+          <text>还没有评论，来抢个沙发吧</text>
+        </view>
+
+        <view class="comment-list" wx:else>
+          <view class="comment-item" wx:for="{{visibleComments}}" wx:key="id">
+            <view class="comment-meta">
+              <text class="comment-author">{{item.author}}</text>
+              <text class="comment-time">{{item.createdAt}}</text>
+            </view>
+            <text class="comment-content">{{item.content}}</text>
+          </view>
+
+          <view class="comment-fold-wrap" wx:if="{{comments.length > collapseThreshold}}">
+            <button class="comment-fold-btn" bindtap="toggleCommentFold">
+              {{commentsCollapsed ? '展开更多评论' : '收起评论'}}
+            </button>
+            <text class="comment-fold-tip" wx:if="{{commentsCollapsed}}">
+              还有 {{comments.length - visibleComments.length}} 条未显示
+            </text>
+          </view>
+        </view>
+      </view>
+
+      <view class="actions glass-panel-soft">
         <button class="btn ghost" bindtap="goBack">返回</button>
         <button class="btn primary" bindtap="toggleBlacklist">
-          {{restaurant.isBlacklisted ? '取消拉黑' : '加入黑名单'}}
+          {{restaurant.isBlacklisted ? '恢复展示' : '设为不感兴趣'}}
         </button>
       </view>
     </view>

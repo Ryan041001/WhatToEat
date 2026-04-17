@@ -27,7 +27,6 @@
 ## PR 链接
 - PR #X：待提交（创建后替换为实际 PR 链接）
 - 仓库地址：https://github.com/Ryan041001/WhatToEat
-- 参考历史分支：https://github.com/Ryan041001/WhatToEat/tree/feat/architecture-homework-03
 
 ## 遇到的问题和解决
 1. 问题：后端接口不可用时，页面没有数据可展示。

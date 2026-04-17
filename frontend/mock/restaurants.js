@@ -183,7 +183,7 @@ export const getMockRestaurants = () => {
       category: '川菜',
       rating: 4.6,
       priceLevel: 3,
-      image: 'https://images.unsplash.com/photo-1604908554167-6ca8f7c3f2f6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800',
+      image: 'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800',
       distance: '1.6km',
       description: '外焦里嫩，香麻过瘾。',
       address: '钱塘区高教西路 17 号',

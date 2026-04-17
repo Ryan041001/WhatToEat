@@ -1,99 +1,143 @@
 <!--pages/restaurants/restaurants.wxml-->
 <view class="container" bindtap="closeSortMenu">
-  <loading-spinner show="{{loading}}" message="正在加载列表..." />
+  <loading-spinner show="{{loading}}" message="正在为你整理餐厅..." />
   <view class="error-banner" wx:if="{{error}}">
     <text>{{error}}</text>
   </view>
 
-  <!-- Header Filters -->
-  <view class="filters">
-    <!-- Category filter -->
-    <scroll-view class="category-scroll" scroll-x>
-      <view class="category-list">
-        <view 
-          class="category-item {{selectedCategory === '' ? 'active' : ''}}"
-          bindtap="selectCategory"
-          data-category=""
-        >
-          全部
-        </view>
-        <view 
-          class="category-item {{selectedCategory === item ? 'active' : ''}}"
-          wx:for="{{categories}}"
-          wx:key="*this"
-          bindtap="selectCategory"
-          data-category="{{item}}"
-        >
-          {{item}}
-        </view>
-      </view>
-    </scroll-view>
+  <view class="hero-shell {{heroCollapsed ? 'collapsed' : ''}}">
+    <view class="restaurants-hero warm-hero">
+      <view class="warm-hero__blob hero-blob-one"></view>
+      <view class="warm-hero__blob hero-blob-two"></view>
 
-    <!-- Price & Sort filters -->
-    <view class="filter-row">
-      <view class="filter-group">
-        <view 
-          class="filter-btn {{selectedPrice === 0 ? 'active' : ''}}"
-          bindtap="selectPrice"
-          data-price="{{0}}"
-        >
-          全部价位
-        </view>
-        <view 
-          class="filter-btn {{selectedPrice === 1 ? 'active' : ''}}"
-          bindtap="selectPrice"
-          data-price="{{1}}"
-        >
-          ¥
-        </view>
-        <view 
-          class="filter-btn {{selectedPrice === 2 ? 'active' : ''}}"
-          bindtap="selectPrice"
-          data-price="{{2}}"
-        >
-          ¥¥
-        </view>
-        <view 
-          class="filter-btn {{selectedPrice === 3 ? 'active' : ''}}"
-          bindtap="selectPrice"
-          data-price="{{3}}"
-        >
-          ¥¥¥
-        </view>
-      </view>
-      <view class="sort-wrap" catchtap="stopPropagation">
-        <view class="sort-dropdown" bindtap="toggleSort">
-          <text class="sort-text">{{sortOptions[selectedSort]}}</text>
-          <text class="sort-arrow {{showSortModal ? 'open' : ''}}">▼</text>
-        </view>
-
-        <view class="sort-menu" wx:if="{{showSortModal}}">
-          <view
-            class="sort-option {{selectedSort === 'rating' ? 'active' : ''}}"
-            bindtap="changeSort"
-            data-sort="rating"
-          >
-            <text class="sort-label">按评分</text>
-            <text class="sort-check" wx:if="{{selectedSort === 'rating'}}">✓</text>
+      <view class="hero-content">
+        <view class="hero-top">
+          <view class="hero-copy">
+            <text class="hero-eyebrow">餐厅列表</text>
+            <text class="hero-title">挑到合胃口的那一家</text>
+            <text class="hero-subtitle">按口味、价位和距离筛一筛，更快找到想吃的。</text>
           </view>
-          <view
-            class="sort-option {{selectedSort === 'distance' ? 'active' : ''}}"
-            bindtap="changeSort"
-            data-sort="distance"
-          >
-            <text class="sort-label">按距离</text>
-            <text class="sort-check" wx:if="{{selectedSort === 'distance'}}">✓</text>
+          <view class="surface-chip hero-chip">
+            <text class="hero-chip-text">{{filteredRestaurants.length}} / {{restaurants.length}} 家</text>
+          </view>
+        </view>
+
+        <view class="warm-hero__surface hero-surface">
+          <view class="hero-surface-icon"><view class="app-icon icon-star icon-fill"></view></view>
+          <view class="hero-surface-copy">
+            <text class="hero-surface-title">筛选很简单，选择更轻松</text>
+            <text class="hero-surface-text">点选分类、价位或排序方式，结果会立即更新。</text>
           </view>
         </view>
       </view>
     </view>
   </view>
 
-  <!-- Restaurant List -->
-  <scroll-view class="restaurant-list" scroll-y>
-    <view class="list-content">
-      <view 
-        class="restaurant-card {{item.isBlacklisted ? 'blacklisted' : ''}}"
+  <view class="filters-shell">
+    <view class="filters page-gutter glass-panel">
+      <view class="filters-heading">
+        <text class="filters-title">筛选条件</text>
+        <text class="filters-subtitle">按分类、价格和排序快速收窄范围</text>
+      </view>
+
+      <scroll-view class="category-scroll" scroll-x>
+        <view class="category-list">
+          <view
+            class="category-item {{selectedCategory === '' ? 'active' : ''}}"
+            bindtap="selectCategory"
+            data-category=""
+          >
+            全部
+          </view>
+          <view
+            class="category-item {{selectedCategory === item ? 'active' : ''}}"
+            wx:for="{{categories}}"
+            wx:key="*this"
+            bindtap="selectCategory"
+            data-category="{{item}}"
+          >
+            {{item}}
+          </view>
+        </view>
+      </scroll-view>
+
+      <view class="filter-row">
+        <view class="filter-group">
+          <view
+            class="filter-btn {{selectedPrice === 0 ? 'active' : ''}}"
+            bindtap="selectPrice"
+            data-price="{{0}}"
+          >
+            全部价位
+          </view>
+          <view
+            class="filter-btn {{selectedPrice === 1 ? 'active' : ''}}"
+            bindtap="selectPrice"
+            data-price="{{1}}"
+          >
+            ¥
+          </view>
+          <view
+            class="filter-btn {{selectedPrice === 2 ? 'active' : ''}}"
+            bindtap="selectPrice"
+            data-price="{{2}}"
+          >
+            ¥¥
+          </view>
+          <view
+            class="filter-btn {{selectedPrice === 3 ? 'active' : ''}}"
+            bindtap="selectPrice"
+            data-price="{{3}}"
+          >
+            ¥¥¥
+          </view>
+        </view>
+        <view class="sort-wrap" catchtap="stopPropagation">
+          <view class="sort-dropdown" bindtap="toggleSort">
+            <text class="sort-text">{{sortOptions[selectedSort]}}</text>
+            <view class="sort-arrow {{showSortModal ? 'open' : ''}}">
+              <view class="app-icon icon-chevron-down icon-fill"></view>
+            </view>
+          </view>
+
+          <view class="sort-menu" wx:if="{{showSortModal}}">
+            <view
+              class="sort-option {{selectedSort === 'rating' ? 'active' : ''}}"
+              bindtap="changeSort"
+              data-sort="rating"
+            >
+              <text class="sort-label">按评分</text>
+              <view class="sort-check" wx:if="{{selectedSort === 'rating'}}">
+                <view class="app-icon icon-check icon-fill"></view>
+              </view>
+            </view>
+            <view
+              class="sort-option {{selectedSort === 'distance' ? 'active' : ''}}"
+              bindtap="changeSort"
+              data-sort="distance"
+            >
+              <text class="sort-label">按距离</text>
+              <view class="sort-check" wx:if="{{selectedSort === 'distance'}}">
+                <view class="app-icon icon-check icon-fill"></view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="restaurant-list">
+    <view class="list-content page-gutter">
+      <view class="list-header" wx:if="{{filteredRestaurants.length > 0}}">
+        <view>
+          <text class="list-title">附近餐厅</text>
+          <text class="list-subtitle">共找到 {{filteredRestaurants.length}} 家符合条件的餐厅</text>
+        </view>
+      </view>
+
+      <view
+        class="restaurant-card {{item.isBlacklisted ? 'blacklisted' : ''}} glass-panel-soft"
         wx:for="{{filteredRestaurants}}"
         wx:key="id"
         bindtap="openDetail"
@@ -104,7 +148,7 @@
           <view class="card-header">
             <text class="card-name">{{item.name}}</text>
             <view class="card-rating">
-              <text class="star">⭐</text>
+              <view class="star-shell"><view class="app-icon icon-star icon-fill"></view></view>
               <text class="rating-value">{{item.rating}}</text>
             </view>
           </view>
@@ -120,29 +164,34 @@
           </view>
           <text class="card-desc" wx:if="{{item.description}}">{{item.description}}</text>
           <view class="card-footer">
-            <button 
+            <button
+              class="action-btn btn-detail"
+              catchtap="openDetail"
+              data-id="{{item.id}}"
+            >
+              查看详情
+            </button>
+            <button
               class="action-btn {{item.isBlacklisted ? 'btn-unblock' : 'btn-block'}}"
               catchtap="toggleBlacklist"
               data-id="{{item.id}}"
             >
-              {{item.isBlacklisted ? '取消拉黑' : '拉黑'}}
+              {{item.isBlacklisted ? '恢复展示' : '不感兴趣'}}
             </button>
           </view>
         </view>
 
-        <!-- Blacklist overlay -->
         <view class="blacklist-overlay" wx:if="{{item.isBlacklisted}}">
-          <text class="overlay-text">🚫 已拉黑</text>
+          <view class="overlay-icon-shell"><view class="app-icon icon-ban icon-fill"></view></view>
+          <text class="overlay-text">不感兴趣</text>
         </view>
       </view>
 
-      <!-- Empty state -->
-      <view class="empty-state" wx:if="{{filteredRestaurants.length === 0}}">
-        <text class="empty-emoji">🔍</text>
-        <text class="empty-text">没有找到餐厅</text>
-        <text class="empty-tip">试试调整筛选条件吧~</text>
+      <view class="empty-state glass-panel" wx:if="{{filteredRestaurants.length === 0}}">
+        <view class="empty-icon-shell"><view class="app-icon icon-alert icon-fill"></view></view>
+        <text class="empty-text">暂时没找到合适的餐厅</text>
+        <text class="empty-tip">换个筛选条件再试试</text>
       </view>
     </view>
-  </scroll-view>
-
+  </view>
 </view>

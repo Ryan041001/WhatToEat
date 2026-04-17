@@ -6,6 +6,8 @@ const RESTAURANT_CACHE_KEY = 'restaurants_cache';
 const BLACKLIST_KEY = 'restaurant_blacklist_keys';
 const TOKEN_KEY = 'token';
 const USER_KEY = 'user_info';
+const BROKEN_IMAGE_URL = 'https://images.unsplash.com/photo-1604908554167-6ca8f7c3f2f6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800';
+const FIXED_IMAGE_URL = 'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800';
 
 function extractRestaurantList(payload) {
 	if (Array.isArray(payload)) {
@@ -58,9 +60,18 @@ App({
 		this.globalData.token = wx.getStorageSync(TOKEN_KEY) || '';
 		this.globalData.user = wx.getStorageSync(USER_KEY) || null;
 
-		const cachedRestaurants = wx.getStorageSync(RESTAURANT_CACHE_KEY) || [];
+		const cachedRestaurants = (wx.getStorageSync(RESTAURANT_CACHE_KEY) || []).map((item) => {
+			if (item && item.image === BROKEN_IMAGE_URL) {
+				return {
+					...item,
+					image: FIXED_IMAGE_URL
+				};
+			}
+			return item;
+		});
 		if (Array.isArray(cachedRestaurants) && cachedRestaurants.length > 0) {
 			this.globalData.restaurants = this.applyBlacklistState(cachedRestaurants);
+			wx.setStorageSync(RESTAURANT_CACHE_KEY, this.globalData.restaurants);
 		}
 	},
 
