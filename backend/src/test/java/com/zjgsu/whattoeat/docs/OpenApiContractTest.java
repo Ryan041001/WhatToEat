@@ -80,6 +80,18 @@ class OpenApiContractTest {
         assertTrue(contract.contains("NoteNotFound:"));
     }
 
+
+    @Test
+    void aiNativeRecommendationAndProfileContractsShouldBeDocumented() {
+        assertTrue(contract.contains("/api/v1/recommendations/ask:\n    post:"));
+        assertTrue(contract.contains("context:\n          $ref: '#/components/schemas/AskRecommendationContext'"));
+        assertTrue(contract.contains("recommendedScenarios:\n          type: array"));
+        assertTrue(contract.contains("/api/v1/users/{userId}/choice-history:\n    post:"));
+        assertTrue(contract.contains("/api/v1/users/{userId}/preference-profile:\n    get:"));
+        assertTrue(contract.contains("/api/v1/users/{userId}/recommendation-feedback:\n    post:"));
+        assertTrue(contract.contains("RecommendationFeedbackType:"));
+    }
+
     @Test
     void queryParameterDocsShouldDescribeConcreteValuesInsteadOfEmptyPlaceholders() {
         assertTrue(contract.contains("UserId:\n      name: userId\n      in: path\n      required: true"));

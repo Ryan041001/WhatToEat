@@ -63,6 +63,20 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void shouldMapReviewValidationBusinessExceptionTo400() throws Exception {
+        mockMvc.perform(get("/test/business/review-rating-invalid"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(2102));
+    }
+
+    @Test
+    void shouldMapAiUpstreamErrorTo502() throws Exception {
+        mockMvc.perform(get("/test/business/ai-upstream-error"))
+                .andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.code").value(3004));
+    }
+
+    @Test
     void shouldMapUnexpectedExceptionTo500WithCode9000() throws Exception {
         mockMvc.perform(get("/test/unexpected"))
                 .andExpect(status().isInternalServerError())
@@ -85,6 +99,16 @@ class GlobalExceptionHandlerTest {
         @GetMapping("/test/business/timeout")
         void timeout() {
             throw new BusinessException(ErrorCode.AMAP_UPSTREAM_TIMEOUT);
+        }
+
+        @GetMapping("/test/business/review-rating-invalid")
+        void reviewRatingInvalid() {
+            throw new BusinessException(ErrorCode.REVIEW_RATING_INVALID);
+        }
+
+        @GetMapping("/test/business/ai-upstream-error")
+        void aiUpstreamError() {
+            throw new BusinessException(ErrorCode.AI_UPSTREAM_ERROR);
         }
 
         @PostMapping("/test/validation")
