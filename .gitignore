@@ -49,6 +49,16 @@ build/
 out/
 *.tsbuildinfo
 
+# Python
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+__pycache__/
+.pytest_cache/
+.uv-cache/
+ai-service/.venv/
+
 # 微信小程序
 miniprogram_npm/
 .miniprogram/

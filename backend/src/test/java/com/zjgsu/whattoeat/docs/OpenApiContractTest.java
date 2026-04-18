@@ -80,6 +80,18 @@ class OpenApiContractTest {
         assertTrue(contract.contains("NoteNotFound:"));
     }
 
+
+    @Test
+    void aiNativeRecommendationAndProfileContractsShouldBeDocumented() {
+        assertTrue(contract.contains("/api/v1/recommendations/ask:\n    post:"));
+        assertTrue(contract.contains("context:\n          $ref: '#/components/schemas/AskRecommendationContext'"));
+        assertTrue(contract.contains("recommendedScenarios:\n          type: array"));
+        assertTrue(contract.contains("/api/v1/users/{userId}/choice-history:\n    post:"));
+        assertTrue(contract.contains("/api/v1/users/{userId}/preference-profile:\n    get:"));
+        assertTrue(contract.contains("/api/v1/users/{userId}/recommendation-feedback:\n    post:"));
+        assertTrue(contract.contains("RecommendationFeedbackType:"));
+    }
+
     @Test
     void queryParameterDocsShouldDescribeConcreteValuesInsteadOfEmptyPlaceholders() {
         assertTrue(contract.contains("UserId:\n      name: userId\n      in: path\n      required: true"));
@@ -88,7 +100,8 @@ class OpenApiContractTest {
         assertTrue(contract.contains("example: 1"));
 
         assertTrue(contract.contains("OptionalUserId:\n      name: userId\n      in: query\n      required: false"));
-        assertTrue(contract.contains("description: 可选；传入后会按该用户黑名单过滤结果。必须为正整数且对应用户必须存在；不需要过滤时请省略该参数，不要传空值。"));
+        assertTrue(contract.contains("description: 可选；传入后会按该用户黑名单过滤结果，并在推荐候选接口中优先避开近 3 天内吃过与近 7 天内带 poiId 的负向反馈。必须为正整数且对应用户必须存在；不需要过滤时请省略该参数，不要传空值。"));
+        assertTrue(contract.contains("recentChoiceCount:\n          type: integer\n          description: 近 3 天内的选择次数。"));
 
         assertTrue(contract.contains("Longitude:\n      name: longitude\n      in: query\n      required: true"));
         assertTrue(contract.contains("description: 必填；必须传具体经度数值，不能只传参数名或传空值。"));
