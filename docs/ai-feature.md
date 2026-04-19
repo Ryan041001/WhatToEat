@@ -2,53 +2,64 @@
 
 ## 1. 文档目标
 
-本文档说明 WhatToEat 当前仓库中已经落地的 AI 能力，包括：
+本文档描述 WhatToEat 当前仓库里已经真实落地的 AI 架构、能力、推荐契约与工程边界，不讨论未来规划。
 
-1. 使用了什么模型接入方式
-2. 当前实现了哪些 AI 功能
-3. AI 能力在系统中的调用链路
-4. 当前能力边界与对前端可见契约
+如果你关心的是：
 
-本文档描述的是 **当前真实实现**，不是未来规划。
+- AI 在系统里的调用链路
+- `backend/` 和 `ai-service/` 各自负责什么
+- 当前到底已经实现了哪些 AI 能力
+- 前端现在能依赖什么、不能依赖什么
 
-关联 PR：
+优先读这份文档。
 
-- https://github.com/Ryan041001/WhatToEat/pull/16
+另外与前端正式联调最相关的配套文档是：
+
+- [`docs/api.md`](./api.md)
+- [`docs/api.yaml`](./api.yaml)
+- [`docs/frontend-ai-review-integration.md`](./frontend-ai-review-integration.md)
 
 ---
 
 ## 2. 当前 AI 架构
 
-当前项目不是在 Spring Boot 后端里直接调用大模型，而是采用两层结构：
+当前项目不是在 Spring Boot 后端里直接调用大模型，而是采用两层收口：
 
 1. 微信小程序前端只调用 `backend/`
 2. `backend/` 调用内部 `ai-service/`
 3. `ai-service/` 再调用 OpenAI-compatible 模型服务
 
-对应仓库位置：
+当前关键目录：
 
-- `backend/src/main/java/com/zjgsu/whattoeat/integration/ai/`
-- `ai-service/app/`
+- `backend/src/main/java/com/zjgsu/whattoeat/infrastructure/ai/`
+- `backend/src/main/java/com/zjgsu/whattoeat/application/recommendation/`
+- `backend/src/main/java/com/zjgsu/whattoeat/domain/recommendation/`
+- `ai-service/app/api/`
+- `ai-service/app/core/`
+- `ai-service/app/domain/`
+- `ai-service/app/infrastructure/llm/`
+- `ai-service/app/schemas/`
 
-这样做的目的有三个：
+这样分层的价值：
 
-1. 前端不需要知道模型协议细节
-2. 后端不需要直接处理复杂的模型响应解析
-3. 后续切换模型供应商时，只需要收口在 `ai-service/`
+1. 前端不需要理解模型协议和错误映射。
+2. backend 只负责候选池、权限边界、业务约束和对外契约。
+3. 模型供应商变化时，主要改动被收敛在 `ai-service/`。
 
 ---
 
-## 3. 使用模型与接入方式
+## 3. 模型接入方式
 
-### 3.1 模型接入方式
+### 3.1 协议与入口
 
-当前 `ai-service/` 使用的是 **OpenAI-compatible API** 接入方式。
+当前 `ai-service/` 通过 OpenAI-compatible API 接入模型。
 
-对应实现文件：
+对应实现：
 
-- `ai-service/app/clients/openai_compatible.py`
+- `ai-service/app/infrastructure/llm/openai_compatible.py`
+- `ai-service/app/infrastructure/llm/client_factory.py`
 
-### 3.2 当前配置项
+### 3.2 配置项
 
 AI Service 当前通过环境变量控制模型侧配置：
 
@@ -57,57 +68,46 @@ AI Service 当前通过环境变量控制模型侧配置：
 - `OPENAI_MODEL`
 - `OPENAI_TIMEOUT_SECONDS`
 
-对应实现文件：
+对应实现：
 
-- `ai-service/app/config.py`
+- `ai-service/app/core/config.py`
 
 ### 3.3 当前默认模型
 
-当前默认模型配置为：
+当前 `ai-service/` 的默认模型值仍是：
 
 ```text
 gpt-4.1-mini
 ```
 
-说明：
-
-- 这是 `ai-service` 的默认值
-- 实际运行时可以通过环境变量替换为兼容 OpenAI Chat Completions 的其他模型
-- 因此当前项目的真实表达应是：
-  - **模型接入协议：OpenAI-compatible**
-  - **默认模型：`gpt-4.1-mini`**
-  - **可通过环境变量替换**
+但这是默认值，不是硬绑定。运行时可以通过环境变量替换成任意兼容 OpenAI Chat Completions 的模型。
 
 ---
 
 ## 4. 当前已实现的 AI 功能
 
-当前 AI 功能已经进入主链路，不再只是实验代码。
-
 ### 4.1 评论标签摘要
 
 功能入口：
 
-- `POST /internal/review-tags`（AI Service 内部接口）
-- 由 backend 的 `RestaurantReviewAiApplicationService` 调用
+- `POST /internal/review-tags`
 
-功能说明：
+backend 调用方：
+
+- `RestaurantReviewAiApplicationService`
+
+AI Service 相关实现：
+
+- `ai-service/app/api/routes/tagging.py`
+- `ai-service/app/domain/tagging/service.py`
+- `ai-service/app/domain/tagging/prompts.py`
+
+效果：
 
 - 输入某家餐厅的评论集合
-- 模型提取 1 到 2 个标签
+- 生成 1 到 2 个标签
 - 生成一句简短摘要
-- 回写到 `restaurant_metric_snapshot`
-
-当前生成结果字段：
-
-- `ai_tag_1`
-- `ai_tag_2`
-- `ai_summary`
-
-对应代码：
-
-- `ai-service/app/services/tagging.py`
-- `backend/src/main/java/com/zjgsu/whattoeat/service/application/RestaurantReviewAiApplicationService.java`
+- 写回 `restaurant_metric_snapshot`
 
 ### 4.2 AI 推荐问答（同步）
 
@@ -115,23 +115,34 @@ gpt-4.1-mini
 
 - `POST /api/v1/recommendations/ask`
 
-功能说明：
+backend 相关实现：
 
-- 后端先从高德获取候选餐厅
-- 合并本地快照字段：
-  - `avgRating`
-  - `reviewCount`
-  - `avgPerCapitaPrice`
-  - `aiTags`
-- 把增强后的候选集合与用户问题交给 AI Service
-- AI 返回：
-  - `answer`
-  - 结构化推荐列表 `recommendations`
+- `backend/src/main/java/com/zjgsu/whattoeat/application/recommendation/RecommendationApplicationService.java`
+- `backend/src/main/java/com/zjgsu/whattoeat/application/recommendation/RecommendationCandidateLoader.java`
+- `backend/src/main/java/com/zjgsu/whattoeat/application/recommendation/RecommendationCardAssembler.java`
 
-对应代码：
+AI Service 相关实现：
 
-- `backend/src/main/java/com/zjgsu/whattoeat/service/application/RecommendationApplicationService.java`
-- `ai-service/app/services/recommendation.py`
+- `ai-service/app/api/routes/recommendation.py`
+- `ai-service/app/domain/recommendation/service.py`
+- `ai-service/app/domain/recommendation/parser.py`
+- `ai-service/app/domain/recommendation/prompts.py`
+
+流程：
+
+1. backend 从高德拿候选
+2. 合并本地聚合快照
+3. 补充 AI 可消费的增强字段
+4. backend 基于服务端 `Clock` 自动补充日期、星期和当前时段语境
+5. 把候选集合和问题传给 AI Service
+6. backend 内部通过流式推荐链路聚合同步结果
+7. 对外返回 `answer` 和结构化推荐结果
+
+补充说明：
+
+- `/api/v1/recommendations/ask` 当前是对外同步兼容接口
+- frontend 正式聊天接入不建议把它作为主入口
+- 即使调用同步接口，backend -> ai-service 仍然是**只请求流式**
 
 ### 4.3 AI 推荐问答（流式）
 
@@ -139,43 +150,43 @@ gpt-4.1-mini
 
 - `POST /api/v1/recommendations/ask/stream`
 
-功能说明：
+流程特征：
 
-- 使用 SSE（`text/event-stream`）返回推荐过程
-- 前端可接收结构化事件：
-  - `session.created`
-  - `retrieval.started`
-  - `retrieval.completed`
-  - `recommendation.card`
-  - `answer.delta`
-  - `answer.done`
-  - `done`
-  - `error`
+- backend 通过 SSE 对前端输出过程事件
+- AI Service 先确定推荐卡片，再输出对应答案文本流
+- backend 再把上游事件翻译为前端可消费的稳定事件
+- `recommendation.card` 与最终 `answer` 来自同一批已选餐厅
+- 为了保证卡片和文案严格对应，`recommendation.card` 可能先于 `answer.delta` 到达
 
-对应代码：
+关键事件：
 
-- `backend/src/main/java/com/zjgsu/whattoeat/controller/RecommendationController.java`
-- `backend/src/main/java/com/zjgsu/whattoeat/integration/ai/AiHttpClient.java`
-- `ai-service/app/main.py`
-- `ai-service/app/services/recommendation.py`
+- `session.created`
+- `retrieval.started`
+- `retrieval.completed`
+- `recommendation.card`
+- `answer.delta`
+- `answer.done`
+- `done`
+- `error`
 
-### 4.4 AI refine（换一家，但保持条件）
+前端对接注意：
 
-当前推荐接口并不是一次性问答，已经支持**轻量多轮 refine**。
+- 小程序正式聊天链路应优先接 `POST /api/v1/recommendations/ask/stream`
+- 前端不需要自行传日期、星期、早中晚餐或天气字段
+- 当前 `frontend/pages/` 下还没有独立 AI 对话页或流式请求模块，这部分仍属于待接入状态
 
-对外入口仍然是：
+### 4.4 轻量 refine
 
-- `POST /api/v1/recommendations/ask`
-- `POST /api/v1/recommendations/ask/stream`
+当前推荐接口已经支持轻量多轮 refine，不需要额外的复杂会话系统。
 
-但请求体现在支持可选 `context`：
+请求体里的可选 `context` 支持：
 
 - `previousQuestion`
 - `rejectedPoiIds`
 - `selectedPoiIds`
 - `userSignals`
 
-这意味着前端后续可以非常轻量地做连续追问，例如：
+这允许前端表达：
 
 - 太贵了
 - 太远了
@@ -183,11 +194,9 @@ gpt-4.1-mini
 - 不要快餐
 - 我在健身
 
-而不需要为此再额外发明一套新模型工作流。
-
 ### 4.5 轻量口味画像
 
-当前没有单独的“长期画像表”，而是采用**实时聚合式画像**：
+当前没有独立长期画像表，而是基于现有业务数据做实时聚合：
 
 - `restaurant_review`
 - `user_restaurant_note`
@@ -210,52 +219,35 @@ gpt-4.1-mini
 - `lifestyleSignals`
 - `recentFeedbackSignals`
 
-这属于当前阶段非常适合的 AI native 形态：
+### 4.6 最近吃过过滤与反馈闭环
 
-- 不重
-- 解释性强
-- 与现有数据自然衔接
+当前推荐链路已经接入两类用户行为信号：
 
-### 4.6 最近吃过过滤与推荐反馈闭环
+1. `choice-history`
+2. `recommendation-feedback`
 
-当前推荐系统已经接入两类用户行为信号：
+作用：
 
-1. **最近吃过**
-   - 接口：
-     - `POST /api/v1/users/{userId}/choice-history`
-     - `GET /api/v1/users/{userId}/choice-history`
-   - 作用：
-     - 推荐会优先避开近 3 天最近吃过的店
-     - 若过滤后完全无候选，才会回退到较宽松候选集
-
-2. **推荐反馈闭环**
-   - 接口：
-     - `POST /api/v1/users/{userId}/recommendation-feedback`
-     - `GET /api/v1/users/{userId}/recommendation-feedback`
-   - 当前支持反馈类型：
-     - `TOO_EXPENSIVE`
-     - `TOO_FAR`
-     - `DONT_WANT_THIS_TODAY`
-     - `LOOKS_UNHYGIENIC`
-     - `ALREADY_ATE`
-   - 其中 `ALREADY_ATE` 会同步写入 `choice-history`
+- 优先避开最近吃过的店
+- 根据近期拒绝原因调整推荐上下文
+- 把“太贵了 / 太远了 / 今天不想吃这个 / 已经吃过了”转成更稳定的模型输入信号
 
 ---
 
-## 5. 当前 AI 推荐实现方式
+## 5. 当前推荐实现方式与契约
 
-### 5.1 不是“自由生成餐厅”
+### 5.1 不是自由生成餐厅
 
-当前推荐能力不是让模型自由输出“你去吃什么”，而是严格限制在当前候选池内。
+当前推荐能力严格限制在后端给出的候选池内，不允许模型脱离候选编造餐厅。
 
-也就是说：
+约束链路：
 
-1. 候选餐厅先由后端决定
-2. AI 只能从这些候选里选择
-3. 后端会校验 AI 给出的 `poiId`
-4. 只有校验通过的结果才会发给前端
+1. 候选餐厅先由 backend 决定
+2. AI 只能从候选集合中选择
+3. backend 会再次校验 `poiId`
+4. 只有校验通过的结果才会返回给前端
 
-此外，现在候选本身也已经不只是“高德原始字段”，而是增强候选：
+当前 AI 候选不只是高德原始字段，还包含增强信息：
 
 - `avgRating`
 - `reviewCount`
@@ -264,7 +256,7 @@ gpt-4.1-mini
 - `aiSummary`
 - `derivedTags`
 
-其中 `derivedTags` 是后端根据类别、AI 摘要、标签做的轻量派生信号，例如：
+其中 `derivedTags` 是后端根据类别、AI 标签和摘要派生出来的轻量信号，例如：
 
 - 高蛋白
 - 清淡
@@ -272,151 +264,140 @@ gpt-4.1-mini
 - 健身友好
 - 快餐
 
-### 5.2 使用了 tool call 思路
+### 5.2 工具调用驱动卡片推荐
 
-推荐服务里定义了结构化工具动作：
+推荐链路不是直接让模型吐一段自然语言，而是先确定结构化推荐卡片，再生成与这些卡片一致的回答：
 
 ```text
 show_restaurant_card
 ```
 
-模型需要通过这个工具动作输出：
+工具字段：
 
 - `poiId`
 - `reason`
 - `rank`
 
-然后：
+处理方式：
 
-1. AI Service 解析 tool call
-2. backend 再把它翻译成前端可见的 `recommendation.card` 事件
+1. `ai-service` 先解析并清洗 tool call，确定本轮选中的餐厅
+2. backend 将其映射为前端事件 `recommendation.card`
+3. `ai-service` 再基于同一批已选餐厅流式生成回答文本
+4. 前端再根据事件稳定渲染卡片和文案
 
-这套设计的好处是：
+这样做的好处：
 
-- 不需要从自然语言里猜餐厅名
-- 推荐卡片与回答文本解耦
-- 更容易做前端稳定渲染
+- 不需要从自然语言里反推餐厅
+- 卡片渲染与答案文本解耦
+- 更容易做流式体验和排序控制
+- 更容易保证“卡片和文本说的是同几家店”
 
-### 5.3 Prompt 当前的强化方向
+### 5.3 Prompt 的当前偏向
 
-当前推荐 prompt 已经针对 AI native 场景做了强化，核心不是“更会聊天”，而是**更会继承上下文与约束**：
+当前 prompt 重点不在“聊天感”，而在约束继承和可解释推荐：
 
-1. 连续追问时，默认继承 `previousQuestion`
-2. 新一轮明确约束优先级高于旧约束
-3. 优先满足显式否定条件
-4. 再综合预算、距离、评分、评论数与标签契合度
-5. 对下面几类信号做了明确偏向：
+1. 连续追问默认继承 `previousQuestion`
+2. 新一轮明确约束优先于旧约束
+3. 先满足显式否定条件
+4. 再综合预算、距离、评分、评论数和标签契合度
+5. 明确强化以下信号：
    - 健身 / 减脂 / 高蛋白
    - 热汤
    - 不要快餐
    - 太贵了
    - 太远了
 
----
+### 5.4 前端当前可依赖的 AI 能力
 
-## 6. 当前对外接口契约
+前端现在能稳定依赖的 AI 结果主要有三类：
 
-### 6.1 前端可见 AI 能力
-
-前端当前能感知到的 AI 结果主要有两类：
-
-1. **餐厅聚合摘要**
+1. 餐厅聚合摘要
    - `aiTags`
    - `aiSummary`
    - `recommendedScenarios`
-2. **AI 推荐问答**
+2. AI 推荐问答
    - `answer`
    - `recommendations`
-   - 流式事件
-3. **用户 AI native 信号接口**
+   - 流式 SSE 事件
+3. 用户 AI-native 信号接口
    - `choice-history`
    - `recommendation-feedback`
    - `preference-profile`
 
-### 6.2 `review-summary` 的重要约定
+### 5.5 `review-summary` 的关键约定
 
-当前后端内部保存了 `aiStatus`，但 **不对前端暴露**。
+backend 内部维护 `aiStatus`，但当前不对前端暴露。
 
-因此当前对前端的真实契约是：
+因此前端的真实契约是：
 
-- 只有当 AI 摘要状态为 `ready` 时，才返回：
-  - `aiTags`
-  - `aiSummary`
-- 其他状态统一返回：
+- 当 AI 结果 ready 时，返回 `aiTags` / `aiSummary`
+- 非 ready 状态统一表现为：
   - `aiTags=[]`
   - `aiSummary=null`
 
-这意味着前端不需要也不能依赖内部 AI 状态做细分判断。
+前端不能基于内部状态做分支逻辑，只能基于对外字段判断“当前有没有可展示结果”。
 
 ---
 
-## 7. 当前能力边界
+## 6. 当前能力边界
 
-虽然 AI 功能已经落地，但当前仍有明确边界。
-
-### 7.1 已经具备的能力
+### 6.1 已经具备的能力
 
 - 评论标签抽取
 - 评论摘要生成
-- 基于候选餐厅集合的推荐回答
+- 基于候选池的推荐回答
 - 流式推荐输出
 - 工具调用驱动的结构化推荐卡片
+- 服务端自动注入日期、星期和时段语境
+- 同步对外接口内部复用流式推荐链路
 
-### 7.2 还没有实现的能力
+### 6.2 还没有实现的能力
 
-- 长对话式会话记忆（目前是轻量 refine，不是完整聊天 session）
+- 长对话式会话记忆
 - 独立长期用户画像表
 - 面向前端暴露 `aiStatus`
 - 单店自由问答接口
 - 基于向量库或 RAG 的评论检索增强
+- 当前前端仓库中的独立 AI 对话页 / 流式请求模块
 
 ---
 
-## 8. 当前工程落地情况
+## 7. 当前工程落地情况
 
-### 8.1 backend 已接入
-
-当前 backend 已完整接入 AI Service：
+### 7.1 backend 已接入的 AI 关键模块
 
 - `AiServiceProperties`
 - `AiAssistantClient`
+- `AiHttpClient`
+- `RecommendationApplicationService`
+- `RecommendationCandidateLoader`
+- `RecommendationCardAssembler`
 - `UserChoiceHistoryApplicationService`
 - `UserRecommendationFeedbackApplicationService`
 - `UserPreferenceProfileApplicationService`
-- `AiHttpClient`
-- 推荐问答调用链
-- 评论摘要调用链
+- `RestaurantReviewAiApplicationService`
 
-### 8.2 ai-service 已独立成服务
+### 7.2 ai-service 当前真实结构
 
-当前仓库中的 `ai-service/` 已包含：
+- `app/main.py`：应用装配入口
+- `app/api/`：FastAPI 路由与依赖注入
+- `app/core/`：配置与异常
+- `app/domain/recommendation/`：推荐 prompt、解析与服务
+- `app/domain/tagging/`：评论标签与摘要服务
+- `app/infrastructure/llm/`：模型客户端实现
+- `app/schemas/`：Pydantic 请求/响应模型
 
-- FastAPI 服务入口
-- OpenAI-compatible client
-- 推荐服务
-- 评论摘要服务
-- 测试代码
-- Dockerfile
-
-说明当前 AI 能力已经不是草稿，而是实际工程组成部分。
+这说明当前 AI 模块已经是正式工程组成部分，不是临时 demo。
 
 ---
 
-## 9. 总结
+## 8. 一句话结论
 
-当前项目中的 AI 功能可以概括为：
+当前项目中的 AI 能力可以概括为：
 
-1. **模型接入方式：** OpenAI-compatible API
-2. **默认模型：** `gpt-4.1-mini`
-3. **已实现能力：**
-   - 评论标签摘要
-   - 评论摘要生成
-   - AI 推荐问答（同步）
-   - AI 推荐问答（流式）
-4. **实现特点：**
-   - 前端不直连模型
-   - backend 不直出模型私有协议
-   - 推荐只在候选池内进行
-   - tool call 驱动结构化推荐卡片
-
-因此，当前 AI 模块已经是 WhatToEat 的正式增强能力，而不是单纯的概念验证代码。
+1. 模型接入方式是 OpenAI-compatible API
+2. 默认模型值是 `gpt-4.1-mini`
+3. 推荐严格受候选池约束
+4. 对前端正式聊天体验，应优先使用 `/api/v1/recommendations/ask/stream`
+5. 流式推荐通过结构化工具调用驱动卡片事件，并保证卡片和文案来自同一批候选
+6. 画像、最近吃过和反馈闭环已经进入主链路，但仍属于轻量 AI-native 形态，而不是重型 agent / RAG 系统

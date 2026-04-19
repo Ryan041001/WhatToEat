@@ -1,5 +1,7 @@
 package com.zjgsu.whattoeat.service.application;
 
+import com.zjgsu.whattoeat.domain.recommendation.RecommendationInsightHeuristics;
+
 import com.zjgsu.whattoeat.common.error.BusinessException;
 import com.zjgsu.whattoeat.common.error.ErrorCode;
 import com.zjgsu.whattoeat.model.entity.RecommendationFeedbackEntity;

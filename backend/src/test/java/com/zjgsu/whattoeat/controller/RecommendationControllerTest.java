@@ -4,7 +4,7 @@ import com.zjgsu.whattoeat.common.error.BusinessException;
 import com.zjgsu.whattoeat.common.error.ErrorCode;
 import com.zjgsu.whattoeat.integration.amap.AmapClient;
 import com.zjgsu.whattoeat.integration.amap.AmapPoi;
-import com.zjgsu.whattoeat.integration.ai.AiAssistantClient;
+import com.zjgsu.whattoeat.infrastructure.ai.AiAssistantClient;
 import com.zjgsu.whattoeat.model.entity.UserBlacklistEntity;
 import com.zjgsu.whattoeat.model.entity.UserEntity;
 import com.zjgsu.whattoeat.model.entity.RestaurantMetricSnapshotEntity;
@@ -28,9 +28,14 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.ArrayList;
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -60,6 +65,9 @@ class RecommendationControllerTest {
 
     @Autowired
     private WebApplicationContext webApplicationContext;
+
+    @Autowired
+    private RecommendationController recommendationController;
 
     @Autowired
     private UserRepository userRepository;
@@ -285,6 +293,10 @@ class RecommendationControllerTest {
                         .toList());
         assertEquals("预算 35 以内，想吃轻一点", aiAssistantClient.lastRecommendationRequest().context().previousQuestion());
         assertEquals(List.of("健身"), aiAssistantClient.lastRecommendationRequest().context().userSignals());
+        org.junit.jupiter.api.Assertions.assertTrue(
+                aiAssistantClient.lastRecommendationRequest().context().temporalContext().contains("星期六"));
+        org.junit.jupiter.api.Assertions.assertTrue(
+                aiAssistantClient.lastRecommendationRequest().context().temporalContext().contains("下午茶或轻食"));
     }
 
     @Test
@@ -460,17 +472,78 @@ class RecommendationControllerTest {
                 .andExpect(request().asyncStarted())
                 .andReturn();
 
-        mockMvc.perform(asyncDispatch(mvcResult))
+        MvcResult streamResult = mockMvc.perform(asyncDispatch(mvcResult))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM))
                 .andExpect(content().string(containsString("event:session.created")))
                 .andExpect(content().string(containsString("event:retrieval.started")))
                 .andExpect(content().string(containsString("event:retrieval.completed")))
+                .andExpect(content().string(containsString("event:answer.delta")))
+                .andExpect(content().string(containsString("event:answer.done")))
                 .andExpect(content().string(containsString("event:recommendation.card")))
                 .andExpect(content().string(containsString("\"poiId\":\"poi-noodle\"")))
                 .andExpect(content().string(containsString("\"avgPerCapitaPrice\":29")))
-                .andExpect(content().string(containsString("event:answer.delta")))
+                .andExpect(content().string(containsString("event:done")))
+                .andReturn();
+
+        String body = streamResult.getResponse().getContentAsString();
+        org.junit.jupiter.api.Assertions.assertTrue(body.indexOf("event:answer.done") < body.indexOf("event:recommendation.card"));
+    }
+
+    @Test
+    void askStreamShouldAllowLongRunningUpstreamStreams() {
+        AmapPoi rice = new AmapPoi("poi-rice", "桂香卤味拌饭", "学林街", 120.35, 30.31, "餐饮", 180);
+        amapClient.addNearbyPage(1, new AmapClient.AmapSearchResult(List.of(rice), 1));
+        aiAssistantClient.setRecommendationAdvice(new AiAssistantClient.RecommendationAdvice(
+                "先看桂香卤味拌饭。",
+                List.of(new AiAssistantClient.RecommendationChoice("poi-rice", "出餐快，价格稳"))));
+
+        SseEmitter emitter = recommendationController.askStream(new RecommendationController.AskRecommendationRequest(
+                null,
+                120.35,
+                30.31,
+                1000,
+                1,
+                "想吃点便宜的",
+                null));
+
+        assertEquals(Duration.ofMinutes(5).toMillis(), emitter.getTimeout());
+    }
+
+    @Test
+    void askStreamShouldFallbackToCardsWhenUpstreamDoesNotEmitToolCallsOrDone() throws Exception {
+        AmapPoi rice = new AmapPoi("poi-rice", "桂香卤味拌饭", "学林街", 120.35, 30.31, "餐饮", 180);
+        AmapPoi noodle = new AmapPoi("poi-noodle", "兰州拉面", "文泽路", 120.36, 30.32, "餐饮", 220);
+        amapClient.addNearbyPage(1, new AmapClient.AmapSearchResult(List.of(rice, noodle), 2));
+        restaurantMetricSnapshotRepository.save(metricSnapshot("poi-rice", "4.1", 12, 18, "出餐快", "学生友好"));
+        restaurantMetricSnapshotRepository.save(metricSnapshot("poi-noodle", "4.8", 25, 29, "性价比高", "汤底稳"));
+        aiAssistantClient.setRecommendationAdvice(new AiAssistantClient.RecommendationAdvice(
+                "更建议先看兰州拉面，如果想简单吃点也可以选桂香卤味拌饭。",
+                List.of()));
+        aiAssistantClient.setEmitToolCalls(false);
+        aiAssistantClient.setEmitDoneEvent(false);
+
+        MvcResult mvcResult = mockMvc.perform(post("/api/v1/recommendations/ask/stream")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "longitude": 120.35,
+                                  "latitude": 30.31,
+                                  "radius": 1000,
+                                  "size": 2,
+                                  "question": "现在适合吃什么"
+                                }
+                                """))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(mvcResult))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM))
                 .andExpect(content().string(containsString("event:answer.done")))
+                .andExpect(content().string(containsString("event:recommendation.card")))
+                .andExpect(content().string(containsString("\"poiId\":\"poi-noodle\"")))
+                .andExpect(content().string(containsString("\"poiId\":\"poi-rice\"")))
                 .andExpect(content().string(containsString("event:done")));
     }
 
@@ -541,6 +614,12 @@ class RecommendationControllerTest {
         @Primary
         StubAiAssistantClient aiAssistantClient() {
             return new StubAiAssistantClient();
+        }
+
+        @Bean
+        @Primary
+        Clock fixedTestClock() {
+            return Clock.fixed(Instant.parse("2026-04-18T07:30:00Z"), ZoneId.of("Asia/Shanghai"));
         }
     }
 
@@ -615,9 +694,19 @@ class RecommendationControllerTest {
 
         private RecommendationAdvice recommendationAdvice = new RecommendationAdvice("暂时没有合适的推荐。", List.of());
         private RecommendationRequest lastRecommendationRequest;
+        private boolean emitToolCalls = true;
+        private boolean emitDoneEvent = true;
 
         void setRecommendationAdvice(RecommendationAdvice recommendationAdvice) {
             this.recommendationAdvice = recommendationAdvice;
+        }
+
+        void setEmitToolCalls(boolean emitToolCalls) {
+            this.emitToolCalls = emitToolCalls;
+        }
+
+        void setEmitDoneEvent(boolean emitDoneEvent) {
+            this.emitDoneEvent = emitDoneEvent;
         }
 
         RecommendationRequest lastRecommendationRequest() {
@@ -627,6 +716,8 @@ class RecommendationControllerTest {
         void reset() {
             recommendationAdvice = new RecommendationAdvice("暂时没有合适的推荐。", List.of());
             lastRecommendationRequest = null;
+            emitToolCalls = true;
+            emitDoneEvent = true;
         }
 
         @Override
@@ -636,23 +727,12 @@ class RecommendationControllerTest {
 
         @Override
         public RecommendationAdvice recommend(RecommendationRequest request) {
-            lastRecommendationRequest = request;
-            return recommendationAdvice;
+            throw new UnsupportedOperationException("non-stream recommendation requests are disabled");
         }
 
         @Override
         public void streamRecommend(RecommendationRequest request, Consumer<RecommendationStreamEvent> eventConsumer) {
             lastRecommendationRequest = request;
-            int rank = 1;
-            for (RecommendationChoice choice : recommendationAdvice.choices()) {
-                Map<String, Object> arguments = new LinkedHashMap<>();
-                arguments.put("poiId", choice.poiId());
-                arguments.put("reason", choice.reason());
-                arguments.put("rank", rank++);
-                eventConsumer.accept(new RecommendationStreamEvent("tool.call", Map.of(
-                        "toolName", "show_restaurant_card",
-                        "arguments", arguments)));
-            }
             String answer = recommendationAdvice.answer();
             int chunkSize = 24;
             for (int start = 0; start < answer.length(); start += chunkSize) {
@@ -661,7 +741,21 @@ class RecommendationControllerTest {
                         "delta", answer.substring(start, end))));
             }
             eventConsumer.accept(new RecommendationStreamEvent("answer.done", Map.of("answer", answer)));
-            eventConsumer.accept(new RecommendationStreamEvent("done", Map.of("finishReason", "stop")));
+            if (emitToolCalls) {
+                int rank = 1;
+                for (RecommendationChoice choice : recommendationAdvice.choices()) {
+                    Map<String, Object> arguments = new LinkedHashMap<>();
+                    arguments.put("poiId", choice.poiId());
+                    arguments.put("reason", choice.reason());
+                    arguments.put("rank", rank++);
+                    eventConsumer.accept(new RecommendationStreamEvent("tool.call", Map.of(
+                            "toolName", "show_restaurant_card",
+                            "arguments", arguments)));
+                }
+            }
+            if (emitDoneEvent) {
+                eventConsumer.accept(new RecommendationStreamEvent("done", Map.of("finishReason", "stop")));
+            }
         }
     }
 }

@@ -5,19 +5,8 @@ from typing import Any, Dict, List, Optional
 
 from openai import APIConnectionError, APITimeoutError, APIStatusError, OpenAI
 
-from app.config import AISettings
-
-
-class ModelServiceError(RuntimeError):
-    pass
-
-
-class ModelTimeoutError(ModelServiceError):
-    pass
-
-
-class ModelResponseError(ModelServiceError):
-    pass
+from app.core.config import AISettings
+from app.core.exceptions import ModelResponseError, ModelServiceError, ModelTimeoutError
 
 
 @dataclass(frozen=True)
@@ -76,13 +65,7 @@ class OpenAICompatibleClient(StructuredModelClient):
         )
 
     def generate_json(self, system_prompt: str, user_prompt: str) -> Dict[str, Any]:
-        if not self.settings.api_key:
-            raise ModelServiceError("OPENAI_API_KEY is not configured")
-        if not self.settings.base_url:
-            raise ModelServiceError("OPENAI_BASE_URL is not configured")
-        if not self.settings.model:
-            raise ModelServiceError("OPENAI_MODEL is not configured")
-
+        self._ensure_configured()
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
@@ -151,42 +134,7 @@ class OpenAICompatibleClient(StructuredModelClient):
         tool_outputs: Optional[List[Dict[str, Any]]] = None,
     ) -> str:
         self._ensure_configured()
-        messages: List[Dict[str, Any]] = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ]
-        if tool_calls:
-            messages.append(
-                {
-                    "role": "assistant",
-                    "content": "",
-                    "tool_calls": [
-                        {
-                            "id": tool_call.id,
-                            "type": "function",
-                            "function": {
-                                "name": tool_call.name,
-                                "arguments": json.dumps(tool_call.arguments, ensure_ascii=False),
-                            },
-                        }
-                        for tool_call in tool_calls
-                    ],
-                }
-            )
-        if tool_calls and tool_outputs:
-            output_by_call_id = {output["toolCallId"]: output for output in tool_outputs if output.get("toolCallId")}
-            for tool_call in tool_calls:
-                output = output_by_call_id.get(tool_call.id)
-                if output is None:
-                    continue
-                messages.append(
-                    {
-                        "role": "tool",
-                        "tool_call_id": tool_call.id,
-                        "content": json.dumps(output, ensure_ascii=False),
-                    }
-                )
-
+        messages = self._build_messages(system_prompt, user_prompt, tool_calls, tool_outputs)
         completion = self._create_chat_completion(messages=messages)
         return self._extract_content(completion)
 
@@ -198,41 +146,7 @@ class OpenAICompatibleClient(StructuredModelClient):
         tool_outputs: Optional[List[Dict[str, Any]]] = None,
     ):
         self._ensure_configured()
-        messages: List[Dict[str, Any]] = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ]
-        if tool_calls:
-            messages.append(
-                {
-                    "role": "assistant",
-                    "content": "",
-                    "tool_calls": [
-                        {
-                            "id": tool_call.id,
-                            "type": "function",
-                            "function": {
-                                "name": tool_call.name,
-                                "arguments": json.dumps(tool_call.arguments, ensure_ascii=False),
-                            },
-                        }
-                        for tool_call in tool_calls
-                    ],
-                }
-            )
-        if tool_calls and tool_outputs:
-            output_by_call_id = {output["toolCallId"]: output for output in tool_outputs if output.get("toolCallId")}
-            for tool_call in tool_calls:
-                output = output_by_call_id.get(tool_call.id)
-                if output is None:
-                    continue
-                messages.append(
-                    {
-                        "role": "tool",
-                        "tool_call_id": tool_call.id,
-                        "content": json.dumps(output, ensure_ascii=False),
-                    }
-                )
+        messages = self._build_messages(system_prompt, user_prompt, tool_calls, tool_outputs)
 
         try:
             stream = self.client.chat.completions.create(
@@ -257,6 +171,50 @@ class OpenAICompatibleClient(StructuredModelClient):
             raise ModelServiceError(str(exc)) from exc
         except Exception as exc:
             raise ModelServiceError(str(exc)) from exc
+
+    def _build_messages(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        tool_calls: Optional[List[ModelToolCall]] = None,
+        tool_outputs: Optional[List[Dict[str, Any]]] = None,
+    ) -> List[Dict[str, Any]]:
+        messages: List[Dict[str, Any]] = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
+        if tool_calls:
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [
+                        {
+                            "id": tool_call.id,
+                            "type": "function",
+                            "function": {
+                                "name": tool_call.name,
+                                "arguments": json.dumps(tool_call.arguments, ensure_ascii=False),
+                            },
+                        }
+                        for tool_call in tool_calls
+                    ],
+                }
+            )
+        if tool_calls and tool_outputs:
+            output_by_call_id = {output["toolCallId"]: output for output in tool_outputs if output.get("toolCallId")}
+            for tool_call in tool_calls:
+                output = output_by_call_id.get(tool_call.id)
+                if output is None:
+                    continue
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "content": json.dumps(output, ensure_ascii=False),
+                    }
+                )
+        return messages
 
     def _create_without_json_mode(self, messages: List[Dict[str, str]]) -> Any:
         return self._create_chat_completion(messages=messages)

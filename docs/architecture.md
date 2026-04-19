@@ -198,7 +198,7 @@ flowchart TD
 ### 4.4 Infrastructure
 
 - `integration/amap/*`：高德调用、DTO 清洗、错误转换
-- `integration/ai/*`：调用内部 AI Service，封装同步 / 流式、工具调用与 SSE 解析
+- `infrastructure/ai/*`：调用内部 AI Service，封装同步 / 流式、工具调用与 SSE 解析
 - `repository/*`：JPA 持久化访问
 
 ---
@@ -209,11 +209,15 @@ flowchart TD
 backend/src/main/java/com/zjgsu/whattoeat/
 ├── controller/
 ├── service/
-│   ├── application/
-│   └── domain/
+│   └── application/          # 评论、画像、反馈等仍在该目录
+├── application/
+│   └── recommendation/       # 推荐主链路已迁到此处
+├── domain/
+│   └── recommendation/       # 推荐领域规则
 ├── integration/
-│   ├── amap/
-│   └── ai/
+│   └── amap/
+├── infrastructure/
+│   └── ai/                   # AI 集成已迁到此处
 ├── repository/
 ├── model/
 │   ├── dto/
@@ -224,7 +228,11 @@ backend/src/main/java/com/zjgsu/whattoeat/
 
 新增且必须纳入架构认知的模块：
 
-- `integration/ai/`
+- `service/application/RestaurantReview*`
+- `service/application/RestaurantMetricAggregationService`
+- `application/recommendation/`
+- `domain/recommendation/`
+- `infrastructure/ai/`
 - `RestaurantReviewEntity`
 - `RestaurantMetricSnapshotEntity`
 - `RestaurantReviewRepository`
@@ -278,15 +286,21 @@ backend/src/main/java/com/zjgsu/whattoeat/
 
 ### 6.4 AI 推荐问答
 
-1. 前端调用 `/api/v1/recommendations/ask` 或 `/ask/stream`
+1. 前端可调用 `/api/v1/recommendations/ask` 或 `/ask/stream`，但正式聊天链路应优先 `/ask/stream`
 2. 后端从高德拉取候选池
 3. 可选应用 `userId` 对应黑名单过滤
 4. 合并 `restaurant_metric_snapshot` 形成增强候选卡
-5. 把候选卡送入 AI Service
-6. AI 只能从给定候选中做推荐
-7. 后端返回：
+5. 后端基于服务端 `Clock` 自动补充轻量时间语境（日期、星期、当前时段），前端无需再额外传时间/日期/天气字段
+6. 把候选卡送入 AI Service
+7. AI 只能从给定候选中做推荐
+8. 后端返回：
    - 同步：`answer + recommendations[]`
    - 流式：`session.created / retrieval.* / recommendation.card / answer.* / done / error`
+
+补充说明：
+
+- 当前推荐主链路对 AI Service 使用的是流式推荐接口；同步接口也是由服务端聚合流式结果得到
+- 因此前端若要做正式聊天体验，应优先接 `/ask/stream`
 
 ---
 

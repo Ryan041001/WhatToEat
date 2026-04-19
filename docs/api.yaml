@@ -235,7 +235,7 @@ paths:
     post:
       tags: [Recommendations]
       summary: 基于当前餐厅候选做 AI 流式推荐
-      description: 请求体与 /ask 一致，也支持 context 连续追问。
+      description: 请求体与 /ask 一致，也支持 context 连续追问。后端会自动注入服务端当前日期、星期和时间段语境；小程序正式接入应优先使用该接口。返回的 `recommendation.card` 与 `answer.*` 来自同一批已选餐厅，卡片事件可能先于回答增量到达。
       operationId: askRecommendationStream
       requestBody:
         required: true
@@ -257,11 +257,20 @@ paths:
                   event:retrieval.started
                   data:{"candidateCount":12}
 
+                  event:retrieval.completed
+                  data:{"candidateCount":12}
+
                   event:recommendation.card
-                  data:{"rank":1,"poiId":"poi-noodle","name":"兰州拉面"}
+                  data:{"rank":1,"poiId":"poi-noodle","name":"兰州拉面","address":"文一路 88 号","category":"面馆","distance":180,"avgRating":4.7,"reviewCount":16,"avgPerCapitaPrice":22,"aiTags":["热汤","出餐快"],"matchReason":"暖胃、离得近，适合当前时段尽快吃上一顿"}
+
+                  event:recommendation.card
+                  data:{"rank":2,"poiId":"poi-rice","name":"黄焖鸡米饭","address":"学院路 66 号","category":"快餐","distance":260,"avgRating":4.5,"reviewCount":11,"avgPerCapitaPrice":26,"aiTags":["下饭","快餐"],"matchReason":"价格稳定，适合工作日快速解决正餐"}
 
                   event:answer.delta
-                  data:{"delta":"推荐你去兰州拉面"}
+                  data:{"delta":"如果你现在想吃得热乎一点，兰州拉面和黄焖鸡米饭都比较稳妥。"}
+
+                  event:answer.done
+                  data:{"answer":"如果你现在想吃得热乎一点，兰州拉面和黄焖鸡米饭都比较稳妥：一个暖胃，一个下饭。"}
 
                   event:done
                   data:{"finishReason":"stop"}

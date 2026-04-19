@@ -400,10 +400,12 @@ curl 'http://127.0.0.1:8080/api/v1/recommendations/cards?longitude=120.35&latitu
 结果语义说明：
 
 - 返回 `answer` 和结构化 `recommendations` 列表
+- 后端会自动把服务端当前时间注入 AI 上下文，包括日期、星期和当前时段；前端**不要**再额外传日期、星期、早中晚餐标签或天气字段
 - 后端只会从当前候选集中返回推荐餐厅，前端不要从 `answer` 文本里自行解析店名
 - `context.rejectedPoiIds` 会参与本轮过滤，适合做“换一家，但保持条件”
 - 当传入 `userId` 时，后端会自动参考最近吃过、近期反馈、口味画像来增强 AI 推荐上下文
 - 若因为“最近吃过 / 最近明确拒绝”过滤后仍有可用候选，后端会优先保留这些过滤；只有完全无候选时才回退到较宽松候选集
+- 该接口是对外同步兼容接口；后端调用 AI Service 时仍走内部流式推荐链路，再在服务端聚合同步结果，因此 backend -> ai-service 仍然是**只请求流式**
 - `userId` 非正整数返回 `400 / 1001`，用户不存在返回 `404 / 1002`
 - 高德或 AI 上游异常分别返回 `502 / 504`
 
@@ -424,8 +426,21 @@ curl 'http://127.0.0.1:8080/api/v1/recommendations/cards?longitude=120.35&latitu
 - `done`
 - `error`
 
+主要事件数据字段：
+
+- `session.created`：`messageId`、`requestId`
+- `retrieval.started` / `retrieval.completed`：`candidateCount`
+- `recommendation.card`：`rank`、`poiId`、`name`、`address`、`category`、`distance`、`avgRating`、`reviewCount`、`avgPerCapitaPrice`、`aiTags`、`matchReason`
+- `answer.delta`：`delta`
+- `answer.done`：`answer`
+- `done`：`finishReason`
+- `error`：`code`、`message`
+
 结果语义说明：
 
+- 后端同样会自动注入服务端当前日期、星期和时间段语境；前端只需传问题、坐标、候选上下文，不要自行拼接时间提示词
+- 对于小程序正式接入，`/ask/stream` 应作为默认且唯一的 AI 请求入口；如果需要“进入对话页就看到输出”，可以在餐厅列表和定位拿到后提前发起流式请求
+- `recommendation.card` 与最终回答使用的是同一批已选餐厅；为了保证卡片和文本一致，流里卡片可能先于 `answer.delta` 出现
 - `tool.call` 属于服务端内部协作语义，不作为当前前端对外契约
 - 收到 `error` 事件后，流可能直接结束，前端不应继续等待 `done`
 - 前端应忽略未来新增但暂未识别的事件类型，以保证向前兼容

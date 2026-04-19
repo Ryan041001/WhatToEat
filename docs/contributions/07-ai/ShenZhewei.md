@@ -2,7 +2,7 @@
 
 姓名：沈哲伟  
 学号：2312190313  
-日期：2026-04-18
+日期：2026-04-19
 
 ## 我完成的工作
 
@@ -24,7 +24,9 @@
 - [x] 实现评论标签与摘要生成能力
 - [x] 实现 AI 推荐问答同步接口
 - [x] 实现 AI 推荐问答流式接口
-- [x] 在 backend 中新增 AI 集成层（`integration/ai/*`）
+- [x] 把 backend -> ai-service 推荐主链路收敛为仅请求流式能力
+- [x] 修复流式推荐里“卡片和回答可能不一致”的根因
+- [x] 在 backend 中新增 AI 基础设施层（`infrastructure/ai/*`）
 - [x] 在推荐链路中接入 AI 推荐能力
 - [x] 在评论链路中接入 AI 标签摘要能力
 - [x] 为 AI 推荐补充 refine / 连续追问上下文（`context`）
@@ -33,8 +35,9 @@
 - [x] 实现轻量口味画像接口（`preference-profile`）
 - [x] 给详情页补充 `recommendedScenarios` 场景解释字段
 - [x] 补充 AI 失败映射与超时映射（`3004 / 3005`）
+- [x] 去掉 backend 内部 AI 流式短超时，补齐流式完成兜底
 - [x] 修复 AI 摘要失败时旧摘要残留的一致性问题
-- [x] 补充 API 文档、前端对接文档与项目级 AGENTS 说明
+- [x] 补充 API 文档、前端对接文档、AI 特性文档与项目级 AGENTS 说明
 
 ### 4. 关键实现说明
 
@@ -60,7 +63,14 @@
 - `aiSummary`
 - `derivedTags`
 - 然后把增强候选集发给 AI Service
-- AI Service 使用 tool call 思路输出结构化推荐结果
+- AI Service 先确定结构化推荐结果，再基于同一批已选餐厅流式输出回答
+
+这里有一个这轮修过的关键点：
+
+- 旧实现里，流式链路会先输出回答，再尝试二次决定推荐卡片
+- 这会导致前端拿不到稳定 `recommendation.card`，或者卡片和回答不严格对应
+- 现在已经改成“先定卡片，再流式出答案”，因此卡片和文本会引用同一批餐厅
+- backend 对前端只暴露 `recommendation.card / answer.* / done / error` 这些稳定事件，不暴露内部 `tool.call`
 
 这次我进一步把推荐从“一次性问答”推进到“轻量 AI native 推荐闭环”：
 
@@ -92,6 +102,9 @@
   - `answer.done`
   - `done`
   - `error`
+- 正式前端聊天链路应优先使用该接口
+- 即使对外仍保留同步 `/ask`，backend 内部也已经统一通过流式推荐链路聚合同步结果
+- 实际 Docker 联调中已经验证过：backend 可真实输出 `session.created -> retrieval.* -> recommendation.card -> answer.* -> done`
 
 #### 4.4 一致性与错误处理
 
@@ -139,10 +152,10 @@
 ### backend
 
 - `backend/src/main/java/com/zjgsu/whattoeat/config/AiServiceProperties.java`
-- `backend/src/main/java/com/zjgsu/whattoeat/integration/ai/AiAssistantClient.java`
-- `backend/src/main/java/com/zjgsu/whattoeat/integration/ai/AiHttpClient.java`
-- `backend/src/main/java/com/zjgsu/whattoeat/service/application/RecommendationApplicationService.java`
-- `backend/src/main/java/com/zjgsu/whattoeat/service/application/RecommendationInsightHeuristics.java`
+- `backend/src/main/java/com/zjgsu/whattoeat/infrastructure/ai/AiAssistantClient.java`
+- `backend/src/main/java/com/zjgsu/whattoeat/infrastructure/ai/AiHttpClient.java`
+- `backend/src/main/java/com/zjgsu/whattoeat/application/recommendation/RecommendationApplicationService.java`
+- `backend/src/main/java/com/zjgsu/whattoeat/domain/recommendation/RecommendationInsightHeuristics.java`
 - `backend/src/main/java/com/zjgsu/whattoeat/service/application/RestaurantReviewAiApplicationService.java`
 - `backend/src/main/java/com/zjgsu/whattoeat/service/application/RestaurantReviewQueryApplicationService.java`
 - `backend/src/main/java/com/zjgsu/whattoeat/service/application/UserChoiceHistoryApplicationService.java`
@@ -158,18 +171,21 @@
 ### ai-service
 
 - `ai-service/app/main.py`
-- `ai-service/app/config.py`
-- `ai-service/app/schemas.py`
-- `ai-service/app/clients/openai_compatible.py`
-- `ai-service/app/services/recommendation.py`
-- `ai-service/app/services/tagging.py`
+- `ai-service/app/api/routes/recommendation.py`
+- `ai-service/app/api/routes/tagging.py`
+- `ai-service/app/core/config.py`
+- `ai-service/app/infrastructure/llm/openai_compatible.py`
+- `ai-service/app/domain/recommendation/service.py`
+- `ai-service/app/domain/tagging/service.py`
 
 ### 文档
 
 - `docs/ai-feature.md`
 - `docs/api.md`
 - `docs/api.yaml`
+- `docs/frontend.md`
 - `docs/frontend-ai-review-integration.md`
+- `README.md`
 - `AGENTS.md`
 
 ---

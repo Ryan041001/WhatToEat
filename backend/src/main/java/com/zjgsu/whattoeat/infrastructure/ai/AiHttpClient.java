@@ -1,4 +1,4 @@
-package com.zjgsu.whattoeat.integration.ai;
+package com.zjgsu.whattoeat.infrastructure.ai;
 
 import com.zjgsu.whattoeat.common.error.BusinessException;
 import com.zjgsu.whattoeat.common.error.ErrorCode;
@@ -9,9 +9,6 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.ResourceAccessException;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientResponseException;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
@@ -21,8 +18,11 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -31,24 +31,20 @@ import java.util.stream.Stream;
 public class AiHttpClient implements AiAssistantClient {
 
     private static final String REVIEW_TAGS_PATH = "/internal/review-tags";
-    private static final String RECOMMEND_PATH = "/internal/recommend";
     private static final String RECOMMEND_STREAM_PATH = "/internal/recommend/stream";
 
-    private final RestClient restClient;
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final AiServiceProperties properties;
     private final MeterRegistry meterRegistry;
 
     public AiHttpClient(
-            RestClient.Builder builder,
+            org.springframework.web.client.RestClient.Builder builder,
             AiServiceProperties properties,
             MeterRegistry meterRegistry) {
-        this.restClient = builder
-                .baseUrl(properties.getBaseUrl())
-                .build();
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(properties.getTimeoutSeconds()))
+                .version(HttpClient.Version.HTTP_1_1)
                 .build();
         this.objectMapper = new ObjectMapper();
         this.properties = properties;
@@ -62,7 +58,48 @@ public class AiHttpClient implements AiAssistantClient {
 
     @Override
     public RecommendationAdvice recommend(RecommendationRequest request) {
-        return post(RECOMMEND_PATH, request, RecommendationAdvice.class, "recommend");
+        Timer.Sample sample = Timer.start(meterRegistry);
+        try {
+            StringBuilder streamedAnswer = new StringBuilder();
+            Map<Integer, RecommendationChoice> rankedChoices = new TreeMap<>();
+            List<RecommendationChoice> unrankedChoices = new ArrayList<>();
+            final String[] finalAnswer = {null};
+
+            streamRecommend(request, upstreamEvent -> {
+                switch (upstreamEvent.name()) {
+                    case "answer.delta" -> appendAnswerDelta(streamedAnswer, upstreamEvent.data());
+                    case "answer.done" -> finalAnswer[0] = extractAnswer(upstreamEvent.data(), streamedAnswer);
+                    case "tool.call" -> collectRecommendationChoice(
+                            upstreamEvent.data(),
+                            rankedChoices,
+                            unrankedChoices);
+                    case "error" -> throw new BusinessException(ErrorCode.AI_UPSTREAM_ERROR);
+                    default -> {
+                        // Ignore unknown upstream events for forward compatibility.
+                    }
+                }
+            });
+
+            List<RecommendationChoice> orderedChoices = new ArrayList<>(rankedChoices.values());
+            orderedChoices.addAll(unrankedChoices);
+            incrementCallCounter("recommend", "success");
+            return new RecommendationAdvice(
+                    finalAnswer[0] == null || finalAnswer[0].isBlank()
+                            ? streamedAnswer.toString().trim()
+                            : finalAnswer[0],
+                    List.copyOf(orderedChoices));
+        } catch (BusinessException e) {
+            incrementCallCounter("recommend", e.getErrorCode().name());
+            throw e;
+        } catch (Exception e) {
+            ErrorCode errorCode = isTimeoutException(e) ? ErrorCode.AI_UPSTREAM_TIMEOUT : ErrorCode.AI_UPSTREAM_ERROR;
+            incrementCallCounter("recommend", errorCode.name());
+            throw new BusinessException(errorCode, e.getMessage());
+        } finally {
+            sample.stop(Timer.builder("ai.client.latency")
+                    .tag("operation", "recommend")
+                    .register(meterRegistry));
+        }
     }
 
     @Override
@@ -71,7 +108,6 @@ public class AiHttpClient implements AiAssistantClient {
         try {
             HttpRequest httpRequest = HttpRequest.newBuilder()
                     .uri(URI.create(properties.getBaseUrl() + RECOMMEND_STREAM_PATH))
-                    .timeout(Duration.ofSeconds(properties.getTimeoutSeconds()))
                     .header("Content-Type", "application/json")
                     .header("Accept", "text/event-stream")
                     .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(request)))
@@ -107,32 +143,44 @@ public class AiHttpClient implements AiAssistantClient {
     private <T> T post(String path, Object request, Class<T> responseType, String operation) {
         Timer.Sample sample = Timer.start(meterRegistry);
         try {
-            T response = restClient.post()
-                    .uri(path)
-                    .body(request)
-                    .retrieve()
-                    .body(responseType);
-            if (response == null) {
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                    .uri(URI.create(properties.getBaseUrl() + path))
+                    .timeout(Duration.ofSeconds(properties.getTimeoutSeconds()))
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(request)))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 504) {
+                incrementCallCounter(operation, ErrorCode.AI_UPSTREAM_TIMEOUT.name());
+                throw new BusinessException(ErrorCode.AI_UPSTREAM_TIMEOUT);
+            }
+            if (response.statusCode() >= 400) {
+                incrementCallCounter(operation, ErrorCode.AI_UPSTREAM_ERROR.name());
+                throw new BusinessException(ErrorCode.AI_UPSTREAM_ERROR, response.body());
+            }
+            if (response.body() == null || response.body().isBlank()) {
                 throw new BusinessException(ErrorCode.AI_UPSTREAM_ERROR);
             }
+
+            T parsed = objectMapper.readValue(response.body(), responseType);
             incrementCallCounter(operation, "success");
-            return response;
+            return parsed;
         } catch (BusinessException e) {
-            incrementCallCounter(operation, e.getErrorCode().name());
             throw e;
-        } catch (RestClientResponseException e) {
-            ErrorCode errorCode = e.getStatusCode().value() == 504
-                    ? ErrorCode.AI_UPSTREAM_TIMEOUT
-                    : ErrorCode.AI_UPSTREAM_ERROR;
-            incrementCallCounter(operation, errorCode.name());
-            throw new BusinessException(errorCode, e.getMessage());
-        } catch (ResourceAccessException e) {
+        } catch (IOException e) {
+            incrementCallCounter(operation, ErrorCode.AI_UPSTREAM_ERROR.name());
+            throw new BusinessException(ErrorCode.AI_UPSTREAM_ERROR, e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             ErrorCode errorCode = isTimeoutException(e) ? ErrorCode.AI_UPSTREAM_TIMEOUT : ErrorCode.AI_UPSTREAM_ERROR;
             incrementCallCounter(operation, errorCode.name());
             throw new BusinessException(errorCode, e.getMessage());
         } catch (Exception e) {
-            incrementCallCounter(operation, ErrorCode.AI_UPSTREAM_ERROR.name());
-            throw new BusinessException(ErrorCode.AI_UPSTREAM_ERROR, e.getMessage());
+            ErrorCode errorCode = isTimeoutException(e) ? ErrorCode.AI_UPSTREAM_TIMEOUT : ErrorCode.AI_UPSTREAM_ERROR;
+            incrementCallCounter(operation, errorCode.name());
+            throw new BusinessException(errorCode, e.getMessage());
         } finally {
             sample.stop(Timer.builder("ai.client.latency")
                     .tag("operation", operation)
@@ -198,5 +246,48 @@ public class AiHttpClient implements AiAssistantClient {
                 : objectMapper.readValue(currentData.toString(), new TypeReference<LinkedHashMap<String, Object>>() {
                 });
         eventConsumer.accept(new RecommendationStreamEvent(eventName, data));
+    }
+
+    @SuppressWarnings("unchecked")
+    private void collectRecommendationChoice(
+            Map<String, Object> upstreamData,
+            Map<Integer, RecommendationChoice> rankedChoices,
+            List<RecommendationChoice> unrankedChoices) {
+        Object toolName = upstreamData.get("toolName");
+        if (!(toolName instanceof String tool) || !"show_restaurant_card".equals(tool)) {
+            return;
+        }
+        Object argumentsObject = upstreamData.get("arguments");
+        if (!(argumentsObject instanceof Map<?, ?> rawArguments)) {
+            return;
+        }
+        Map<String, Object> arguments = (Map<String, Object>) rawArguments;
+        Object poiIdValue = arguments.get("poiId");
+        if (!(poiIdValue instanceof String poiId) || poiId.isBlank()) {
+            return;
+        }
+        String reason = arguments.get("reason") instanceof String text ? text : null;
+        RecommendationChoice choice = new RecommendationChoice(poiId, reason);
+        Object rankValue = arguments.get("rank");
+        if (rankValue instanceof Number number && number.intValue() > 0) {
+            rankedChoices.putIfAbsent(number.intValue(), choice);
+            return;
+        }
+        unrankedChoices.add(choice);
+    }
+
+    private void appendAnswerDelta(StringBuilder streamedAnswer, Map<String, Object> upstreamData) {
+        Object delta = upstreamData.get("delta");
+        if (delta instanceof String text) {
+            streamedAnswer.append(text);
+        }
+    }
+
+    private String extractAnswer(Map<String, Object> upstreamData, StringBuilder streamedAnswer) {
+        Object answer = upstreamData.get("answer");
+        if (answer instanceof String text && !text.isBlank()) {
+            return text;
+        }
+        return streamedAnswer.toString().trim();
     }
 }

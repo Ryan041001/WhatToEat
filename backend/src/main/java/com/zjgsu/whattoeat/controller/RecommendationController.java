@@ -2,7 +2,7 @@ package com.zjgsu.whattoeat.controller;
 
 import com.zjgsu.whattoeat.common.error.BusinessException;
 import com.zjgsu.whattoeat.common.api.ApiResponse;
-import com.zjgsu.whattoeat.service.application.RecommendationApplicationService;
+import com.zjgsu.whattoeat.application.recommendation.RecommendationApplicationService;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -27,6 +28,8 @@ import java.util.concurrent.CompletableFuture;
 @RequestMapping("/api/v1/recommendations")
 @Validated
 public class RecommendationController {
+
+    private static final long STREAM_TIMEOUT_MILLIS = Duration.ofMinutes(5).toMillis();
 
     private final RecommendationApplicationService service;
 
@@ -75,7 +78,7 @@ public class RecommendationController {
     public SseEmitter askStream(@Validated @RequestBody AskRecommendationRequest request) {
         int radius = request.radius() == null ? 1000 : request.radius();
         int size = request.size() == null ? 3 : request.size();
-        SseEmitter emitter = new SseEmitter(60_000L);
+        SseEmitter emitter = new SseEmitter(STREAM_TIMEOUT_MILLIS);
         String requestId = UUID.randomUUID().toString();
         String messageId = UUID.randomUUID().toString();
 

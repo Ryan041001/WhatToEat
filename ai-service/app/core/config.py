@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 
 def load_environment() -> None:
-    service_root = Path(__file__).resolve().parents[1]
+    service_root = Path(__file__).resolve().parents[2]
     repo_root = service_root.parent
     load_dotenv(repo_root / ".env")
     load_dotenv(service_root / ".env", override=True)

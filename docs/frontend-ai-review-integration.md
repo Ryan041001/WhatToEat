@@ -1,6 +1,6 @@
 # 前端对接文档：评论、聚合摘要与 AI 推荐增强
 
-日期：2026-04-18
+日期：2026-04-19
 
 本文档面向微信小程序前端开发，基于当前仓库里的 **后端接口变更** 与 **前端实际代码进度**，补充评论、评分、人均价格、排序增强、AI 推荐问答的对接要求，并重点补齐联调阶段的鲁棒性约束。
 
@@ -29,6 +29,10 @@
    - `frontend/pages/restaurants/*`
    - `frontend/pages/swipe/*`
    - `frontend/pages/detail/*`
+
+4. **当前还没有独立的 AI 对话页 / 推荐聊天页**
+   - `frontend/pages/` 下目前没有专门承载 AI 对话流式渲染的页面或请求模块
+   - 本文档里关于 AI 问答的内容，当前属于“后续正式联调契约”，不是“前端已经做完”
 
 ### 0.2 当前仍是旧数据模型的页面
 
@@ -103,6 +107,7 @@
 4. 前端必须把“接口空态”和“接口失败”区分开，不能把所有 404 / 空数组都当异常。
 5. 流式场景中，前端只消费后端定义的结构化事件，不直接消费模型私有协议。
 6. 页面渲染应优先使用 `poiId` 作为稳定主键，而不是临时生成的本地 id。
+7. AI 推荐的时间语境由后端自动补齐；前端不要自行计算日期、星期、早中晚餐标签，也不要为了推荐再接天气。
 
 ---
 
@@ -135,7 +140,7 @@
 
 目标：列表页真正展示评分、人均、评论数和 AI 标签，并接入后端排序。
 
-### P3：AI 同步 / 流式问答
+### P3：AI 流式问答
 
 目标：提供真正可用的推荐问答，而不是只在前端拼文案。
 
@@ -280,6 +285,22 @@ payload
 - 统一清 token
 - 只做一次跳转
 - 页面侧保留一次“本页请求因登录失效被中断”的状态，避免用户误以为是空数据
+- 页面侧收到 `401` 后尽快停止后续依赖请求
+
+### 4.5 流式请求不要复用当前通用 client
+
+当前 `frontend/api/client.js` 只适合普通 CRUD 请求，不具备以下能力：
+
+- `enableChunked: true`
+- `responseType: 'arraybuffer'`
+- `requestTask.onChunkReceived()`
+- 原始 chunk 缓冲与增量解析
+
+因此 `ask/stream` 不要强塞进现有 `client.get/post` 风格封装，建议单独做流式模块，例如：
+
+- `frontend/api/recommendation-chat.js`
+
+这份独立模块当前在前端仓库里**还不存在**，后续正式接入 AI 对话页时需要新增。
 
 ---
 
@@ -289,7 +310,7 @@ payload
 
 ### 5.1 AI refine（换一家，但保持条件）
 
-同步 ask 与流式 ask 都统一按下面方式组织请求：
+当前建议后续前端正式接入时**只走流式 `ask/stream`**。请求体按下面结构组织即可：
 
 ```json
 {
@@ -320,6 +341,7 @@ payload
    - 把刚刚明确拒绝的餐厅放进 `context.rejectedPoiIds`
    - 把本轮快捷语句作为新的 `question`
 3. 用户说“在健身”“最近减脂”“想吃高蛋白”时，前端可把这些词直接塞进 `userSignals`
+4. 不要额外传“今天星期几”“现在下午三点”“适合下午茶”这类时间提示；后端会用服务端时钟自动补到 AI 上下文里
 
 ### 5.2 推荐反馈闭环
 
@@ -402,32 +424,17 @@ payload
    - 否则“最近吃过，先别推”永远不会变成真实能力。
 4. **不要忽略 `recommendedScenarios`。**
    - 否则详情页失去最自然的 AI native 解释层。
-- 页面侧收到 401 后尽快停止后续依赖请求
-
-### 4.5 流式请求不要复用当前通用 client
-
-`ask/stream` 需要：
-
-- `enableChunked: true`
-- `responseType: 'arraybuffer'`
-- `onChunkReceived()`
-
-这类请求建议做独立模块，例如：
-
-- `frontend/api/recommendation-chat.js`
-
-不要强塞进现有 CRUD 风格的 `client.get/post`。
 
 ---
 
-## 5. 详情页改造
+## 6. 详情页改造
 
 当前页面参考：
 
 - `frontend/pages/detail/detail.js`
 - `frontend/pages/detail/detail.wxml`
 
-### 5.1 当前现状
+### 6.1 当前现状
 
 当前详情页仍是本地 demo 方案：
 
@@ -436,7 +443,7 @@ payload
 - 没有评分、人均、聚合摘要
 - 没有“当前用户评论”和“公开评论”区分
 
-### 5.2 目标能力
+### 6.2 目标能力
 
 详情页应改成四块数据：
 
@@ -445,7 +452,7 @@ payload
 3. 公开评论列表
 4. 当前餐厅聚合摘要
 
-### 5.3 推荐加载顺序
+### 6.3 推荐加载顺序
 
 建议：
 
@@ -456,7 +463,7 @@ payload
    - 登录态下再请求 `GET /api/v1/users/{userId}/restaurant-reviews/{poiId}`
 3. 三块数据分别落状态，不要相互阻塞
 
-### 5.4 当前用户评论回显
+### 6.4 当前用户评论回显
 
 接口：
 
@@ -479,7 +486,7 @@ payload
 - 不弹系统错误
 - 只清空表单并标记 `hasReviewed = false`
 
-### 5.5 评论表单改造
+### 6.5 评论表单改造
 
 现有表单只有文本输入，需要改为三部分：
 
@@ -497,14 +504,14 @@ payload
 - `content` 必填
 - `content.trim().length <= 1000`
 
-### 5.6 星级组件要求
+### 6.6 星级组件要求
 
 - 支持半星
 - 建议前端内部直接使用数字值：`0.5 / 1.0 / 1.5 / ... / 5.0`
 - 编辑态展示可点击星级
 - 评论列表展示只读星级
 
-### 5.7 人均价格输入要求
+### 6.7 人均价格输入要求
 
 - 字段名：`perCapitaPrice`
 - 单位：元
@@ -513,7 +520,7 @@ payload
 - 不允许负数、小数、空值
 - 建议占位文案：`例如 28`
 
-### 5.8 评论提交接口
+### 6.8 评论提交接口
 
 `PUT /api/v1/users/{userId}/restaurant-reviews/{poiId}`
 
@@ -538,7 +545,7 @@ payload
   2. 公开评论列表
   3. 当前餐厅聚合摘要
 
-### 5.9 删除当前用户评论
+### 6.9 删除当前用户评论
 
 `DELETE /api/v1/users/{userId}/restaurant-reviews/{poiId}`
 
@@ -548,7 +555,7 @@ payload
 - 删除成功后清空编辑表单
 - 同时刷新评论列表与聚合摘要
 
-### 5.10 公开评论列表
+### 6.10 公开评论列表
 
 接口：
 
@@ -568,7 +575,7 @@ payload
 - `data.items = []`
 - 展示“暂无评论”
 
-### 5.11 聚合摘要接口
+### 6.11 聚合摘要接口
 
 `GET /api/v1/restaurants/{poiId}/review-summary`
 
@@ -612,14 +619,14 @@ payload
 
 ---
 
-## 6. 列表页改造
+## 7. 列表页改造
 
 当前页面参考：
 
 - `frontend/pages/restaurants/restaurants.js`
 - `frontend/pages/restaurants/restaurants.wxml`
 
-### 6.1 当前现状
+### 7.1 当前现状
 
 当前列表页：
 
@@ -628,7 +635,7 @@ payload
 - 筛选主要依赖本地 mock / 全局缓存数据
 - 黑名单切换仍是本地状态切换
 
-### 6.2 新增展示字段
+### 7.2 新增展示字段
 
 `/api/v1/restaurants/nearby` 和 `/api/v1/restaurants/search` 现在都支持增强字段，列表页和搜索结果页应统一按同一套逻辑处理。
 
@@ -646,7 +653,7 @@ payload
 - `avgPerCapitaPrice == null`：显示 `人均待补充`
 - `aiTags.length === 0`：不展示标签区域
 
-### 6.3 排序入口改造
+### 7.3 排序入口改造
 
 列表页排序枚举建议改为后端受控值：
 
@@ -670,14 +677,14 @@ payload
 - 不要拼派生值，例如 `avg_rating`、`price_desc`
 - 传未支持值时，后端返回 `400 / 1001`
 
-### 6.4 分页停止条件
+### 7.4 分页停止条件
 
 为兼容当前增强排序实现，分页建议同时满足以下两种停止条件之一就停止继续翻页：
 
 1. 已达到 `total`
 2. 当前页 `items.length === 0`
 
-### 6.5 当前页面改造建议
+### 7.5 当前页面改造建议
 
 建议不要继续在页面里直接 parse 文案距离或推导旧字段，而是：
 
@@ -689,11 +696,11 @@ payload
 
 ---
 
-## 7. 与现有黑名单 / 登录态的兼容提醒
+## 8. 与现有黑名单 / 登录态的兼容提醒
 
 虽然本文件重点是评论和 AI 增强，但当前前端还有两个会影响联调稳定性的现实问题。
 
-### 7.1 黑名单当前仍是本地态
+### 8.1 黑名单当前仍是本地态
 
 当前：
 
@@ -711,7 +718,7 @@ payload
 - 如果本轮联调只做评论与 AI，可先在文档里明确“当前前端黑名单仍为本地态，后端推荐过滤以真实服务端黑名单为准”
 - 如果要追求真实一致性，应尽快把 `toggleBlacklist()` 切到后端接口
 
-### 7.2 登录失败时的 mock fallback 只适合开发期
+### 8.2 登录失败时的 mock fallback 只适合开发期
 
 当前 `frontend/pages/index/index.js` 在登录失败时会自动切 mock 会话。
 
@@ -728,9 +735,29 @@ payload
 
 ---
 
-## 8. AI 推荐问答接口
+## 9. AI 推荐问答接口
 
-### 8.1 同步接口
+### 9.1 接入原则
+
+后续小程序正式接入时，AI 问答建议只使用：
+
+- `POST /api/v1/recommendations/ask/stream`
+
+原因：
+
+- 用户已经明确要求 AI 请求强制走流式
+- backend -> ai-service 当前也已经收敛为流式推荐链路
+- 更适合做“进入对话页就能看到正在输出”的体验
+
+同步 `POST /api/v1/recommendations/ask` 目前仅保留为兼容接口，不建议小程序正式链路调用。
+
+另外要注意：
+
+- 后端会自动补当前日期、星期和时间段语境
+- 前端不需要额外传日期、星期、早中晚餐、下午茶、天气等字段
+- 时间段不需要做数据库规则，AI 会结合候选餐厅和当前时间自然判断
+
+### 9.2 同步接口（兼容说明）
 
 `POST /api/v1/recommendations/ask`
 
@@ -753,6 +780,7 @@ payload
 - 若传 `userId`，必须为正整数；不存在用户返回 `404 / 1002`
 - `size` 当前最大 `10`，前端建议限制在 `1 ~ 3` 或 `1 ~ 5`
 - 同步 `ask` 与流式 `ask/stream` 入参保持一致
+- 小程序正式接入不建议调用本接口；它主要用于非流式消费者或调试
 
 返回体示例：
 
@@ -777,7 +805,7 @@ payload
 }
 ```
 
-### 8.2 前端呈现建议
+### 9.3 前端呈现建议
 
 - 提供一个简短输入框或问答入口
 - 用户提交后显示：
@@ -785,8 +813,9 @@ payload
   - 对应推荐餐厅卡片
 - 卡片以 `recommendations` 为准，不要从回答文本里提取店名
 - 若页面本身已有餐厅列表，可优先按 `poiId` 做本地命中并复用已有卡片样式
+- 推荐文案应尽量短，一眼可读；首轮更适合做成“你好 + 今天星期几/当前时段 + 2 张推荐卡 + 简短理由”的结构
 
-### 8.3 流式接口
+### 9.4 流式接口
 
 `POST /api/v1/recommendations/ask/stream`
 
@@ -807,7 +836,27 @@ const requestTask = wx.request({
 });
 ```
 
-### 8.4 解析要求
+当前前端仓库里还没有专门处理这类流式请求的页面和模块，因此后续正式接入时要把“请求发起 + chunk 解析 + 消息状态维护”一起补上。
+
+推荐的首轮预热方式：
+
+1. 小程序启动后先拿定位和餐厅列表
+2. 用户进入对话入口前即可提前发起一条默认流式请求
+3. 对话页打开时直接读取已开始返回的文本和卡片，不必再等第一次请求启动
+
+默认问题建议保持简短，例如：
+
+```json
+{
+  "question": "你好，先帮我看看现在适合吃什么",
+  "longitude": 120.35,
+  "latitude": 30.31,
+  "radius": 3000,
+  "size": 2
+}
+```
+
+### 9.5 解析要求
 
 前端必须自己维护两个缓冲区：
 
@@ -822,18 +871,57 @@ const requestTask = wx.request({
 4. JSON 不完整时必须继续留在 `rawBuffer`
 5. 收到未知事件类型时应忽略而不是报错，保证向前兼容
 
-### 8.5 当前前端可见事件
+### 9.6 事件契约与前端状态处理
 
-- `session.created`
-- `retrieval.started`
-- `retrieval.completed`
-- `recommendation.card`
-- `answer.delta`
-- `answer.done`
-- `done`
-- `error`
+当前前端可见事件只有以下几类：
 
-### 8.6 推荐卡片渲染原则
+| 事件名 | `data` 格式 | 前端应如何处理 |
+|---|---|---|
+| `session.created` | `{ "messageId": "msg_xxx", "requestId": "req_xxx" }` | 初始化当前 AI 消息状态，绑定 `messageId` 与 `requestId` |
+| `retrieval.started` | `{ "candidateCount": 12 }` | 仅用于展示“正在筛选候选餐厅”之类的轻量 loading |
+| `retrieval.completed` | `{ "candidateCount": 12 }` | 标记候选检索结束，可关闭检索态 loading |
+| `recommendation.card` | `{ "rank": 1, "poiId": "...", "name": "...", "address": "...", "category": "...", "distance": 78, "avgRating": 4.6, "reviewCount": 12, "avgPerCapitaPrice": 23, "aiTags": ["快餐"], "matchReason": "..." }` | 以 `poiId` 为主键 upsert 卡片，并保留 `rank`/到达顺序 |
+| `answer.delta` | `{ "delta": "..." }` | 把增量文本追加到 `answerText` |
+| `answer.done` | `{ "answer": "..." }` | 用完整回答收口；若与增量拼接结果不同，以 `answer` 为准 |
+| `done` | `{ "finishReason": "stop" }` | 标记当前消息完成，写入 `completedAt` |
+| `error` | `{ "code": 3004, "message": "..." }` | 标记当前消息为 `interrupted` 或 `error`，但保留已经收到的文本和卡片 |
+
+补充约定：
+
+- `recommendation.card` 和最终 `answer` 来自同一批已选餐厅
+- 为了保证卡片和文本严格对应，流里卡片可能先于 `answer.delta` / `answer.done` 到达
+- 前端不要写死“必须先有文本再有卡片”的顺序
+- 收到未知事件类型时直接忽略，不要中断整条流
+
+当前真实联调中已经稳定观察到的典型顺序如下：
+
+```text
+event:session.created
+data:{"messageId":"msg_xxx","requestId":"req_xxx"}
+
+event:retrieval.started
+data:{"candidateCount":12}
+
+event:retrieval.completed
+data:{"candidateCount":12}
+
+event:recommendation.card
+data:{"rank":1,"poiId":"poi_sha_xian","name":"沙县小吃(月雅苑店)","matchReason":"距离最近（78米），品类丰富，适合晚餐时段快速解决一餐"}
+
+event:recommendation.card
+data:{"rank":2,"poiId":"poi_mi_xian","name":"过桥米线(月雅苑店)","matchReason":"过桥米线暖胃舒适，适合晚上用餐，距离仅81米"}
+
+event:answer.delta
+data:{"delta":"晚上想吃得舒服一点的话，沙县小吃和过桥米线都比较合适。"}
+
+event:answer.done
+data:{"answer":"晚上想吃得舒服一点的话，沙县小吃和过桥米线都比较合适：一个出餐快，一个暖胃。"}
+
+event:done
+data:{"finishReason":"stop"}
+```
+
+### 9.7 推荐卡片渲染原则
 
 推荐卡片字段建议：
 
@@ -852,14 +940,17 @@ const requestTask = wx.request({
 
 - 卡片必须直接用流式事件里的结构化字段渲染
 - 不要从 `answer` 文本里正则匹配餐厅名称
+- 文本区负责解释“为什么推荐”，卡片区负责承载“推荐了哪几家”；两者都以同一条流里的结构化事件为准
+- 卡片顺序以 `rank` 为主，没有 `rank` 时再退回到到达顺序
 - 同一个 `poiId` 如果重复收到，按更新处理，不重复插卡
+- 如果页面本身已有全局餐厅缓存，可按 `poiId` 关联本地图片等补充字段，但不要覆盖流里下发的 `matchReason`
 - 如果只收到了文本、没有卡片，则展示纯文本回答并保留“查看附近餐厅”兜底按钮
 
-### 8.7 失败回退策略
+### 9.8 失败处理策略
 
-前端必须支持以下回退：
+前端必须支持以下处理，但**不要回退到同步接口**：
 
-- 流式接口失败：回退到同步 `POST /api/v1/recommendations/ask`
+- 流式接口失败：保留失败态并提供“重新生成”按钮，再次发起流式请求
 - 流式中途收到 `error` 事件：
   - 读取 `code`、`message`
   - 保留已输出的文案和卡片
@@ -874,11 +965,8 @@ const requestTask = wx.request({
 - 只收到了文本没收到卡片：
   - 显示文本
   - 提供“查看候选餐厅列表”按钮
-- 同步接口返回的 `recommendations.length < size`：
-  - 按实际返回数渲染
-  - 不要前端自行补卡
 
-### 8.8 对话状态管理建议
+### 9.9 对话状态管理建议
 
 每条 AI 消息建议维护：
 
@@ -889,18 +977,24 @@ const requestTask = wx.request({
   status,        // streaming / final / interrupted / error
   answerText,
   cards,
+  retrieval,
   startedAt,
   completedAt
 }
 ```
 
+建议最少再补两个约束：
+
+- `cards` 里每一项直接保存流里收到的原始结构化字段，避免再次从 `answerText` 反推
+- 当用户点击“换一家”或快捷反馈时，直接从当前消息状态提取 `cards[].poiId`、`lastQuestion`、`lastRejectedPoiIds` 去拼下一轮 `context`
+
 这样后续做“重新生成”“复制回答”“继续追问”会更稳。
 
 ---
 
-## 9. 必做清单（按当前仓库现实落地）
+## 10. 必做清单（按当前仓库现实落地）
 
-### 9.1 P0 必做
+### 10.1 P0 必做
 
 1. `frontend/app.js` 兼容 `data.items`
 2. `frontend/app.js` 请求参数改为 `size`
@@ -908,7 +1002,7 @@ const requestTask = wx.request({
 4. 全局餐厅对象统一使用 `poiId` 作为稳定主键
 5. 成功拿到真实后端列表后，不再用 `mergeWithMockRestaurants()` 把 mock 数据混入真实列表
 
-### 9.2 P1 必做
+### 10.2 P1 必做
 
 1. 详情页删除本地评论存储读写逻辑
 2. 新增半星评分组件
@@ -917,22 +1011,22 @@ const requestTask = wx.request({
 5. 评论列表改为 `/restaurants/{poiId}/reviews`
 6. 详情页新增 `/restaurants/{poiId}/review-summary`
 
-### 9.3 P2 必做
+### 10.3 P2 必做
 
 1. 列表页支持后端排序枚举
 2. 列表页展示 `avgRating / reviewCount / avgPerCapitaPrice / aiTags`
 3. 分页与空态按后端真实语义处理
 
-### 9.4 P3 必做
+### 10.4 P3 必做
 
-1. AI 同步问答接入
-2. AI 流式问答接入
-3. 流式失败自动回退同步接口
+1. AI 流式问答接入
+2. 进入对话页前的首轮流式预热
+3. 流式失败后重试流式，不回退同步接口
 4. 结构化卡片渲染，不解析自然语言猜店名
 
 ---
 
-## 10. 一句话结论
+## 11. 一句话结论
 
 当前小程序已经具备登录、基础列表、详情、卡片滑选等页面骨架，但 **真实后端联调仍停留在“餐厅列表半接通、评论和 AI 尚未接入”的阶段**。本轮最重要的不是继续堆页面，而是先把：
 

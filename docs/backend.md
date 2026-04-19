@@ -33,11 +33,15 @@
 backend/src/main/java/com/zjgsu/whattoeat/
 ├── controller/       # 对外 REST API
 ├── service/
-│   ├── application/  # 业务编排
-│   └── domain/       # 推荐规则
+│   └── application/  # 评论、画像、反馈等能力当前仍在这里
+├── application/
+│   └── recommendation/  # 推荐业务编排（新目录）
+├── domain/
+│   └── recommendation/  # 推荐规则与启发式（新目录）
 ├── integration/
-│   ├── amap/         # 高德集成
-│   └── ai/           # AI Service 集成
+│   └── amap/            # 高德集成
+├── infrastructure/
+│   └── ai/              # AI Service 集成
 ├── repository/       # JPA Repository
 ├── model/
 │   ├── dto/
@@ -50,7 +54,9 @@ backend/src/main/java/com/zjgsu/whattoeat/
 
 - `controller/RestaurantReviewController.java`
 - `controller/RestaurantReviewSummaryController.java`
-- `integration/ai/*`
+- `infrastructure/ai/*`
+- `application/recommendation/*`
+- `domain/recommendation/*`
 - `service/application/RestaurantReview*`
 - `service/application/RestaurantMetricAggregationService`
 - `model/entity/RestaurantReviewEntity`
@@ -116,6 +122,7 @@ backend/src/main/java/com/zjgsu/whattoeat/
 - 会先校验 `userId`
 - 会应用服务端黑名单过滤
 - `ask` / `askStream` 会合并本地快照增强候选卡
+- 会基于后端 `Clock` 自动补充当前日期、星期和时段语境，前端无需自行传这类字段
 
 ### 5.3 `RestaurantReviewApplicationService`
 
@@ -181,6 +188,7 @@ backend/src/main/java/com/zjgsu/whattoeat/
   - `/internal/recommend`
   - `/internal/recommend/stream`
 - AI 只做“给定语料 / 给定候选”的推理增强，不直接替代主数据源
+- 推荐主链路当前强制走流式能力；即使对外暴露同步 `/recommendations/ask`，backend 内部也会通过流式结果聚合同步响应
 
 ### 7.3 当前 AI Service 形态
 
@@ -253,6 +261,9 @@ docker compose --env-file .env up --build
 
 4. **前端当前本地黑名单与服务端黑名单可能不一致**
    - 后端推荐只认服务端真实黑名单
+5. **正式聊天接入应优先使用流式接口**
+   - 推荐页未来应直接接 `/recommendations/ask/stream`
+   - 如果要做“进入会话页就看到输出”，可以在拿到定位和候选列表后提前发起流式请求
 
 ---
 

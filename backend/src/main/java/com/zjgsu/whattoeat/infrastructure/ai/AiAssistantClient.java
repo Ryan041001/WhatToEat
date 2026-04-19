@@ -1,4 +1,4 @@
-package com.zjgsu.whattoeat.integration.ai;
+package com.zjgsu.whattoeat.infrastructure.ai;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -44,6 +44,7 @@ public interface AiAssistantClient {
             List<String> rejectedPoiIds,
             List<String> selectedPoiIds,
             List<String> userSignals,
+            String temporalContext,
             String preferenceProfileSummary,
             List<String> preferredTags,
             List<String> avoidedTags,

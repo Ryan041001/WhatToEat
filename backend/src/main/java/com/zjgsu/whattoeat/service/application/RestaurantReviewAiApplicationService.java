@@ -1,6 +1,6 @@
 package com.zjgsu.whattoeat.service.application;
 
-import com.zjgsu.whattoeat.integration.ai.AiAssistantClient;
+import com.zjgsu.whattoeat.infrastructure.ai.AiAssistantClient;
 import com.zjgsu.whattoeat.model.entity.RestaurantMetricSnapshotEntity;
 import com.zjgsu.whattoeat.model.entity.RestaurantReviewEntity;
 import com.zjgsu.whattoeat.repository.RestaurantMetricSnapshotRepository;

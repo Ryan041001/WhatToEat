@@ -1,4 +1,4 @@
-package com.zjgsu.whattoeat.service.application;
+package com.zjgsu.whattoeat.domain.recommendation;
 
 import com.zjgsu.whattoeat.model.RecommendationFeedbackType;
 import com.zjgsu.whattoeat.model.entity.RecommendationFeedbackEntity;
@@ -11,12 +11,12 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Stream;
 
-final class RecommendationInsightHeuristics {
+public final class RecommendationInsightHeuristics {
 
     private RecommendationInsightHeuristics() {
     }
 
-    static List<String> deriveCandidateSignals(String category, List<String> aiTags, String aiSummary) {
+    public static List<String> deriveCandidateSignals(String category, List<String> aiTags, String aiSummary) {
         String text = combineTexts(Stream.concat(
                 Stream.of(category, aiSummary),
                 aiTags == null ? Stream.empty() : aiTags.stream()).toList());
@@ -30,7 +30,7 @@ final class RecommendationInsightHeuristics {
         return List.copyOf(signals);
     }
 
-    static List<String> deriveRecommendedScenarios(
+    public static List<String> deriveRecommendedScenarios(
             Integer avgPerCapitaPrice,
             List<String> aiTags,
             String aiSummary,
@@ -60,7 +60,7 @@ final class RecommendationInsightHeuristics {
         return scenarios.stream().limit(5).toList();
     }
 
-    static List<String> derivePreferredTags(Collection<String> texts) {
+    public static List<String> derivePreferredTags(Collection<String> texts) {
         String combined = combineTexts(texts);
         LinkedHashSet<String> tags = new LinkedHashSet<>();
         if (containsAny(combined, "清淡", "轻食", "减脂", "爽口", "少油", "轻盈")) {
@@ -84,7 +84,7 @@ final class RecommendationInsightHeuristics {
         return List.copyOf(tags);
     }
 
-    static List<String> deriveAvoidedTags(Collection<String> texts) {
+    public static List<String> deriveAvoidedTags(Collection<String> texts) {
         String combined = combineTexts(texts);
         LinkedHashSet<String> tags = new LinkedHashSet<>();
         if (containsAny(combined, "太油", "油腻", "很腻")) {
@@ -105,7 +105,7 @@ final class RecommendationInsightHeuristics {
         return List.copyOf(tags);
     }
 
-    static List<String> deriveRecentFeedbackSignals(List<RecommendationFeedbackEntity> feedbacks) {
+    public static List<String> deriveRecentFeedbackSignals(List<RecommendationFeedbackEntity> feedbacks) {
         LinkedHashSet<String> signals = new LinkedHashSet<>();
         for (RecommendationFeedbackEntity feedback : feedbacks) {
             RecommendationFeedbackType type = parseType(feedback.getFeedbackType());
@@ -123,7 +123,7 @@ final class RecommendationInsightHeuristics {
         return List.copyOf(signals);
     }
 
-    static RecommendationFeedbackType parseType(String rawType) {
+    public static RecommendationFeedbackType parseType(String rawType) {
         if (rawType == null || rawType.isBlank()) {
             return null;
         }

@@ -1,6 +1,6 @@
 import unittest
 
-from app.config import normalize_openai_base_url
+from app.core.config import normalize_openai_base_url
 
 
 class ConfigTest(unittest.TestCase):

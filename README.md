@@ -157,7 +157,8 @@ docker compose --env-file .env up --build
 
 - 餐厅主数据来源于高德，不在本地维护完整餐厅主表
 - 本地数据库当前保存：用户、黑名单、备注、评论、聚合快照、预留历史
-- `user_choice_history` 当前仍是预留态，尚未真正接入推荐主链路
+- `user_choice_history` 当前已经进入推荐软过滤链路，用于“最近吃过，先别推”
+- AI 推荐对外同时保留同步与流式接口，但正式前端聊天接入应优先使用 `/api/v1/recommendations/ask/stream`
 - `review-summary` 当前对外不暴露 `aiStatus`；前端应把 `aiTags=[]`、`aiSummary=null` 统一理解为“当前无可展示的 AI 结果”
 
 ---

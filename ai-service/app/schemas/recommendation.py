@@ -4,32 +4,6 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
-class HealthResponse(BaseModel):
-    status: str
-
-
-class ReviewText(BaseModel):
-    content: str
-    rating_score: Optional[Decimal] = Field(default=None, alias="ratingScore")
-    per_capita_price: Optional[int] = Field(default=None, alias="perCapitaPrice")
-
-    model_config = {"populate_by_name": True}
-
-
-class ReviewTagRequest(BaseModel):
-    poi_id: str = Field(alias="poiId")
-    poi_name: Optional[str] = Field(default=None, alias="poiName")
-    reviews: List[ReviewText]
-
-    model_config = {"populate_by_name": True}
-
-
-class ReviewTagResponse(BaseModel):
-    tag1: Optional[str] = None
-    tag2: Optional[str] = None
-    summary: Optional[str] = None
-
-
 class RecommendationCandidate(BaseModel):
     poi_id: str = Field(alias="poiId")
     name: str
@@ -51,6 +25,7 @@ class RecommendationContext(BaseModel):
     rejected_poi_ids: List[str] = Field(default_factory=list, alias="rejectedPoiIds")
     selected_poi_ids: List[str] = Field(default_factory=list, alias="selectedPoiIds")
     user_signals: List[str] = Field(default_factory=list, alias="userSignals")
+    temporal_context: Optional[str] = Field(default=None, alias="temporalContext")
     preference_profile_summary: Optional[str] = Field(default=None, alias="preferenceProfileSummary")
     preferred_tags: List[str] = Field(default_factory=list, alias="preferredTags")
     avoided_tags: List[str] = Field(default_factory=list, alias="avoidedTags")

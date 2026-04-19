@@ -5,16 +5,16 @@ import com.zjgsu.whattoeat.model.entity.RestaurantMetricSnapshotEntity;
 import java.util.List;
 import java.util.stream.Stream;
 
-final class RestaurantMetricSnapshotViewSupport {
+public final class RestaurantMetricSnapshotViewSupport {
 
     private RestaurantMetricSnapshotViewSupport() {
     }
 
-    static boolean isAiReady(RestaurantMetricSnapshotEntity snapshot) {
+    public static boolean isAiReady(RestaurantMetricSnapshotEntity snapshot) {
         return snapshot != null && "ready".equalsIgnoreCase(snapshot.getAiStatus());
     }
 
-    static List<String> visibleAiTags(RestaurantMetricSnapshotEntity snapshot) {
+    public static List<String> visibleAiTags(RestaurantMetricSnapshotEntity snapshot) {
         if (!isAiReady(snapshot)) {
             return List.of();
         }
@@ -23,7 +23,7 @@ final class RestaurantMetricSnapshotViewSupport {
                 .toList();
     }
 
-    static String visibleAiSummary(RestaurantMetricSnapshotEntity snapshot) {
+    public static String visibleAiSummary(RestaurantMetricSnapshotEntity snapshot) {
         return isAiReady(snapshot) ? snapshot.getAiSummary() : null;
     }
 }
