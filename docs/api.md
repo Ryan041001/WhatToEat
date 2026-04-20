@@ -70,11 +70,17 @@
 ```json
 {
   "code": "mock-code-001",
-  "nickname": "Alice"
+  "nickname": "Alice",
+  "avatarUrl": "https://placehold.co/200x200/F97316/FFFFFF?text=%E5%90%83"
 }
 ```
 
-登录成功后返回 `token`，后续受保护接口通过请求头传递：
+说明：
+
+- `nickname` 建议由小程序登录页在提交前确认，不再使用固定默认值作为唯一来源
+- `avatarUrl` 可选；如果小程序端未显式选择头像，可传默认占位头像地址
+
+登录成功后返回 `token` 和当前用户信息（含 `nickname`、`avatarUrl`），后续受保护接口通过请求头传递：
 
 ```http
 Authorization: Bearer <token>
@@ -206,6 +212,9 @@ Authorization: Bearer <token>
 - `page`：页码，默认 `1`
 - `size`：每页条数，默认 `10`
 - `sort`：排序方式，可选；支持 `distance`、`avgRating`、`reviewCount`、`avgPriceAsc`、`avgPriceDesc`、`smart`
+- `category`：可选；按真实分类筛选，支持传完整分类路径或前端展示用的末级分类名
+- `minAvgPerCapitaPrice`：可选；最低人均价格（元）
+- `maxAvgPerCapitaPrice`：可选；最高人均价格（元）
 
 调用提示：
 
@@ -215,7 +224,7 @@ Authorization: Bearer <token>
 请求示例：
 
 ```bash
-curl 'http://127.0.0.1:8080/api/v1/restaurants/nearby?longitude=120.35&latitude=30.31&radius=1000&page=1&size=10'
+curl 'http://127.0.0.1:8080/api/v1/restaurants/nearby?longitude=120.35&latitude=30.31&radius=1000&page=1&size=10&category=%E5%BF%AB%E9%A4%90%E5%8E%85&minAvgPerCapitaPrice=20&maxAvgPerCapitaPrice=40'
 ```
 
 结果语义说明：
@@ -223,6 +232,8 @@ curl 'http://127.0.0.1:8080/api/v1/restaurants/nearby?longitude=120.35&latitude=
 - 当 `total > 0` 且当前页 `items` 为空时，返回 `200 OK`，`items: []`
 - 返回项除基础 POI 字段外，还会补充本地聚合增强字段：`avgRating`、`reviewCount`、`avgPerCapitaPrice`、`aiTags`
 - `sort` 为空时默认按 `distance`；如果传入未支持值，返回 `400 Bad Request` / `1001`
+- 当传入 `minAvgPerCapitaPrice` / `maxAvgPerCapitaPrice` 时，`avgPerCapitaPrice = null` 的餐厅不会落入任何明确价格区间
+- 分类与价格筛选在后端执行，前端不再对当前缓存做假筛选
 
 返回示例：
 
@@ -263,11 +274,14 @@ curl 'http://127.0.0.1:8080/api/v1/restaurants/nearby?longitude=120.35&latitude=
 - `page`：页码
 - `size`：每页条数
 - `sort`：排序方式，可选；支持 `distance`、`avgRating`、`reviewCount`、`avgPriceAsc`、`avgPriceDesc`、`smart`
+- `category`：可选；按真实分类筛选，支持完整分类路径或末级分类名
+- `minAvgPerCapitaPrice`：可选；最低人均价格（元）
+- `maxAvgPerCapitaPrice`：可选；最高人均价格（元）
 
 请求示例：
 
 ```bash
-curl 'http://127.0.0.1:8080/api/v1/restaurants/search?keyword=拉面&longitude=120.36&latitude=30.32&radius=1000&page=1&size=10'
+curl 'http://127.0.0.1:8080/api/v1/restaurants/search?keyword=拉面&longitude=120.36&latitude=30.32&radius=1000&page=1&size=10&minAvgPerCapitaPrice=20&maxAvgPerCapitaPrice=35'
 ```
 
 结果语义说明：
@@ -275,6 +289,7 @@ curl 'http://127.0.0.1:8080/api/v1/restaurants/search?keyword=拉面&longitude=1
 - 当 `total > 0` 且当前页 `items` 为空时，返回 `200 OK`，`items: []`
 - 返回项除基础 POI 字段外，还会补充本地聚合增强字段：`avgRating`、`reviewCount`、`avgPerCapitaPrice`、`aiTags`
 - `sort` 为空时默认按 `distance`；如果传入未支持值，返回 `400 Bad Request` / `1001`
+- 当传入价格区间时，`avgPerCapitaPrice = null` 的餐厅不会落入明确价格范围
 
 ---
 

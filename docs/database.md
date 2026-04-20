@@ -30,6 +30,7 @@ erDiagram
       BIGINT id PK
       VARCHAR openid UK
       VARCHAR nickname
+      VARCHAR avatar_url
       DATETIME created_at
       DATETIME updated_at
     }
@@ -99,6 +100,7 @@ erDiagram
 | id | bigint | PK, auto increment | 用户主键 |
 | openid | varchar(64) | UNIQUE, NOT NULL | 微信用户标识 |
 | nickname | varchar(64) | NULL | 昵称 |
+| avatar_url | varchar(512) | NULL | 用户头像 URL / 小程序端头像地址 |
 | created_at | datetime | NOT NULL | 创建时间 |
 | updated_at | datetime | NOT NULL | 更新时间 |
 
@@ -235,6 +237,7 @@ backend/src/main/resources/db/migration/
   V7__init_restaurant_review.sql
   V8__init_restaurant_metric_snapshot.sql
   V9__init_recommendation_feedback.sql
+  V10__add_avatar_url_to_users.sql
 ```
 
 ### 5.2 版本管理原则

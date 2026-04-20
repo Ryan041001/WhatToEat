@@ -1,4 +1,6 @@
 // pages/home/home.js
+import { AI_CHAT_SESSION_KEY, shouldRestoreAiChatState } from '../../utils/ai-chat-session';
+
 const app = getApp();
 
 Page({
@@ -27,11 +29,7 @@ Page({
     this._shakeSpikeCount = 0;
     this._lastAccel = null;
     this._onShakeAccelerometerChange = this._onShakeAccelerometerChange || this._onAccelerometerChange.bind(this);
-    try {
-      wx.startAccelerometer && wx.startAccelerometer({ interval: 'game' });
-      wx.offAccelerometerChange && wx.offAccelerometerChange(this._onShakeAccelerometerChange);
-      wx.onAccelerometerChange && wx.onAccelerometerChange(this._onShakeAccelerometerChange);
-    } catch (e) {}
+    this.enableShakeSensor();
   },
 
   // 加载数据
@@ -73,17 +71,46 @@ Page({
 
   onHide() {
     // 离开首页解绑监听
-    try {
-      wx.stopAccelerometer && wx.stopAccelerometer();
-      wx.offAccelerometerChange && wx.offAccelerometerChange();
-    } catch (e) {}
+    this.disableShakeSensor();
   },
 
   onUnload() {
     // 离开首页解绑监听
+    this.disableShakeSensor();
+  },
+
+  enableShakeSensor() {
     try {
+      const attachListener = () => {
+        wx.offAccelerometerChange && wx.offAccelerometerChange(this._onShakeAccelerometerChange);
+        wx.onAccelerometerChange && wx.onAccelerometerChange(this._onShakeAccelerometerChange);
+      };
+
+      if (wx.stopAccelerometer) {
+        wx.stopAccelerometer({
+          complete: () => {
+            wx.startAccelerometer && wx.startAccelerometer({
+              interval: 'game',
+              success: attachListener,
+              fail: () => {}
+            });
+          }
+        });
+        return;
+      }
+
+      wx.startAccelerometer && wx.startAccelerometer({
+        interval: 'game',
+        success: attachListener,
+        fail: () => {}
+      });
+    } catch (e) {}
+  },
+
+  disableShakeSensor() {
+    try {
+      wx.offAccelerometerChange && wx.offAccelerometerChange(this._onShakeAccelerometerChange);
       wx.stopAccelerometer && wx.stopAccelerometer();
-      wx.offAccelerometerChange && wx.offAccelerometerChange();
     } catch (e) {}
   },
 
@@ -140,8 +167,11 @@ Page({
     if (!app.globalData) {
       app.globalData = {};
     }
-    app.globalData.aiShouldPreheat = true;
-    app.globalData.aiPreheatQuestion = '你好，先帮我看看现在适合吃什么';
+
+    const cachedSession = wx.getStorageSync(AI_CHAT_SESSION_KEY);
+    const hasSessionSnapshot = shouldRestoreAiChatState(cachedSession);
+    app.globalData.aiShouldPreheat = !hasSessionSnapshot;
+    app.globalData.aiPreheatQuestion = hasSessionSnapshot ? '' : '你好，先帮我看看现在适合吃什么';
 
     wx.navigateTo({
       url: '/pages/ai-chat/ai-chat'

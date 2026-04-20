@@ -18,7 +18,7 @@
             <text class="hero-subtitle">按口味、价位和距离筛一筛，更快找到想吃的。</text>
           </view>
           <view class="surface-chip hero-chip">
-            <text class="hero-chip-text">{{filteredRestaurants.length}} / {{restaurants.length}} 家</text>
+            <text class="hero-chip-text">{{restaurants.length}} 家</text>
           </view>
         </view>
 
@@ -26,7 +26,7 @@
           <view class="hero-surface-icon"><view class="app-icon icon-star icon-fill"></view></view>
           <view class="hero-surface-copy">
             <text class="hero-surface-title">筛选很简单，选择更轻松</text>
-            <text class="hero-surface-text">点选分类、价位或排序方式，结果会立即更新。</text>
+            <text class="hero-surface-text">分类、人均和排序都会重新请求真实结果，不再只筛旧缓存。</text>
           </view>
         </view>
       </view>
@@ -37,7 +37,7 @@
     <view class="filters page-gutter glass-panel">
       <view class="filters-heading">
         <text class="filters-title">筛选条件</text>
-        <text class="filters-subtitle">按分类、价格和排序快速收窄范围</text>
+        <text class="filters-subtitle">按真实分类、人均价格和排序快速收窄范围</text>
       </view>
 
       <scroll-view class="category-scroll" scroll-x>
@@ -64,32 +64,45 @@
       <view class="filter-row">
         <view class="filter-group">
           <view
-            class="filter-btn {{selectedPrice === 0 ? 'active' : ''}}"
-            bindtap="selectPrice"
-            data-price="{{0}}"
+            class="filter-btn {{selectedPricePreset === 'all' ? 'active' : ''}}"
+            bindtap="selectPricePreset"
+            data-preset="all"
           >
             全部价位
           </view>
           <view
-            class="filter-btn {{selectedPrice === 1 ? 'active' : ''}}"
-            bindtap="selectPrice"
-            data-price="{{1}}"
+            class="filter-btn {{selectedPricePreset === '0-20' ? 'active' : ''}}"
+            bindtap="selectPricePreset"
+            data-preset="0-20"
           >
-            ¥
+            0-20
           </view>
           <view
-            class="filter-btn {{selectedPrice === 2 ? 'active' : ''}}"
-            bindtap="selectPrice"
-            data-price="{{2}}"
+            class="filter-btn {{selectedPricePreset === '21-40' ? 'active' : ''}}"
+            bindtap="selectPricePreset"
+            data-preset="21-40"
           >
-            ¥¥
+            21-40
           </view>
           <view
-            class="filter-btn {{selectedPrice === 3 ? 'active' : ''}}"
-            bindtap="selectPrice"
-            data-price="{{3}}"
+            class="filter-btn {{selectedPricePreset === '41-60' ? 'active' : ''}}"
+            bindtap="selectPricePreset"
+            data-preset="41-60"
           >
-            ¥¥¥
+            41-60
+          </view>
+          <view
+            class="filter-btn {{selectedPricePreset === '60+' ? 'active' : ''}}"
+            bindtap="selectPricePreset"
+            data-preset="60+"
+          >
+            60+
+          </view>
+          <view
+            class="filter-btn {{showAdvancedFilters || selectedPricePreset === 'custom' ? 'active' : ''}}"
+            bindtap="toggleAdvancedFilters"
+          >
+            更多筛选
           </view>
         </view>
         <view class="sort-wrap" catchtap="stopPropagation">
@@ -164,21 +177,51 @@
           </view>
         </view>
       </view>
+
+      <view class="advanced-panel glass-panel-soft" wx:if="{{showAdvancedFilters || selectedPricePreset === 'custom'}}">
+        <view class="advanced-header">
+          <text class="advanced-title">自定义人均区间</text>
+          <text class="advanced-tip">空着表示这一侧不限</text>
+        </view>
+        <view class="advanced-inputs">
+          <input
+            class="price-input"
+            type="number"
+            placeholder="最低人均"
+            value="{{customPriceMin}}"
+            bindinput="onCustomPriceMinInput"
+          />
+          <text class="price-separator">-</text>
+          <input
+            class="price-input"
+            type="number"
+            placeholder="最高人均"
+            value="{{customPriceMax}}"
+            bindinput="onCustomPriceMaxInput"
+          />
+        </view>
+        <view class="advanced-actions">
+          <button class="advanced-btn secondary" bindtap="resetCustomPrice">重置</button>
+          <button class="advanced-btn primary" bindtap="applyCustomPrice">应用</button>
+        </view>
+      </view>
+
+      <text class="filter-summary">{{filteredSummaryText}}</text>
     </view>
   </view>
 
   <view class="restaurant-list">
     <view class="list-content page-gutter">
-      <view class="list-header" wx:if="{{filteredRestaurants.length > 0}}">
+      <view class="list-header" wx:if="{{restaurants.length > 0}}">
         <view>
           <text class="list-title">附近餐厅</text>
-          <text class="list-subtitle">共找到 {{filteredRestaurants.length}} 家符合条件的餐厅</text>
+          <text class="list-subtitle">共找到 {{restaurants.length}} 家符合条件的餐厅</text>
         </view>
       </view>
 
       <view
         class="restaurant-card {{item.isBlacklisted ? 'blacklisted' : ''}} glass-panel-soft"
-        wx:for="{{filteredRestaurants}}"
+        wx:for="{{restaurants}}"
         wx:key="id"
         bindtap="openDetail"
         data-id="{{item.id}}"
@@ -229,10 +272,10 @@
         </view>
       </view>
 
-      <view class="empty-state glass-panel" wx:if="{{filteredRestaurants.length === 0}}">
+      <view class="empty-state glass-panel" wx:if="{{!loading && !error && restaurants.length === 0}}">
         <view class="empty-icon-shell"><view class="app-icon icon-alert icon-fill"></view></view>
-        <text class="empty-text">暂时没找到合适的餐厅</text>
-        <text class="empty-tip">换个筛选条件再试试</text>
+        <text class="empty-text">当前筛选条件下没有合适餐厅</text>
+        <text class="empty-tip">换个条件再试试</text>
       </view>
     </view>
   </view>

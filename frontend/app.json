@@ -15,6 +15,11 @@
     "backgroundColor": "#ffffff",
     "navigationStyle": "default"
   },
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于为你推荐附近餐厅和 AI 个性化建议"
+    }
+  },
   "style": "v2",
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents"

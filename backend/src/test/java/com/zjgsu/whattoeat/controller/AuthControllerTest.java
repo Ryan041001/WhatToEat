@@ -39,24 +39,26 @@ class AuthControllerTest {
     void wechatLoginShouldReturn201WithTokenAndUser() throws Exception {
         mockMvc.perform(post("/api/v1/auth/wechat-login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"code\":\"mock-code-001\",\"nickname\":\"Alice\"}"))
+                        .content("{\"code\":\"mock-code-001\",\"nickname\":\"Alice\",\"avatarUrl\":\"https://example.com/avatar-alice.png\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.token").isString())
                 .andExpect(jsonPath("$.data.user.openid").isString())
-                .andExpect(jsonPath("$.data.user.nickname").value("Alice"));
+                .andExpect(jsonPath("$.data.user.nickname").value("Alice"))
+                .andExpect(jsonPath("$.data.user.avatarUrl").value("https://example.com/avatar-alice.png"));
     }
 
     @Test
     void wechatLoginShouldAcceptWxLoginCodeWhenMockLoginEnabledWithoutWechatCredentials() throws Exception {
         mockMvc.perform(post("/api/v1/auth/wechat-login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"code\":\"wx-devtools-code-001\",\"nickname\":\"Alice\"}"))
+                        .content("{\"code\":\"wx-devtools-code-001\",\"nickname\":\"Alice\",\"avatarUrl\":\"https://example.com/avatar-alice.png\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.token").isString())
                 .andExpect(jsonPath("$.data.user.openid").value("mock-openid-wx-devtools-code-001"))
-                .andExpect(jsonPath("$.data.user.nickname").value("Alice"));
+                .andExpect(jsonPath("$.data.user.nickname").value("Alice"))
+                .andExpect(jsonPath("$.data.user.avatarUrl").value("https://example.com/avatar-alice.png"));
     }
 
     @Test
@@ -79,7 +81,7 @@ class AuthControllerTest {
     void meShouldReturnCurrentUserAfterLogin() throws Exception {
         MvcResult loginResult = mockMvc.perform(post("/api/v1/auth/wechat-login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"code\":\"mock-code-002\",\"nickname\":\"Bob\"}"))
+                        .content("{\"code\":\"mock-code-002\",\"nickname\":\"Bob\",\"avatarUrl\":\"https://example.com/avatar-bob.png\"}"))
                 .andExpect(status().isCreated())
                 .andReturn();
 
@@ -89,7 +91,8 @@ class AuthControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.nickname").value("Bob"));
+                .andExpect(jsonPath("$.data.nickname").value("Bob"))
+                .andExpect(jsonPath("$.data.avatarUrl").value("https://example.com/avatar-bob.png"));
     }
 
     @Test

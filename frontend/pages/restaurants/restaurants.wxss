@@ -215,6 +215,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 16rpx;
+  flex-wrap: wrap;
 }
 
 .filter-group {
@@ -240,6 +241,93 @@
   color: #FF6B6B;
   border-color: rgba(255, 107, 107, 0.22);
   font-weight: 600;
+}
+
+.advanced-panel {
+  margin-top: 18rpx;
+  padding: 22rpx;
+}
+
+.advanced-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.advanced-title {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #374151;
+}
+
+.advanced-tip {
+  font-size: 20rpx;
+  color: #8B93A6;
+}
+
+.advanced-inputs {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  margin-top: 18rpx;
+}
+
+.price-input {
+  flex: 1;
+  height: 76rpx;
+  padding: 0 20rpx;
+  border-radius: 20rpx;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  font-size: 24rpx;
+  color: #374151;
+  box-sizing: border-box;
+}
+
+.price-separator {
+  color: #8B93A6;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.advanced-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14rpx;
+  margin-top: 18rpx;
+}
+
+.advanced-btn {
+  min-width: 136rpx;
+  height: 72rpx;
+  line-height: 72rpx;
+  padding: 0 28rpx;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.advanced-btn::after {
+  border: none;
+}
+
+.advanced-btn.secondary {
+  background: rgba(255, 255, 255, 0.82);
+  color: #6B7280;
+}
+
+.advanced-btn.primary {
+  background: linear-gradient(135deg, #FF6B6B 0%, #FF9E2A 100%);
+  color: #FFFFFF;
+}
+
+.filter-summary {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 22rpx;
+  color: #8B93A6;
+  line-height: 1.6;
 }
 
 .sort-wrap {

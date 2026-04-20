@@ -7,7 +7,8 @@
     <view class="hero-content">
       <view class="hero-top">
         <view class="avatar">
-          <view class="avatar-icon-shell"><view class="app-icon icon-user icon-fill"></view></view>
+          <image class="avatar-image" wx:if="{{userAvatarUrl}}" src="{{userAvatarUrl}}" mode="aspectFill"></image>
+          <view class="avatar-icon-shell" wx:else><view class="app-icon icon-user icon-fill"></view></view>
         </view>
         <view class="hero-copy">
           <text class="hero-eyebrow">个人中心</text>
@@ -46,6 +47,12 @@
         <text class="stat-value">{{activeCount}}</text>
         <text class="stat-label">当前可选</text>
       </view>
+    </view>
+  </view>
+
+  <view class="page-gutter" wx:if="{{restaurantLoadError}}">
+    <view class="load-warning">
+      <text class="load-warning-text">{{restaurantLoadError}}</text>
     </view>
   </view>
 

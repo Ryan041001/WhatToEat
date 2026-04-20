@@ -1,4 +1,5 @@
 import { WechatLogin } from '../../api/auth';
+import { DEFAULT_AVATAR_URL } from '../../utils/restaurant-state';
 
 const app = getApp();
 
@@ -27,8 +28,10 @@ function pickUser(payload) {
 Page({
 	data: {
 		loading: false,
-		usingMockLogin: false,
-		loginError: ''
+		loginError: '',
+		nickname: '',
+		avatarUrl: '',
+		hasCustomAvatar: false
 	},
 
 	onShow() {
@@ -40,12 +43,38 @@ Page({
 		}
 	},
 
+	handleNicknameInput(e) {
+		this.setData({
+			nickname: (e && e.detail ? e.detail.value : '') || '',
+			loginError: ''
+		});
+	},
+
+	handleChooseAvatar(e) {
+		const avatarUrl = e && e.detail && e.detail.avatarUrl ? e.detail.avatarUrl : '';
+		this.setData({
+			avatarUrl,
+			hasCustomAvatar: !!(e && e.detail && e.detail.avatarUrl),
+			loginError: ''
+		});
+	},
+
 	async handleWechatLogin() {
 		if (this.data.loading) {
 			return;
 		}
 
-		this.setData({ loading: true, loginError: '', usingMockLogin: false });
+		const nickname = (this.data.nickname || '').trim();
+		if (!nickname) {
+			this.setData({ loginError: '请先填写昵称' });
+			wx.showToast({
+				title: '请先填写昵称',
+				icon: 'none'
+			});
+			return;
+		}
+
+		this.setData({ loading: true, loginError: '' });
 
 		try {
 			const loginRes = await wxLoginPromise();
@@ -54,30 +83,35 @@ Page({
 				throw new Error('未获取到微信登录code');
 			}
 
-			const response = await WechatLogin(code);
+			const avatarUrl = this.data.hasCustomAvatar && this.data.avatarUrl
+				? this.data.avatarUrl
+				: DEFAULT_AVATAR_URL;
+			const response = await WechatLogin(code, nickname, avatarUrl);
 			const token = pickToken(response);
-			const user = pickUser(response) || { nickname: '微信用户' };
+			const user = pickUser(response) || { nickname, avatarUrl };
 
 			if (!token) {
 				throw new Error('后端未返回有效token');
 			}
 
-			app.setAuth(token, user);
-			await app.bootstrapRestaurants({ force: true });
+			app.setAuth(token, {
+				...user,
+				nickname: user.nickname || nickname,
+				avatarUrl: user.avatarUrl || avatarUrl
+			});
+			try {
+				await app.bootstrapRestaurants({ force: true });
+			} catch (bootstrapError) {}
 
 			wx.showToast({ title: '登录成功', icon: 'success' });
 			wx.redirectTo({ url: '/pages/home/home' });
 		} catch (error) {
-			// API 不可用时，走本地 Mock 会话，保证开发流程可继续。
-			app.createMockSession();
-			await app.bootstrapRestaurants({ force: true });
-			this.setData({ usingMockLogin: true, loginError: '登录遇到一点问题，已为你切换到便捷体验模式' });
-
+			app.clearAuth();
+			this.setData({ loginError: error.message || '登录失败，请检查后端服务和网络连接' });
 			wx.showToast({
-				title: '已切换便捷体验模式',
+				title: '登录失败',
 				icon: 'none'
 			});
-			wx.redirectTo({ url: '/pages/home/home' });
 		} finally {
 			this.setData({ loading: false });
 		}

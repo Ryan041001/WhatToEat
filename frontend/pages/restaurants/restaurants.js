@@ -1,26 +1,78 @@
-// pages/restaurants/restaurants.js
+import { AddBlacklist, RemoveBlacklist } from '../../api/blacklist';
+import { GetNearbyRestaurants, mapApiRestaurantToCard } from '../../api/restaurants';
+import { buildCategoryOptions } from '../../utils/restaurant-filters';
+import { extractRestaurantList } from '../../utils/restaurant-state';
+
 const app = getApp();
+
+const PRICE_PRESETS = [
+  { key: 'all', label: '全部价位', min: null, max: null },
+  { key: '0-20', label: '0-20', min: 0, max: 20 },
+  { key: '21-40', label: '21-40', min: 21, max: 40 },
+  { key: '41-60', label: '41-60', min: 41, max: 60 },
+  { key: '60+', label: '60+', min: 60, max: null }
+];
+
+const SORT_OPTIONS = {
+  distance: '按距离',
+  avgRating: '按评分',
+  reviewCount: '按评论数',
+  avgPriceAsc: '人均从低到高',
+  avgPriceDesc: '人均从高到低',
+  smart: '智能推荐'
+};
+
+function enrichRestaurant(restaurant = {}) {
+  return {
+    ...restaurant,
+    displayRating: restaurant.avgRating !== null && restaurant.avgRating !== undefined
+      ? Number(restaurant.avgRating).toFixed(1)
+      : '暂无评分',
+    displayReviewCount: Number.isFinite(Number(restaurant.reviewCount)) ? Number(restaurant.reviewCount) : 0,
+    displayAvgPerCapitaPrice: restaurant.avgPerCapitaPrice !== null && restaurant.avgPerCapitaPrice !== undefined
+      ? `¥${restaurant.avgPerCapitaPrice}`
+      : '人均待补充',
+    priceText: restaurant.priceLevel > 0 ? '¥'.repeat(restaurant.priceLevel) : '--',
+    distanceValue: Number.isFinite(Number(restaurant.distanceValue))
+      ? Number(restaurant.distanceValue)
+      : parseDistance(restaurant.distance)
+  };
+}
+
+function parseDistance(distanceText) {
+  const match = typeof distanceText === 'string' ? distanceText.match(/(\d+)/) : null;
+  return match ? parseInt(match[0], 10) : 999999;
+}
+
+function parsePriceInput(value) {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+
+  const normalized = String(value).trim();
+  if (!/^\d+$/.test(normalized)) {
+    return NaN;
+  }
+
+  return Number(normalized);
+}
 
 Page({
   data: {
     loading: false,
     error: '',
     restaurants: [],
-    filteredRestaurants: [],
-    categories: ['川菜', '日料', '快餐', '烧烤', '米线', '面食', '韩餐', '西餐', '火锅', '小吃'],
+    categories: [],
     selectedCategory: '',
-    selectedPrice: 0,
+    selectedPricePreset: 'all',
+    customPriceMin: '',
+    customPriceMax: '',
     selectedSort: 'distance',
-    sortOptions: {
-      distance: '按距离',
-      avgRating: '按评分',
-      reviewCount: '按评论数',
-      avgPriceAsc: '人均从低到高',
-      avgPriceDesc: '人均从高到低',
-      smart: '智能推荐'
-    },
+    sortOptions: SORT_OPTIONS,
     showSortModal: false,
-    heroCollapsed: false
+    heroCollapsed: false,
+    showAdvancedFilters: false,
+    filteredSummaryText: '按真实分类、人均和排序筛选'
   },
 
   onPageScroll(e) {
@@ -34,85 +86,188 @@ Page({
     this.loadData();
   },
 
-  // 加载数据
-  async loadData() {
-    this.setData({ loading: true, error: '' });
-    try {
-      await app.bootstrapRestaurants({
-        force: true,
-        sort: this.data.selectedSort
-      });
-      const restaurants = app.getRestaurants().map((r) => ({
-        ...r,
-        displayRating: r.avgRating !== null && r.avgRating !== undefined ? Number(r.avgRating).toFixed(1) : '暂无评分',
-        displayReviewCount: Number.isFinite(Number(r.reviewCount)) ? Number(r.reviewCount) : 0,
-        displayAvgPerCapitaPrice: r.avgPerCapitaPrice !== null && r.avgPerCapitaPrice !== undefined
-          ? `¥${r.avgPerCapitaPrice}`
-          : '人均待补充',
-        priceText: r.priceLevel > 0 ? '¥'.repeat(r.priceLevel) : '--',
-        distanceValue: Number.isFinite(Number(r.distanceValue)) ? Number(r.distanceValue) : this.parseDistance(r.distance)
-      }));
+  async loadData(options = {}) {
+    const { scrollToTop = false } = options;
+    this.setData({ loading: true, error: '', showSortModal: false });
 
-      this.setData({ restaurants }, () => {
-        this.filterRestaurants();
+    try {
+      const location = await app.resolveCurrentLocation();
+      await app.loadBlacklistPoiIds();
+
+      const params = {
+        longitude: location.longitude,
+        latitude: location.latitude,
+        radius: 3000,
+        page: 1,
+        size: 30,
+        sort: this.data.selectedSort
+      };
+
+      const priceRange = this.getActivePriceRange();
+      if (this.data.selectedCategory) {
+        params.category = this.data.selectedCategory;
+      }
+      if (priceRange.minPrice !== null) {
+        params.minAvgPerCapitaPrice = priceRange.minPrice;
+      }
+      if (priceRange.maxPrice !== null) {
+        params.maxAvgPerCapitaPrice = priceRange.maxPrice;
+      }
+
+      const response = await GetNearbyRestaurants(params);
+      const restaurants = app
+        .applyBlacklistState(extractRestaurantList(response).map(mapApiRestaurantToCard))
+        .map(enrichRestaurant);
+      const categories = buildCategoryOptions(
+        restaurants,
+        this.data.categories,
+        this.data.selectedCategory
+      );
+
+      this.setData({
+        restaurants,
+        categories,
+        filteredSummaryText: this.buildSummaryText()
       });
+
+      if (scrollToTop && typeof wx.pageScrollTo === 'function') {
+        wx.pageScrollTo({
+          scrollTop: 0,
+          duration: 180
+        });
+      }
     } catch (error) {
-      this.setData({ error: '餐厅列表暂时没加载出来，请稍后重试' });
+      this.setData({
+        restaurants: [],
+        categories: [],
+        error: error && error.message ? error.message : '餐厅列表暂时没加载出来，请稍后重试'
+      });
     } finally {
       this.setData({ loading: false });
     }
   },
 
-  // 解析距离（用于排序）
-  parseDistance(distanceStr) {
-    const match = distanceStr.match(/(\d+)/);
-    return match ? parseInt(match[0]) : 999999;
+  getActivePriceRange() {
+    if (this.data.selectedPricePreset && this.data.selectedPricePreset !== 'custom') {
+      const preset = PRICE_PRESETS.find((item) => item.key === this.data.selectedPricePreset) || PRICE_PRESETS[0];
+      return {
+        minPrice: preset.min,
+        maxPrice: preset.max
+      };
+    }
+
+    return {
+      minPrice: parsePriceInput(this.data.customPriceMin),
+      maxPrice: parsePriceInput(this.data.customPriceMax)
+    };
   },
 
-  // 筛选餐厅
-  filterRestaurants() {
-    let filtered = [...this.data.restaurants];
+  buildSummaryText() {
+    const parts = [];
 
-    // 按分类筛选
     if (this.data.selectedCategory) {
-      filtered = filtered.filter(r => r.category === this.data.selectedCategory);
+      parts.push(this.data.selectedCategory);
     }
 
-    // 按价格筛选
-    if (this.data.selectedPrice > 0) {
-      filtered = filtered.filter(r => r.priceLevel === this.data.selectedPrice);
+    if (this.data.selectedPricePreset && this.data.selectedPricePreset !== 'all') {
+      const preset = PRICE_PRESETS.find((item) => item.key === this.data.selectedPricePreset);
+      if (preset) {
+        parts.push(`人均 ${preset.label}`);
+      }
+    } else if (this.data.selectedPricePreset === 'custom') {
+      const minText = this.data.customPriceMin ? `¥${this.data.customPriceMin}` : '不限';
+      const maxText = this.data.customPriceMax ? `¥${this.data.customPriceMax}` : '不限';
+      parts.push(`人均 ${minText}-${maxText}`);
     }
 
-    // 后端已经按 selectedSort 返回，此处仅保留 distance 兜底
-    if (this.data.selectedSort === 'distance') {
-      filtered.sort((a, b) => a.distanceValue - b.distanceValue);
-    }
-
-    this.setData({ filteredRestaurants: filtered });
+    parts.push(SORT_OPTIONS[this.data.selectedSort] || '按距离');
+    return parts.join(' · ');
   },
 
-  // 选择分类
   selectCategory(e) {
-    const category = e.currentTarget.dataset.category;
+    const category = e && e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset.category || '' : '';
     this.setData({ selectedCategory: category }, () => {
-      this.filterRestaurants();
+      this.loadData({ scrollToTop: true });
     });
   },
 
-  // 选择价格
-  selectPrice(e) {
-    const price = parseInt(e.currentTarget.dataset.price);
-    this.setData({ selectedPrice: price }, () => {
-      this.filterRestaurants();
+  selectPricePreset(e) {
+    const preset = e && e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset.preset : 'all';
+    if (!preset) {
+      return;
+    }
+
+    this.setData({
+      selectedPricePreset: preset,
+      customPriceMin: '',
+      customPriceMax: '',
+      showAdvancedFilters: false
+    }, () => {
+      this.loadData({ scrollToTop: true });
     });
   },
 
-  // 切换排序模态框
+  toggleAdvancedFilters() {
+    this.setData({
+      showAdvancedFilters: !this.data.showAdvancedFilters
+    });
+  },
+
+  onCustomPriceMinInput(e) {
+    this.setData({
+      customPriceMin: (e && e.detail ? e.detail.value : '') || ''
+    });
+  },
+
+  onCustomPriceMaxInput(e) {
+    this.setData({
+      customPriceMax: (e && e.detail ? e.detail.value : '') || ''
+    });
+  },
+
+  applyCustomPrice() {
+    const minPrice = parsePriceInput(this.data.customPriceMin);
+    const maxPrice = parsePriceInput(this.data.customPriceMax);
+
+    if (Number.isNaN(minPrice) || Number.isNaN(maxPrice)) {
+      wx.showToast({
+        title: '价格请输入非负整数',
+        icon: 'none'
+      });
+      return;
+    }
+
+    if (minPrice !== null && maxPrice !== null && minPrice > maxPrice) {
+      wx.showToast({
+        title: '最低人均不能大于最高人均',
+        icon: 'none'
+      });
+      return;
+    }
+
+    this.setData({
+      selectedPricePreset: 'custom',
+      showAdvancedFilters: true
+    }, () => {
+      this.loadData({ scrollToTop: true });
+    });
+  },
+
+  resetCustomPrice() {
+    this.setData({
+      selectedPricePreset: 'all',
+      customPriceMin: '',
+      customPriceMax: '',
+      showAdvancedFilters: false
+    }, () => {
+      this.loadData({ scrollToTop: true });
+    });
+  },
+
   toggleSort() {
     this.setData({ showSortModal: !this.data.showSortModal });
   },
 
-  // 点击空白区域关闭排序菜单
   closeSortMenu() {
     if (!this.data.showSortModal) {
       return;
@@ -120,11 +275,10 @@ Page({
     this.setData({ showSortModal: false });
   },
 
-  // 阻止冒泡
   stopPropagation() {},
 
   openDetail(e) {
-    const id = e.currentTarget.dataset.id;
+    const id = e && e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset.id : '';
     if (!id) {
       return;
     }
@@ -133,38 +287,82 @@ Page({
     });
   },
 
-  // 改变排序
   changeSort(e) {
-    const sort = e.currentTarget.dataset.sort;
-    this.setData({ 
+    const sort = e && e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset.sort : '';
+    if (!sort || sort === this.data.selectedSort) {
+      this.setData({ showSortModal: false });
+      return;
+    }
+
+    this.setData({
       selectedSort: sort,
       showSortModal: false
     }, () => {
-      this.filterRestaurants();
+      this.loadData({ scrollToTop: true });
     });
   },
 
-  // 切换拉黑状态
-  toggleBlacklist(e) {
-    const id = e.currentTarget.dataset.id;
-    const restaurant = this.data.restaurants.find(r => String(r.id) === String(id));
-    
-    if (!restaurant) return;
+  async toggleBlacklist(e) {
+    const id = e && e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset.id : '';
+    const restaurant = this.data.restaurants.find((item) => String(item.id) === String(id));
+
+    if (!restaurant) {
+      return;
+    }
+
+    const userId = app.getCurrentUserId();
+    if (!userId) {
+      wx.showToast({
+        title: '请先登录后再操作',
+        icon: 'none'
+      });
+      return;
+    }
+
+    const poiId = restaurant.poiId || restaurant.id;
+    if (!poiId) {
+      wx.showToast({
+        title: '餐厅主键缺失，请刷新后重试',
+        icon: 'none'
+      });
+      return;
+    }
 
     wx.showModal({
       title: '确认操作',
       content: restaurant.isBlacklisted ? '要把这家餐厅移出不感兴趣吗？' : '要暂时不看这家餐厅吗？',
-      success: (res) => {
-        if (res.confirm) {
-          app.toggleBlacklist(id);
-          this.loadData();
-          
+      success: async (res) => {
+        if (!res.confirm) {
+          return;
+        }
+
+        try {
+          if (restaurant.isBlacklisted) {
+            await RemoveBlacklist(userId, poiId);
+            app.setBlacklistPoiIds(app.globalData.blacklistPoiIds.filter((item) => item !== String(poiId)));
+          } else {
+            await AddBlacklist(userId, {
+              poiId,
+              reason: ''
+            });
+            app.setBlacklistPoiIds([...app.globalData.blacklistPoiIds, String(poiId)]);
+          }
+
+          this.setData({
+            restaurants: app.applyBlacklistState(this.data.restaurants).map(enrichRestaurant)
+          });
+
           wx.showToast({
             title: restaurant.isBlacklisted ? '已恢复展示' : '已设为不感兴趣',
             icon: 'success'
+          });
+        } catch (error) {
+          wx.showToast({
+            title: error && error.message ? error.message : '操作失败，请稍后重试',
+            icon: 'none'
           });
         }
       }
     });
   }
-})
+});

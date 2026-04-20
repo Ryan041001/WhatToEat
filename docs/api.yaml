@@ -101,6 +101,9 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
         - $ref: '#/components/parameters/RestaurantSort'
+        - $ref: '#/components/parameters/RestaurantCategory'
+        - $ref: '#/components/parameters/RestaurantMinAvgPerCapitaPrice'
+        - $ref: '#/components/parameters/RestaurantMaxAvgPerCapitaPrice'
       responses:
         '200':
           description: 查询成功
@@ -128,6 +131,9 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
         - $ref: '#/components/parameters/RestaurantSort'
+        - $ref: '#/components/parameters/RestaurantCategory'
+        - $ref: '#/components/parameters/RestaurantMinAvgPerCapitaPrice'
+        - $ref: '#/components/parameters/RestaurantMaxAvgPerCapitaPrice'
       responses:
         '200':
           description: 查询成功
@@ -878,6 +884,32 @@ components:
         default: distance
       description: 可选；排序方式，默认按距离。支持距离、评分、评论数、人均升序、人均降序和综合推荐。
       example: avgRating
+    RestaurantCategory:
+      name: category
+      in: query
+      required: false
+      schema:
+        type: string
+      description: 可选；按真实分类筛选，支持传完整分类路径或前端展示用的末级分类名。
+      example: 快餐厅
+    RestaurantMinAvgPerCapitaPrice:
+      name: minAvgPerCapitaPrice
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+      description: 可选；最低人均价格（元）。
+      example: 20
+    RestaurantMaxAvgPerCapitaPrice:
+      name: maxAvgPerCapitaPrice
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+      description: 可选；最高人均价格（元）。
+      example: 40
   responses:
     BadRequest:
       description: 参数错误
@@ -1102,6 +1134,10 @@ components:
         nickname:
           type: string
           example: Alice
+        avatarUrl:
+          type: string
+          nullable: true
+          example: https://placehold.co/200x200/F97316/FFFFFF?text=%E5%90%83
       required: [code]
     LoginResponse:
       type: object
@@ -1149,6 +1185,10 @@ components:
         nickname:
           type: string
           example: Alice
+        avatarUrl:
+          type: string
+          nullable: true
+          example: https://placehold.co/200x200/F97316/FFFFFF?text=%E5%90%83
       required: [id, openid]
     RestaurantItem:
       type: object

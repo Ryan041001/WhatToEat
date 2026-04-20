@@ -54,15 +54,29 @@ public class RestaurantQueryApplicationService {
     }
 
     public RestaurantPage nearby(double longitude, double latitude, int radius, int page, int size, String sort) {
+        return nearby(longitude, latitude, radius, page, size, sort, null, null, null);
+    }
+
+    public RestaurantPage nearby(
+            double longitude,
+            double latitude,
+            int radius,
+            int page,
+            int size,
+            String sort,
+            String category,
+            Integer minAvgPerCapitaPrice,
+            Integer maxAvgPerCapitaPrice) {
         try {
             String normalizedSort = normalizeSort(sort);
-            AmapClient.AmapSearchResult result = fetchNearbyCandidates(longitude, latitude, radius, page, size, normalizedSort);
+            RestaurantFilters filters = RestaurantFilters.of(category, minAvgPerCapitaPrice, maxAvgPerCapitaPrice);
+            AmapClient.AmapSearchResult result = fetchNearbyCandidates(longitude, latitude, radius, page, size, normalizedSort, filters);
             if (result.total() == 0) {
                 throw new BusinessException(ErrorCode.AMAP_NO_RESULT);
             }
-            List<RestaurantListItem> items = toRestaurantPageItems(result.items(), page, size, normalizedSort);
+            ProcessedRestaurantPage processed = processRestaurantPage(result.items(), result.total(), page, size, normalizedSort, filters);
             incrementRequestCounter("nearby", "success");
-            return new RestaurantPage(items, page, size, result.total());
+            return new RestaurantPage(processed.items(), page, size, processed.total());
         } catch (BusinessException e) {
             incrementRequestCounter("nearby", e.getErrorCode().name());
             throw e;
@@ -77,15 +91,30 @@ public class RestaurantQueryApplicationService {
     }
 
     public RestaurantPage search(String keyword, double longitude, double latitude, int radius, int page, int size, String sort) {
+        return search(keyword, longitude, latitude, radius, page, size, sort, null, null, null);
+    }
+
+    public RestaurantPage search(
+            String keyword,
+            double longitude,
+            double latitude,
+            int radius,
+            int page,
+            int size,
+            String sort,
+            String category,
+            Integer minAvgPerCapitaPrice,
+            Integer maxAvgPerCapitaPrice) {
         try {
             String normalizedSort = normalizeSort(sort);
-            AmapClient.AmapSearchResult result = fetchSearchCandidates(keyword, longitude, latitude, radius, page, size, normalizedSort);
+            RestaurantFilters filters = RestaurantFilters.of(category, minAvgPerCapitaPrice, maxAvgPerCapitaPrice);
+            AmapClient.AmapSearchResult result = fetchSearchCandidates(keyword, longitude, latitude, radius, page, size, normalizedSort, filters);
             if (result.total() == 0) {
                 throw new BusinessException(ErrorCode.AMAP_NO_RESULT);
             }
-            List<RestaurantListItem> items = toRestaurantPageItems(result.items(), page, size, normalizedSort);
+            ProcessedRestaurantPage processed = processRestaurantPage(result.items(), result.total(), page, size, normalizedSort, filters);
             incrementRequestCounter("search", "success");
-            return new RestaurantPage(items, page, size, result.total());
+            return new RestaurantPage(processed.items(), page, size, processed.total());
         } catch (BusinessException e) {
             incrementRequestCounter("search", e.getErrorCode().name());
             throw e;
@@ -120,8 +149,9 @@ public class RestaurantQueryApplicationService {
             int radius,
             int page,
             int size,
-            String sort) {
-        if (SORT_DISTANCE.equals(sort)) {
+            String sort,
+            RestaurantFilters filters) {
+        if (!requiresCandidatePool(sort, filters)) {
             return amapClient.searchNearby(longitude, latitude, radius, page, size);
         }
         return amapClient.searchNearby(longitude, latitude, radius, 1, candidatePoolSize(size));
@@ -134,8 +164,9 @@ public class RestaurantQueryApplicationService {
             int radius,
             int page,
             int size,
-            String sort) {
-        if (SORT_DISTANCE.equals(sort)) {
+            String sort,
+            RestaurantFilters filters) {
+        if (!requiresCandidatePool(sort, filters)) {
             return amapClient.searchByKeyword(keyword, longitude, latitude, radius, page, size);
         }
         return amapClient.searchByKeyword(keyword, longitude, latitude, radius, 1, candidatePoolSize(size));
@@ -145,7 +176,13 @@ public class RestaurantQueryApplicationService {
         return Math.max(size * 5, SORTED_CANDIDATE_MIN_SIZE);
     }
 
-    private List<RestaurantListItem> toRestaurantPageItems(List<AmapPoi> pois, int page, int size, String sort) {
+    private ProcessedRestaurantPage processRestaurantPage(
+            List<AmapPoi> pois,
+            long rawTotal,
+            int page,
+            int size,
+            String sort,
+            RestaurantFilters filters) {
         Map<String, RestaurantMetricSnapshotEntity> snapshotByPoiId = restaurantMetricSnapshotRepository.findAllById(
                         pois.stream().map(AmapPoi::poiId).toList())
                 .stream()
@@ -167,22 +204,61 @@ public class RestaurantQueryApplicationService {
                             snapshot == null ? null : snapshot.getAvgPerCapitaPrice(),
                             RestaurantMetricSnapshotViewSupport.visibleAiTags(snapshot))
                         ;
-                })
+                        })
                 .toList();
 
-        if (SORT_DISTANCE.equals(sort)) {
-            return items;
+        List<RestaurantListItem> filtered = applyFilters(items, filters);
+        if (!requiresCandidatePool(sort, filters)) {
+            return new ProcessedRestaurantPage(filtered, rawTotal);
         }
 
-        List<RestaurantListItem> sorted = new ArrayList<>(items);
+        List<RestaurantListItem> sorted = new ArrayList<>(filtered);
         sorted.sort(comparatorFor(sort));
-        return paginate(sorted, page, size);
+        return new ProcessedRestaurantPage(paginate(sorted, page, size), filtered.size());
     }
 
     private List<RestaurantListItem> paginate(List<RestaurantListItem> items, int page, int size) {
         int fromIndex = Math.min((page - 1) * size, items.size());
         int toIndex = Math.min(fromIndex + size, items.size());
         return items.subList(fromIndex, toIndex);
+    }
+
+    private boolean requiresCandidatePool(String sort, RestaurantFilters filters) {
+        return !SORT_DISTANCE.equals(sort) || filters.hasAny();
+    }
+
+    private List<RestaurantListItem> applyFilters(List<RestaurantListItem> items, RestaurantFilters filters) {
+        return items.stream()
+                .filter(item -> matchesCategory(item, filters.category()))
+                .filter(item -> matchesMinPrice(item, filters.minAvgPerCapitaPrice()))
+                .filter(item -> matchesMaxPrice(item, filters.maxAvgPerCapitaPrice()))
+                .toList();
+    }
+
+    private boolean matchesCategory(RestaurantListItem item, String category) {
+        if (category == null) {
+            return true;
+        }
+        if (category.equals(item.category())) {
+            return true;
+        }
+        return List.of(item.category().split(";")).stream()
+                .map(String::trim)
+                .anyMatch(category::equals);
+    }
+
+    private boolean matchesMinPrice(RestaurantListItem item, Integer minAvgPerCapitaPrice) {
+        if (minAvgPerCapitaPrice == null) {
+            return true;
+        }
+        return item.avgPerCapitaPrice() != null && item.avgPerCapitaPrice() >= minAvgPerCapitaPrice;
+    }
+
+    private boolean matchesMaxPrice(RestaurantListItem item, Integer maxAvgPerCapitaPrice) {
+        if (maxAvgPerCapitaPrice == null) {
+            return true;
+        }
+        return item.avgPerCapitaPrice() != null && item.avgPerCapitaPrice() <= maxAvgPerCapitaPrice;
     }
 
     private Comparator<RestaurantListItem> comparatorFor(String sort) {
@@ -210,6 +286,23 @@ public class RestaurantQueryApplicationService {
     }
 
     public record RestaurantPage(List<RestaurantListItem> items, int page, int size, long total) {
+    }
+
+    private record ProcessedRestaurantPage(List<RestaurantListItem> items, long total) {
+    }
+
+    private record RestaurantFilters(String category, Integer minAvgPerCapitaPrice, Integer maxAvgPerCapitaPrice) {
+        private static RestaurantFilters of(String category, Integer minAvgPerCapitaPrice, Integer maxAvgPerCapitaPrice) {
+            if (minAvgPerCapitaPrice != null && maxAvgPerCapitaPrice != null && minAvgPerCapitaPrice > maxAvgPerCapitaPrice) {
+                throw new BusinessException(ErrorCode.VALIDATION_FAILED);
+            }
+            String normalizedCategory = category == null || category.isBlank() ? null : category.trim();
+            return new RestaurantFilters(normalizedCategory, minAvgPerCapitaPrice, maxAvgPerCapitaPrice);
+        }
+
+        private boolean hasAny() {
+            return category != null || minAvgPerCapitaPrice != null || maxAvgPerCapitaPrice != null;
+        }
     }
 
     public record RestaurantListItem(
