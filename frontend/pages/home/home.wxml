@@ -58,6 +58,12 @@
         </view>
         <text class="action-text">卡片滑</text>
       </view>
+      <view class="action-btn action-ai" bindtap="goToAiChat">
+        <view class="action-icon-shell">
+          <view class="svg-icon icon-star"></view>
+        </view>
+        <text class="action-text">AI 推荐</text>
+      </view>
     </view>
   </view>
 

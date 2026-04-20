@@ -30,56 +30,35 @@
    - `frontend/pages/swipe/*`
    - `frontend/pages/detail/*`
 
-4. **当前还没有独立的 AI 对话页 / 推荐聊天页**
-   - `frontend/pages/` 下目前没有专门承载 AI 对话流式渲染的页面或请求模块
-   - 本文档里关于 AI 问答的内容，当前属于“后续正式联调契约”，不是“前端已经做完”
+4. **已新增独立 AI 对话页 / 推荐聊天页（基础版）**
+  - 页面：`frontend/pages/ai-chat/*`
+  - 流式请求模块：`frontend/api/recommendation-chat.js`
+  - 当前已接入 `POST /api/v1/recommendations/ask/stream` 的结构化事件渲染
 
-### 0.2 当前仍是旧数据模型的页面
+### 0.2 当前已完成的底座修复
 
-以下页面当前仍主要依赖旧字段或本地缓存：
-
-另外还有一个很容易被忽视、但会直接破坏联调真实性的问题：
-
-- `frontend/app.js` 里的 `mergeWithMockRestaurants()` 会在真实后端返回数量不足 12 条时，**把 mock 餐厅混入真实列表**
-- 这会导致列表、首页、卡片页、详情页里同时存在“真实 POI + 本地假数据”
-- 一旦详情页、评论页、AI 推荐页继续沿用这份混合列表，就会出现：
-  - 页面能点开，但后端没有这个 `poiId` 的真实上下文
-  - 前端看得到的餐厅和后端推荐候选不一致
-  - 黑名单 / 评论 / AI 推荐结果出现“前端看起来对，实际服务端不一致”的错觉
-
-所以在真正开始评论 / AI / 排序联调前，建议把“成功请求后仍混入 mock 数据”也纳入 P0 必修项。
-
-- `frontend/pages/restaurants/restaurants.js`
-  - 仍使用旧字段：`rating`、`priceLevel`、`tags`
-  - 当前排序只有：`rating`、`distance`
-  - 当前筛选仍是本地分类/价位筛选，不是后端增强排序
-
-- `frontend/pages/detail/detail.js`
-  - 评论仍保存在 `wx.setStorageSync`
-  - 只有纯文本评论输入，没有评分、人均、聚合摘要
-  - 未接当前用户评论接口 / 公开评论接口 / 聚合摘要接口
+当前已经完成以下关键修复：
 
 - `frontend/app.js`
-  - `bootstrapRestaurants()` 已尝试调用 `/restaurants/nearby`
-  - **但当前有两个关键兼容问题：**
-    1. 传参使用的是 `pageSize`，不是后端当前文档约定的 `size`
-    2. `extractRestaurantList()` 没处理当前分页结构 `data.items`
-  - 这意味着：即使后端成功返回分页数据，前端也可能把结果识别为空，然后落回 mock 数据
+  - `extractRestaurantList()` 已支持 `data.items`
+  - `bootstrapRestaurants()` 已统一传 `size`
+  - 成功获取真实后端列表后不再混入 mock
 
-### 0.3 当前尚未接入的后端能力
+- `frontend/pages/restaurants/restaurants.js`
+  - 已接后端排序枚举：`distance / avgRating / reviewCount / avgPriceAsc / avgPriceDesc / smart`
+  - 已展示增强字段：`avgRating`、`reviewCount`、`avgPerCapitaPrice`、`aiTags`
+
+- `frontend/pages/detail/detail.js`
+  - 评论已从本地存储迁移到后端接口
+  - 已接入当前用户评论、公开评论列表、聚合摘要与场景标签
+
+### 0.3 当前尚未接入或待增强的后端能力
 
 以下能力后端已经在本次 diff 中补齐，但前端尚未真正落地：
 
-1. 当前用户单店评论 CRUD
-2. 餐厅公开评论列表
-3. 餐厅评论聚合摘要（评分 / 人均 / AI 标签 / AI 摘要）
-4. 列表增强字段：`avgRating`、`reviewCount`、`avgPerCapitaPrice`、`aiTags`
-5. 列表增强排序：`avgRating`、`reviewCount`、`avgPriceAsc`、`avgPriceDesc`、`smart`
-6. AI 同步问答：`POST /api/v1/recommendations/ask`
-7. AI 流式问答：`POST /api/v1/recommendations/ask/stream`
-8. 最近选择历史：`POST/GET /api/v1/users/{userId}/choice-history`
-9. 推荐反馈闭环：`POST/GET /api/v1/users/{userId}/recommendation-feedback`
-10. 轻量口味画像：`GET /api/v1/users/{userId}/preference-profile`
+1. AI 同步问答：`POST /api/v1/recommendations/ask`（前端正式链路仍建议不用）
+2. 对话状态持久化（退出页面后恢复上一轮流式会话）
+3. `choice-history / recommendation-feedback` 的历史查询页展示（GET 已有接口，但前端还未做独立历史页）
 
 ### 0.3.1 与新增后端能力相关的前端风险（本轮不改前端，只记录风险）
 
@@ -836,7 +815,12 @@ const requestTask = wx.request({
 });
 ```
 
-当前前端仓库里还没有专门处理这类流式请求的页面和模块，因此后续正式接入时要把“请求发起 + chunk 解析 + 消息状态维护”一起补上。
+当前前端仓库已经新增专门处理这类流式请求的页面和模块：
+
+- `frontend/pages/ai-chat/*`
+- `frontend/api/recommendation-chat.js`
+
+后续可在现有实现上继续增强“请求预热 + 会话状态持久化 + refine 快捷入口”。
 
 推荐的首轮预热方式：
 

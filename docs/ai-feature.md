@@ -173,7 +173,9 @@ AI Service 相关实现：
 
 - 小程序正式聊天链路应优先接 `POST /api/v1/recommendations/ask/stream`
 - 前端不需要自行传日期、星期、早中晚餐或天气字段
-- 当前 `frontend/pages/` 下还没有独立 AI 对话页或流式请求模块，这部分仍属于待接入状态
+- 当前已接入独立 AI 对话页与流式模块：
+   - `frontend/pages/ai-chat/*`
+   - `frontend/api/recommendation-chat.js`
 
 ### 4.4 轻量 refine
 
@@ -358,7 +360,7 @@ backend 内部维护 `aiStatus`，但当前不对前端暴露。
 - 面向前端暴露 `aiStatus`
 - 单店自由问答接口
 - 基于向量库或 RAG 的评论检索增强
-- 当前前端仓库中的独立 AI 对话页 / 流式请求模块
+- AI 对话页的会话持久化与多轮 refine 快捷操作（当前仍是轻量版本）
 
 ---
 

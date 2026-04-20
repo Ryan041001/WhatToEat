@@ -1,7 +1,8 @@
 // frontend/api/client.js
 
-// 根据环境配置 baseURL，微信开发者工具本地调试默认使用 127.0.0.1
-const baseURL = 'http://127.0.0.1:8080/api/v1';
+import { getApiBaseUrl } from './base-url';
+
+let isHandlingUnauthorized = false;
 
 /**
  * 封装微信的 wx.request
@@ -12,6 +13,13 @@ const baseURL = 'http://127.0.0.1:8080/api/v1';
  */
 const request = (url, method = 'GET', data = {}, options = {}) => {
   return new Promise((resolve, reject) => {
+    const {
+      silent = false,
+      allowHttpStatus = [],
+      returnFullResponse = false,
+      skipAuthRedirect = false
+    } = options;
+
     // 从本地缓存获取 token
     const token = wx.getStorageSync('token');
     const header = {
@@ -24,43 +32,82 @@ const request = (url, method = 'GET', data = {}, options = {}) => {
     }
 
     wx.request({
-      url: `${baseURL}${url}`,
+      url: `${getApiBaseUrl()}${url}`,
       method,
       data,
       header,
       success: (res) => {
         const { statusCode, data } = res;
-        // 简单处理状态码，通常 2xx 表示成功
-        if (statusCode >= 200 && statusCode < 300) {
+        const is2xx = statusCode >= 200 && statusCode < 300;
+        const isAllowedStatus = Array.isArray(allowHttpStatus) && allowHttpStatus.includes(statusCode);
+        if (is2xx || isAllowedStatus) {
+          if (returnFullResponse) {
+            resolve({
+              statusCode,
+              data,
+              header: res.header || {}
+            });
+            return;
+          }
           resolve(data);
         } else if (statusCode === 401) {
-          // 未授权，处理 token 过期的情况
           wx.removeStorageSync('token');
-          wx.showToast({
-            title: '登录已过期，请重新登录',
-            icon: 'none'
+
+          if (!skipAuthRedirect && !isHandlingUnauthorized) {
+            isHandlingUnauthorized = true;
+            if (!silent) {
+              wx.showToast({
+                title: '登录已过期，请重新登录',
+                icon: 'none'
+              });
+            }
+            wx.redirectTo({
+              url: '/pages/index/index',
+              complete: () => {
+                setTimeout(() => {
+                  isHandlingUnauthorized = false;
+                }, 600);
+              }
+            });
+          }
+
+          reject({
+            statusCode,
+            data,
+            code: data && data.code,
+            message: (data && data.message) || 'Unauthorized'
           });
-          wx.redirectTo({
-            url: '/pages/index/index'
-          });
-          reject(new Error('Unauthorized'));
         } else {
-          // 其他服务器错误
-          wx.showToast({
-            title: data.message || '请求失败',
-            icon: 'none'
+          if (!silent) {
+            wx.showToast({
+              title: (data && data.message) || '请求失败',
+              icon: 'none'
+            });
+          }
+          reject({
+            statusCode,
+            data,
+            code: data && data.code,
+            message: (data && data.message) || '请求失败'
           });
-          reject(data);
         }
       },
       fail: (err) => {
         const message = (err && err.errMsg) ? err.errMsg : '网络请求异常';
-        wx.showToast({
-          title: '网络开小差了，请稍后重试',
-          icon: 'none'
-        });
+        if (!silent) {
+          wx.showToast({
+            title: '网络开小差了，请稍后重试',
+            icon: 'none'
+          });
+        }
         console.error('请求失败详情:', message, err);
-        reject(err);
+        reject({
+          statusCode: 0,
+          data: null,
+          code: 0,
+          message,
+          raw: err
+        });
       }
     });
   });

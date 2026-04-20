@@ -102,22 +102,62 @@
 
           <view class="sort-menu" wx:if="{{showSortModal}}">
             <view
-              class="sort-option {{selectedSort === 'rating' ? 'active' : ''}}"
-              bindtap="changeSort"
-              data-sort="rating"
-            >
-              <text class="sort-label">按评分</text>
-              <view class="sort-check" wx:if="{{selectedSort === 'rating'}}">
-                <view class="app-icon icon-check icon-fill"></view>
-              </view>
-            </view>
-            <view
               class="sort-option {{selectedSort === 'distance' ? 'active' : ''}}"
               bindtap="changeSort"
               data-sort="distance"
             >
               <text class="sort-label">按距离</text>
               <view class="sort-check" wx:if="{{selectedSort === 'distance'}}">
+                <view class="app-icon icon-check icon-fill"></view>
+              </view>
+            </view>
+            <view
+              class="sort-option {{selectedSort === 'avgRating' ? 'active' : ''}}"
+              bindtap="changeSort"
+              data-sort="avgRating"
+            >
+              <text class="sort-label">按评分</text>
+              <view class="sort-check" wx:if="{{selectedSort === 'avgRating'}}">
+                <view class="app-icon icon-check icon-fill"></view>
+              </view>
+            </view>
+            <view
+              class="sort-option {{selectedSort === 'reviewCount' ? 'active' : ''}}"
+              bindtap="changeSort"
+              data-sort="reviewCount"
+            >
+              <text class="sort-label">按评论数</text>
+              <view class="sort-check" wx:if="{{selectedSort === 'reviewCount'}}">
+                <view class="app-icon icon-check icon-fill"></view>
+              </view>
+            </view>
+            <view
+              class="sort-option {{selectedSort === 'avgPriceAsc' ? 'active' : ''}}"
+              bindtap="changeSort"
+              data-sort="avgPriceAsc"
+            >
+              <text class="sort-label">人均从低到高</text>
+              <view class="sort-check" wx:if="{{selectedSort === 'avgPriceAsc'}}">
+                <view class="app-icon icon-check icon-fill"></view>
+              </view>
+            </view>
+            <view
+              class="sort-option {{selectedSort === 'avgPriceDesc' ? 'active' : ''}}"
+              bindtap="changeSort"
+              data-sort="avgPriceDesc"
+            >
+              <text class="sort-label">人均从高到低</text>
+              <view class="sort-check" wx:if="{{selectedSort === 'avgPriceDesc'}}">
+                <view class="app-icon icon-check icon-fill"></view>
+              </view>
+            </view>
+            <view
+              class="sort-option {{selectedSort === 'smart' ? 'active' : ''}}"
+              bindtap="changeSort"
+              data-sort="smart"
+            >
+              <text class="sort-label">智能推荐</text>
+              <view class="sort-check" wx:if="{{selectedSort === 'smart'}}">
                 <view class="app-icon icon-check icon-fill"></view>
               </view>
             </view>
@@ -149,7 +189,7 @@
             <text class="card-name">{{item.name}}</text>
             <view class="card-rating">
               <view class="star-shell"><view class="app-icon icon-star icon-fill"></view></view>
-              <text class="rating-value">{{item.rating}}</text>
+              <text class="rating-value">{{item.displayRating}}</text>
             </view>
           </view>
           <view class="card-meta">
@@ -157,10 +197,12 @@
             <text class="meta-dot">•</text>
             <text class="meta-item">{{item.distance}}</text>
             <text class="meta-dot">•</text>
-            <text class="meta-item">{{item.priceText}}</text>
+            <text class="meta-item">{{item.displayAvgPerCapitaPrice}}</text>
+            <text class="meta-dot">•</text>
+            <text class="meta-item">{{item.displayReviewCount}} 条评论</text>
           </view>
           <view class="card-tags">
-            <text class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">{{tag}}</text>
+            <text class="tag" wx:for="{{item.aiTags && item.aiTags.length > 0 ? item.aiTags : item.tags}}" wx:for-item="tag" wx:key="*this">{{tag}}</text>
           </view>
           <text class="card-desc" wx:if="{{item.description}}">{{item.description}}</text>
           <view class="card-footer">

@@ -26,7 +26,7 @@
           </view>
           <view class="hero-meta hero-meta-star">
             <view class="meta-icon-shell meta-icon-star"><view class="app-icon icon-star icon-fill"></view></view>
-            <text class="hero-meta-text">{{restaurant.rating}}</text>
+            <text class="hero-meta-text">{{restaurant.avgRating !== null && restaurant.avgRating !== undefined ? restaurant.avgRating : '--'}}</text>
           </view>
         </view>
       </view>
@@ -55,44 +55,125 @@
         </view>
       </view>
 
+      <view class="summary-card glass-panel-soft">
+        <view class="summary-head">
+          <text class="section-label">评论聚合摘要</text>
+          <text class="summary-tip" wx:if="{{summaryLoading}}">更新中...</text>
+        </view>
+
+        <view class="summary-metrics">
+          <view class="summary-metric-item">
+            <text class="summary-metric-label">平均评分</text>
+            <text class="summary-metric-value">{{summary.avgRating !== null && summary.avgRating !== undefined ? summary.avgRating : '暂无评分'}}</text>
+          </view>
+          <view class="summary-metric-item">
+            <text class="summary-metric-label">评论数</text>
+            <text class="summary-metric-value">{{summary.reviewCount}}</text>
+          </view>
+          <view class="summary-metric-item">
+            <text class="summary-metric-label">平均人均</text>
+            <text class="summary-metric-value">{{summary.avgPerCapitaPrice !== null && summary.avgPerCapitaPrice !== undefined ? '¥' + summary.avgPerCapitaPrice : '人均待补充'}}</text>
+          </view>
+        </view>
+
+        <view class="tags" wx:if="{{summary.aiTags && summary.aiTags.length > 0}}">
+          <text class="tag" wx:for="{{summary.aiTags}}" wx:key="*this">{{item}}</text>
+        </view>
+
+        <view class="summary-text-wrap" wx:if="{{summary.aiSummary}}">
+          <text class="summary-text">{{summary.aiSummary}}</text>
+        </view>
+
+        <view class="summary-empty" wx:if="{{!summary.aiSummary}}">
+          <text>{{summary.reviewCount > 0 ? 'AI 摘要暂不可用' : '暂无评论'}}</text>
+        </view>
+
+        <view class="scenario-wrap" wx:if="{{summary.recommendedScenarios && summary.recommendedScenarios.length > 0}}">
+          <text class="scenario-title">适合场景</text>
+          <view class="scenario-tags">
+            <text class="scenario-tag" wx:for="{{summary.recommendedScenarios}}" wx:for-item="scene" wx:key="*this">{{scene}}</text>
+          </view>
+        </view>
+      </view>
+
       <view class="comment-card glass-panel-soft">
         <view class="comment-head">
-          <text class="section-label">用户评论</text>
-          <text class="comment-count">{{comments.length}} 条</text>
+          <text class="section-label">我的评论</text>
+          <text class="comment-count" wx:if="{{myReviewLoading}}">加载中...</text>
+          <text class="comment-count" wx:elif="{{hasReviewed}}">已发布</text>
+          <text class="comment-count" wx:else>未发布</text>
         </view>
 
         <view class="comment-editor">
+          <view class="rating-field">
+            <text class="field-label">评分（0.5 ~ 5.0）</text>
+            <view class="rating-options">
+              <view
+                wx:for="{{ratingOptions}}"
+                wx:key="value"
+                class="rating-pill {{reviewForm.ratingScore === item.value ? 'active' : ''}}"
+                data-value="{{item.value}}"
+                bindtap="onRatingSelect"
+              >
+                {{item.label}}
+              </view>
+            </view>
+          </view>
+
+          <view class="price-field">
+            <text class="field-label">人均价格（元）</text>
+            <input
+              class="price-input"
+              type="number"
+              placeholder="例如 28"
+              value="{{reviewForm.perCapitaPrice}}"
+              bindinput="onPerCapitaInput"
+            />
+          </view>
+
           <textarea
             class="comment-input"
             placeholder="说说你对这家店的看法..."
-            maxlength="120"
+            maxlength="1000"
             auto-height
-            value="{{commentInput}}"
-            bindinput="onCommentInput"
+            value="{{reviewForm.content}}"
+            bindinput="onReviewContentInput"
           ></textarea>
-          <button class="comment-submit" disabled="{{!canSubmitComment}}" bindtap="submitComment">发布</button>
+
+          <view class="comment-actions">
+            <button class="comment-submit" loading="{{submittingReview}}" bindtap="submitReview">
+              {{hasReviewed ? '更新评论' : '发布评论'}}
+            </button>
+            <button class="comment-delete" wx:if="{{hasReviewed}}" loading="{{deletingReview}}" bindtap="deleteMyReview">删除评论</button>
+          </view>
+        </view>
+      </view>
+
+      <view class="comment-card glass-panel-soft">
+        <view class="comment-head">
+          <text class="section-label">公开评论</text>
+          <text class="comment-count">{{publicReviews.length}} 条</text>
         </view>
 
-        <view class="comment-empty" wx:if="{{comments.length === 0}}">
-          <text>还没有评论，来抢个沙发吧</text>
+        <view class="comment-empty" wx:if="{{reviewListLoading}}">
+          <text>评论加载中...</text>
+        </view>
+
+        <view class="comment-empty" wx:elif="{{publicReviews.length === 0}}">
+          <text>暂无评论</text>
         </view>
 
         <view class="comment-list" wx:else>
-          <view class="comment-item" wx:for="{{visibleComments}}" wx:key="id">
+          <view class="comment-item" wx:for="{{publicReviews}}" wx:key="id">
             <view class="comment-meta">
               <text class="comment-author">{{item.author}}</text>
-              <text class="comment-time">{{item.createdAt}}</text>
+              <text class="comment-time">{{item.displayTime}}</text>
+            </view>
+            <view class="comment-extra">
+              <text class="comment-extra-item">评分：{{item.ratingScore !== null && item.ratingScore !== undefined ? item.ratingScore : '--'}}</text>
+              <text class="comment-extra-item">人均：{{item.perCapitaPrice !== null && item.perCapitaPrice !== undefined ? '¥' + item.perCapitaPrice : '--'}}</text>
             </view>
             <text class="comment-content">{{item.content}}</text>
-          </view>
-
-          <view class="comment-fold-wrap" wx:if="{{comments.length > collapseThreshold}}">
-            <button class="comment-fold-btn" bindtap="toggleCommentFold">
-              {{commentsCollapsed ? '展开更多评论' : '收起评论'}}
-            </button>
-            <text class="comment-fold-tip" wx:if="{{commentsCollapsed}}">
-              还有 {{comments.length - visibleComments.length}} 条未显示
-            </text>
           </view>
         </view>
       </view>

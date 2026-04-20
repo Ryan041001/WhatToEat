@@ -1,0 +1,58 @@
+<view class="page">
+  <view class="header">
+    <text class="title">AI 推荐问答</text>
+    <text class="subtitle">基于当前位置和候选餐厅给出推荐</text>
+  </view>
+
+  <view class="profile-hint" wx:if="{{profileLoading || preferenceSummary}}">
+    <text wx:if="{{profileLoading}}">正在读取口味画像...</text>
+    <text wx:elif="{{preferenceSummary}}">你的近期偏好：{{preferenceSummary}}</text>
+  </view>
+
+  <view class="panel">
+    <textarea
+      class="question-input"
+      maxlength="200"
+      auto-height
+      placeholder="例如：想吃热汤，预算 35 以内，别太远"
+      value="{{question}}"
+      bindinput="onQuestionInput"
+    ></textarea>
+    <view class="action-row">
+      <button class="btn primary" loading="{{loading}}" bindtap="askAi">开始推荐</button>
+      <button class="btn ghost" wx:if="{{status === 'error' || status === 'interrupted'}}" bindtap="retry">重试</button>
+    </view>
+    <text class="status">{{statusText}}</text>
+  </view>
+
+  <view class="panel" wx:if="{{answerText}}">
+    <text class="section-title">推荐理由</text>
+    <text class="answer-text">{{answerText}}</text>
+  </view>
+
+  <view class="panel" wx:if="{{cards.length > 0}}">
+    <text class="section-title">推荐餐厅</text>
+    <view class="card-list">
+      <view class="card" wx:for="{{cards}}" wx:key="poiId">
+        <view class="card-head">
+          <text class="card-name">{{item.rank}}. {{item.name}}</text>
+          <text class="card-distance">{{item.distance}}m</text>
+        </view>
+        <view class="card-meta">
+          <text>{{item.category}}</text>
+          <text>评分：{{item.avgRating !== null && item.avgRating !== undefined ? item.avgRating : '--'}}</text>
+          <text>人均：{{item.avgPerCapitaPrice !== null && item.avgPerCapitaPrice !== undefined ? '¥' + item.avgPerCapitaPrice : '--'}}</text>
+        </view>
+        <view class="tag-row" wx:if="{{item.aiTags && item.aiTags.length > 0}}">
+          <text class="tag" wx:for="{{item.aiTags}}" wx:for-item="tag" wx:key="*this">{{tag}}</text>
+        </view>
+        <text class="reason" wx:if="{{item.matchReason}}">{{item.matchReason}}</text>
+        <view class="card-actions">
+          <button class="mini-btn success" data-poiid="{{item.poiId}}" bindtap="chooseThisRestaurant">就吃这家</button>
+          <button class="mini-btn" data-poiid="{{item.poiId}}" bindtap="openDetail">查看详情</button>
+          <button class="mini-btn warn" data-poiid="{{item.poiId}}" bindtap="rejectCard">不想吃这家</button>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
