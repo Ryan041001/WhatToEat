@@ -36,7 +36,10 @@ Page({
   async loadData() {
     this.setData({ loading: true, error: '' });
     try {
-      await app.bootstrapRestaurants();
+      await app.bootstrapRestaurants({
+        force: true,
+        forceLocationRefresh: true
+      });
       const restaurants = app.getRestaurants();
       const actives = app.getActiveRestaurants();
       const topRated = [...actives]

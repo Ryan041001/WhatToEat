@@ -10,6 +10,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -19,12 +20,15 @@ public class UserChoiceHistoryApplicationService {
 
     static final int RECENT_SUPPRESSION_DAYS = 3;
 
+    private final Clock clock;
     private final UserRepository userRepository;
     private final UserChoiceHistoryRepository userChoiceHistoryRepository;
 
     public UserChoiceHistoryApplicationService(
+            Clock clock,
             UserRepository userRepository,
             UserChoiceHistoryRepository userChoiceHistoryRepository) {
+        this.clock = clock;
         this.userRepository = userRepository;
         this.userChoiceHistoryRepository = userChoiceHistoryRepository;
     }
@@ -60,7 +64,7 @@ public class UserChoiceHistoryApplicationService {
             return Set.of();
         }
         validateUserExists(userId);
-        LocalDateTime since = LocalDateTime.now().minusDays(RECENT_SUPPRESSION_DAYS);
+        LocalDateTime since = LocalDateTime.now(clock).minusDays(RECENT_SUPPRESSION_DAYS);
         return userChoiceHistoryRepository.findByUserIdAndChosenAtAfterOrderByChosenAtDesc(userId, since).stream()
                 .map(UserChoiceHistoryEntity::getPoiId)
                 .collect(Collectors.toSet());

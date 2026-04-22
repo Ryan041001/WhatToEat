@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
@@ -22,14 +23,17 @@ public class UserRecommendationFeedbackApplicationService {
 
     static final int RECENT_FEEDBACK_DAYS = 7;
 
+    private final Clock clock;
     private final UserRepository userRepository;
     private final RecommendationFeedbackRepository recommendationFeedbackRepository;
     private final UserChoiceHistoryApplicationService userChoiceHistoryApplicationService;
 
     public UserRecommendationFeedbackApplicationService(
+            Clock clock,
             UserRepository userRepository,
             RecommendationFeedbackRepository recommendationFeedbackRepository,
             UserChoiceHistoryApplicationService userChoiceHistoryApplicationService) {
+        this.clock = clock;
         this.userRepository = userRepository;
         this.recommendationFeedbackRepository = recommendationFeedbackRepository;
         this.userChoiceHistoryApplicationService = userChoiceHistoryApplicationService;
@@ -112,7 +116,7 @@ public class UserRecommendationFeedbackApplicationService {
     }
 
     private List<RecommendationFeedbackEntity> recentFeedbackEntities(Long userId) {
-        LocalDateTime since = LocalDateTime.now().minusDays(RECENT_FEEDBACK_DAYS);
+        LocalDateTime since = LocalDateTime.now(clock).minusDays(RECENT_FEEDBACK_DAYS);
         return recommendationFeedbackRepository.findByUserIdAndCreatedAtAfterOrderByCreatedAtDescIdDesc(userId, since);
     }
 

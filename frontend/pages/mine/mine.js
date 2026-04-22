@@ -30,7 +30,10 @@ Page({
     });
 
     try {
-      await app.bootstrapRestaurants();
+      await app.bootstrapRestaurants({
+        force: true,
+        forceLocationRefresh: true
+      });
       const restaurants = app.getRestaurants();
       const userAdded = restaurants.filter(r => r.isUserAdded);
       const actives = app.getActiveRestaurants();

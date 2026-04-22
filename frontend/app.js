@@ -274,12 +274,18 @@ App({
 	},
 
 	async bootstrapRestaurants(options = {}) {
-		const { force = false, sort = 'distance' } = options;
+		const {
+			force = false,
+			sort = 'distance',
+			forceLocationRefresh = force
+		} = options;
 		if (!force && sort === 'distance' && this.globalData.restaurants.length >= 12) {
 			return this.globalData.restaurants;
 		}
 
-		const location = await this.resolveCurrentLocation();
+		const location = await this.resolveCurrentLocation({
+			forceRefresh: forceLocationRefresh
+		});
 
 		const params = {
 			longitude: location.longitude,

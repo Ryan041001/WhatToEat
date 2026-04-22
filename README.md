@@ -1,5 +1,9 @@
 # 今天吃什么 (WhatToEat)
 
+[![Codecov](https://codecov.io/gh/Ryan041001/WhatToEat/graph/badge.svg?branch=main)](https://codecov.io/gh/Ryan041001/WhatToEat)
+![Backend Coverage](.github/badges/backend-coverage.svg)
+![AI Coverage](.github/badges/ai-coverage.svg)
+
 ## 团队成员
 | 姓名 | 学号 | 分工 |
 | :--- | :--- | :--- |
@@ -123,6 +127,30 @@ uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
 cd ai-service
 uv run --with pytest pytest -q
 ```
+
+### 覆盖率与徽章
+本仓库现在同时支持：
+
+- GitHub Actions 将 `backend` 的 JaCoCo 和 `ai-service` 的 `coverage.xml` 上传到 Codecov
+- `README.md` 同时展示 Codecov 总徽章，以及仓库内生成的 `backend` / `ai-service` 本地覆盖率徽章
+- 后端 CI 已拆分为独立的“测试覆盖率”和“打包”任务，覆盖率上传不再依赖 `package/verify`
+
+本地刷新覆盖率报告与徽章：
+
+```bash
+cd backend
+JAVA_HOME=$(/usr/libexec/java_home -v 17) ./mvnw test jacoco:report
+
+cd ../ai-service
+UV_CACHE_DIR=../.uv-cache uv run --with pytest --with pytest-cov pytest --cov=app --cov-report=xml:coverage.xml --cov-report=term -q
+
+cd ..
+python3 scripts/update_coverage_badges.py
+```
+
+说明：
+- Codecov 已通过 `.github/workflows/test-and-coverage.yml` 接入
+- 若仓库为私有仓库，请在 GitHub 仓库 Secrets 中配置 `CODECOV_TOKEN`
 
 ### Docker Compose 联调
 ```bash

@@ -100,7 +100,10 @@ Page({
 				avatarUrl: user.avatarUrl || avatarUrl
 			});
 			try {
-				await app.bootstrapRestaurants({ force: true });
+				await app.bootstrapRestaurants({
+					force: true,
+					forceLocationRefresh: true
+				});
 			} catch (bootstrapError) {}
 
 			wx.showToast({ title: '登录成功', icon: 'success' });
