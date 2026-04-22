@@ -30,8 +30,9 @@ public class RestaurantController {
             @RequestParam double latitude,
             @RequestParam(defaultValue = "1000") @Min(100) @Max(50000) int radius,
             @RequestParam(defaultValue = "1") @Min(1) int page,
-            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
-        return ApiResponse.ok(queryService.nearby(longitude, latitude, radius, page, size));
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size,
+            @RequestParam(defaultValue = "distance") String sort) {
+        return ApiResponse.ok(queryService.nearby(longitude, latitude, radius, page, size, sort));
     }
 
     @GetMapping("/search")
@@ -41,10 +42,11 @@ public class RestaurantController {
             @RequestParam double latitude,
             @RequestParam(defaultValue = "1000") @Min(100) @Max(50000) int radius,
             @RequestParam(defaultValue = "1") @Min(1) int page,
-            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size,
+            @RequestParam(defaultValue = "distance") String sort) {
         if (keyword == null || keyword.isBlank() || page < 1) {
             throw new BusinessException(ErrorCode.VALIDATION_FAILED);
         }
-        return ApiResponse.ok(queryService.search(keyword, longitude, latitude, radius, page, size));
+        return ApiResponse.ok(queryService.search(keyword, longitude, latitude, radius, page, size, sort));
     }
 }

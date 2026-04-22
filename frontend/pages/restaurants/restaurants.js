@@ -10,10 +10,14 @@ Page({
     categories: ['川菜', '日料', '快餐', '烧烤', '米线', '面食', '韩餐', '西餐', '火锅', '小吃'],
     selectedCategory: '',
     selectedPrice: 0,
-    selectedSort: 'rating',
+    selectedSort: 'distance',
     sortOptions: {
-      rating: '按评分',
-      distance: '按距离'
+      distance: '按距离',
+      avgRating: '按评分',
+      reviewCount: '按评论数',
+      avgPriceAsc: '人均从低到高',
+      avgPriceDesc: '人均从高到低',
+      smart: '智能推荐'
     },
     showSortModal: false,
     heroCollapsed: false
@@ -34,11 +38,19 @@ Page({
   async loadData() {
     this.setData({ loading: true, error: '' });
     try {
-      await app.bootstrapRestaurants();
+      await app.bootstrapRestaurants({
+        force: true,
+        sort: this.data.selectedSort
+      });
       const restaurants = app.getRestaurants().map((r) => ({
         ...r,
-        priceText: '¥'.repeat(r.priceLevel),
-        distanceValue: this.parseDistance(r.distance)
+        displayRating: r.avgRating !== null && r.avgRating !== undefined ? Number(r.avgRating).toFixed(1) : '暂无评分',
+        displayReviewCount: Number.isFinite(Number(r.reviewCount)) ? Number(r.reviewCount) : 0,
+        displayAvgPerCapitaPrice: r.avgPerCapitaPrice !== null && r.avgPerCapitaPrice !== undefined
+          ? `¥${r.avgPerCapitaPrice}`
+          : '人均待补充',
+        priceText: r.priceLevel > 0 ? '¥'.repeat(r.priceLevel) : '--',
+        distanceValue: Number.isFinite(Number(r.distanceValue)) ? Number(r.distanceValue) : this.parseDistance(r.distance)
       }));
 
       this.setData({ restaurants }, () => {
@@ -71,10 +83,8 @@ Page({
       filtered = filtered.filter(r => r.priceLevel === this.data.selectedPrice);
     }
 
-    // 排序
-    if (this.data.selectedSort === 'rating') {
-      filtered.sort((a, b) => b.rating - a.rating);
-    } else if (this.data.selectedSort === 'distance') {
+    // 后端已经按 selectedSort 返回，此处仅保留 distance 兜底
+    if (this.data.selectedSort === 'distance') {
       filtered.sort((a, b) => a.distanceValue - b.distanceValue);
     }
 

@@ -203,6 +203,10 @@
   background: linear-gradient(135deg, #20C997 0%, #48D1CC 100%);
 }
 
+.action-ai {
+  background: linear-gradient(135deg, #4F46E5 0%, #06B6D4 100%);
+}
+
 .action-icon-shell {
   display: flex;
   align-items: center;

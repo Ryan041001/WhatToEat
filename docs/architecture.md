@@ -2,45 +2,47 @@
 
 ## 1. 文档目标
 
-本文档用于说明“今天吃什么（WhatToEat）”后端在本阶段的整体架构、模块边界、数据流、技术选型与运行方式。后续代码实现与测试以本设计为基准。
+本文档描述 **WhatToEat 当前仓库真实落地的后端架构**，用于给前后端联调、数据库演进、AI 能力扩展提供统一基线。
 
-- 技术栈：Java 17 + Spring Boot 4.x + Spring Data JPA + MySQL
-- 外部依赖：高德 Web 服务 API（餐厅主数据来源）
-- 设计原则：高内聚、低耦合、先交付核心路径
+当前实现不是“纯高德代理 + 黑名单”的早期版本，而是已经进入 **高德主数据 + 本地评论与聚合增强 + AI 推荐增强** 的阶段。
+
+- 技术栈：Java 17 + Spring Boot 4.x + Spring Data JPA + MySQL / H2
+- 外部依赖：高德 Web 服务 API、内部 AI Service（OpenAI-compatible）
+- 设计原则：主链路稳定优先、结构化返回优先、上游隔离优先、前端只对接 backend
 
 ---
 
-## 2. 架构范围与约束
+## 2. 当前范围与约束
 
-### 2.1 本阶段范围
+### 2.1 当前已落地范围
 
 1. 附近餐厅查询（高德）
-2. 随机推荐（支持黑名单过滤）
-3. 卡片候选列表
-4. 用户侧数据：黑名单、备注（历史能力预留）
+2. 关键词搜索（高德）
+3. 随机推荐与卡片候选列表
+4. 餐厅列表增强排序（基于本地聚合快照）
+5. 用户黑名单 CRUD
+6. 用户备注 CRUD
+7. 用户对单店评论 CRUD
+8. 餐厅公开评论分页查询
+9. 餐厅评论聚合摘要与 AI 标签摘要
+10. AI 推荐问答（同步 / 流式）
 
-### 2.2 关键约束
+### 2.2 当前仍未接入主链路的能力
 
-- 餐厅主数据不落地为本地主表（来源统一为高德 POI）
-- 本地数据库只保存用户侧数据（黑名单、备注、历史）
-- 前端不直接调用高德 API，由后端统一代理与清洗
+1. 还没有独立的“用户长期口味画像表”，当前采用轻量聚合接口实时生成画像
+2. 还没有把 AI 摘要状态显式暴露给前端（当前只暴露摘要结果，不暴露 `aiStatus`）
+3. 前端尚未真正接入 choice-history / recommendation-feedback / preference-profile 这组三个新能力
+
+### 2.3 关键约束
+
+- 餐厅主数据 **仍不落地为本地主表**，统一来源于高德 POI
+- 本地数据库现在不仅保存用户侧数据，也保存 **餐厅评论事实表** 与 **餐厅聚合快照表**
+- 前端不直接调用高德，也不直接调用 AI Service，只调用 `backend/`
+- AI 只能在当前候选集合或当前餐厅评论语料范围内工作，不能脱离现有候选随意编造餐厅
 
 ---
 
-## 3. 技术选型确认
-
-| 层级 | 选择 | 理由 |
-|---|---|---|
-| 后端框架 | Spring Boot 4 + Java 17 | 便于快速搭建 RESTful API，生态成熟，适合后续扩展参数校验、统一异常处理、配置管理与测试能力 |
-| 数据访问 | Spring Data JPA + Hibernate | 适合本阶段以黑名单、备注等用户侧数据为主的 CRUD 场景，开发成本低，和 Spring Boot 集成直接 |
-| 数据库 | MySQL 8 | 适合承载结构化用户数据，和 JPA、Flyway 配套成熟，便于后续联调与部署 |
-| 数据库迁移 | Flyway | 用版本化 SQL 管理表结构演进，避免人工改库导致环境不一致 |
-| 外部服务集成 | 高德 Web 服务 API | 提供餐厅主数据与位置能力，避免本地维护完整餐厅主表 |
-| 运行与部署方式 | 本地开发使用 `Spring Boot + Maven Wrapper`，后续部署采用单体服务 + MySQL | 本阶段先保证本地开发与联调效率，部署拓扑简单，便于课堂作业验收 |
-
----
-
-## 4. 逻辑分层架构
+## 3. 总体架构
 
 ```mermaid
 flowchart TD
@@ -50,15 +52,28 @@ flowchart TD
         direction TB
 
         subgraph WEB[Web Layer]
-            RC[RecommendationController]
-            BC[UserBlacklistController]
-            NC[UserNoteController]
+            AC[AuthController]
+            RC[RestaurantController]
+            RECC[RecommendationController]
+            BLC[UserBlacklistController]
+            NTC[UserNoteController]
+            RVC[RestaurantReviewController]
+            RSC[RestaurantReviewSummaryController]
         end
 
         subgraph APP[Application Layer]
-            RAS[RecommendationApplicationService]
-            BAS[UserBlacklistApplicationService]
-            NAS[UserNoteApplicationService]
+            AAS[AuthApplicationService]
+            RQAS[RestaurantQueryApplicationService]
+            RECAS[RecommendationApplicationService]
+            BLAS[UserBlacklistApplicationService]
+            NTAS[UserNoteApplicationService]
+            RVAS[RestaurantReviewApplicationService]
+            RVQAS[RestaurantReviewQueryApplicationService]
+            RMAS[RestaurantMetricAggregationService]
+            RVAIAS[RestaurantReviewAiApplicationService]
+            UCHAS[UserChoiceHistoryApplicationService]
+            URFAS[UserRecommendationFeedbackApplicationService]
+            UPPAS[UserPreferenceProfileApplicationService]
         end
 
         subgraph DOMAIN[Domain Layer]
@@ -66,80 +81,143 @@ flowchart TD
         end
 
         subgraph INFRA[Infrastructure Layer]
-            AR[AmapClient / AmapHttpClient]
+            AMAP[AmapClient / AmapHttpClient]
+            AI[AiAssistantClient / AiHttpClient]
             UR[UserRepository]
-            UBR[UserBlacklistRepository]
-            UNR[UserRestaurantNoteRepository]
-            UHR[UserChoiceHistoryRepository]
+            BLR[UserBlacklistRepository]
+            NR[UserRestaurantNoteRepository]
+            HR[UserChoiceHistoryRepository]
+            RVR[RestaurantReviewRepository]
+            RMSR[RestaurantMetricSnapshotRepository]
         end
 
         subgraph SUPPORT[Common & Config]
             RESP[ApiResponse]
             EX[GlobalExceptionHandler / ErrorCode]
-            CFG[AmapProperties / WebClientConfig]
+            CFG[AmapProperties / AiServiceProperties / Web Config]
         end
     end
 
     subgraph EXT[External Systems]
-        AMAP[高德 Web 服务 API]
+        AMAPAPI[高德 Web 服务 API]
+        AISVC[AI Service]
         DB[(MySQL / H2)]
     end
 
+    FE --> AC
     FE --> RC
-    FE --> BC
-    FE --> NC
+    FE --> RECC
+    FE --> BLC
+    FE --> NTC
+    FE --> RVC
+    FE --> RSC
 
-    RC --> RAS
-    BC --> BAS
-    NC --> NAS
+    RC --> RQAS
+    RECC --> RECAS
+    RVC --> RVAS
+    RSC --> RVQAS
 
-    RAS --> RDS
-    RAS --> AR
-    RAS --> UBR
-    BAS --> UR
-    BAS --> UBR
-    NAS --> UR
-    NAS --> UNR
+    RECAS --> RDS
+    RECAS --> AMAP
+    RECAS --> AI
+    RECAS --> BLR
+    RECAS --> RMSR
+    RQAS --> AMAP
+    RQAS --> RMSR
+    RVAS --> RVR
+    RVAS --> RMAS
+    RVAS --> RVAIAS
+    RVQAS --> RVR
+    RVQAS --> RMSR
+    RVAIAS --> AI
+    BLAS --> UR
+    BLAS --> BLR
+    NTAS --> UR
+    NTAS --> NR
 
-    RDS --> UBR
-    AR --> AMAP
+    AMAP --> AMAPAPI
+    AI --> AISVC
     UR --> DB
-    UBR --> DB
-    UNR --> DB
-    UHR --> DB
-
-    RC -.统一返回.-> RESP
-    BC -.统一返回.-> RESP
-    NC -.统一返回.-> RESP
-    RC -.异常处理.-> EX
-    BC -.异常处理.-> EX
-    NC -.异常处理.-> EX
-    AR -.配置注入.-> CFG
+    BLR --> DB
+    NR --> DB
+    HR --> DB
+    RVR --> DB
+    RMSR --> DB
 ```
-
-说明：`user_choice_history` 当前只在数据模型中预留，尚未接入现行推荐链路。
-
-### 4.1 分层职责
-
-- **Controller**：参数接收、校验、返回统一响应结构
-- **Application Service**：编排业务流程（例如推荐时先取候选再过滤）
-- **Domain Service**：核心业务规则（随机策略、过滤策略）
-- **Repository（JPA）**：用户侧数据持久化访问
-- **Integration/Amap**：高德接口调用、超时与错误转换、DTO 映射
-- **Common**：统一返回体、全局异常处理、业务错误码
 
 ---
 
-## 5. 包结构实现
+## 4. 分层职责
+
+### 4.1 Controller
+
+负责参数接收、校验、返回统一 `ApiResponse`，并在需要时做最小权限校验。
+
+当前主要控制器：
+
+- `AuthController`
+- `RestaurantController`
+- `RecommendationController`
+- `UserBlacklistController`
+- `UserNoteController`
+- `RestaurantReviewController`
+- `RestaurantReviewSummaryController`
+
+### 4.2 Application Service
+
+负责业务编排与跨模块调用，不直接暴露给前端。
+
+关键流程：
+
+- `RestaurantQueryApplicationService`
+  - 调高德 nearby / search
+  - 合并 `restaurant_metric_snapshot`
+  - 执行本地增强排序
+- `RecommendationApplicationService`
+  - 构建候选池
+  - 应用黑名单过滤
+  - 调 AI 生成结构化推荐
+  - 在流式场景把上游工具调用翻译成 `recommendation.card`
+- `RestaurantReviewApplicationService`
+  - 评论校验 / 创建 / 更新 / 删除
+  - 触发快照重算 + AI 标签重算
+- `RestaurantReviewQueryApplicationService`
+  - 公开评论分页查询
+  - 评论摘要查询
+- `RestaurantMetricAggregationService`
+  - 聚合评论数 / 均分 / 均价
+- `RestaurantReviewAiApplicationService`
+  - 基于当前餐厅评论生成标签与摘要
+
+### 4.3 Domain Service
+
+- `RecommendationDomainService`
+  - 黑名单过滤
+  - 随机挑选策略
+
+### 4.4 Infrastructure
+
+- `integration/amap/*`：高德调用、DTO 清洗、错误转换
+- `infrastructure/ai/*`：调用内部 AI Service，封装同步 / 流式、工具调用与 SSE 解析
+- `repository/*`：JPA 持久化访问
+
+---
+
+## 5. 当前包结构与真实映射
 
 ```text
 backend/src/main/java/com/zjgsu/whattoeat/
 ├── controller/
 ├── service/
-│   ├── application/
-│   └── domain/
+│   └── application/          # 评论、画像、反馈等仍在该目录
+├── application/
+│   └── recommendation/       # 推荐主链路已迁到此处
+├── domain/
+│   └── recommendation/       # 推荐领域规则
 ├── integration/
 │   └── amap/
+├── infrastructure/
+│   └── ai/                   # AI 集成已迁到此处
 ├── repository/
 ├── model/
 │   ├── dto/
@@ -148,78 +226,110 @@ backend/src/main/java/com/zjgsu/whattoeat/
 └── config/
 ```
 
-当前仓库已按上述结构落地，核心代码位置如下：
+新增且必须纳入架构认知的模块：
 
-- `controller/RecommendationController.java`：餐厅推荐相关接口
-- `controller/UserBlacklistController.java`：用户黑名单相关接口
-- `controller/UserNoteController.java`：用户备注相关接口
-- `service/application/`：流程编排层
-- `service/domain/`：推荐与过滤规则
-- `integration/amap/`：高德接口封装
-- `repository/`：JPA Repository
-- `model/entity/`：用户侧数据实体
-- `common/`：统一返回体、异常与错误码
-- `config/`：配置绑定与 WebClient 配置
+- `service/application/RestaurantReview*`
+- `service/application/RestaurantMetricAggregationService`
+- `application/recommendation/`
+- `domain/recommendation/`
+- `infrastructure/ai/`
+- `RestaurantReviewEntity`
+- `RestaurantMetricSnapshotEntity`
+- `RestaurantReviewRepository`
+- `RestaurantMetricSnapshotRepository`
+- `RestaurantReviewApplicationService`
+- `RestaurantReviewQueryApplicationService`
+- `RestaurantMetricAggregationService`
+- `RestaurantReviewAiApplicationService`
 
 ---
 
 ## 6. 核心业务流程
 
-### 6.1 随机推荐流程
+### 6.1 餐厅查询与增强排序
 
-```mermaid
-sequenceDiagram
-    participant FE as MiniProgram
-    participant RC as RecommendationController
-    participant RAS as RecommendationApplicationService
-    participant AR as AmapHttpClient
-    participant DBR as UserBlacklistRepository
-    participant DSR as RecommendationDomainService
-    participant DB as MySQL/H2
-    participant AMAP as Amap API
+1. 前端请求 `/api/v1/restaurants/nearby` 或 `/api/v1/restaurants/search`
+2. 后端调用高德获取候选列表
+3. 读取 `restaurant_metric_snapshot` 合并增强字段：
+   - `avgRating`
+   - `reviewCount`
+   - `avgPerCapitaPrice`
+   - `aiTags`
+4. 若 `sort=distance`，直接返回当前页结果
+5. 若是增强排序：
+   - 先抓取放大的候选池
+   - 在本地按评分 / 评论数 / 人均 / smart 排序
+   - 再本地分页
 
-    FE->>RC: GET /api/v1/recommendations/random\n(longitude, latitude, radius, userId)
-    RC->>RAS: 参数校验通过后发起推荐请求
-    RAS->>AR: 调用 nearby/search 获取候选餐厅
-    AR->>AMAP: HTTP 请求高德 POI 接口
-    AMAP-->>AR: 原始 POI 列表
-    AR-->>RAS: 清洗后的候选餐厅 DTO
-    RAS->>DBR: 按 userId 查询黑名单
-    DBR->>DB: SELECT poi_id FROM user_blacklist
-    DB-->>DBR: 黑名单 POI 集合
-    DBR-->>RAS: 黑名单结果
-    RAS->>DSR: 执行黑名单过滤与随机策略
-    DSR-->>RAS: 单个推荐结果
-    opt 记录历史选择
-        RAS->>DB: INSERT INTO user_choice_history
-    end
-    RAS-->>RC: 推荐结果
-    RC-->>FE: ApiResponse<RecommendationResult>
-```
+> 注意：当前增强排序是“候选池内局部排序”，不是对高德全量结果做全局稳定排序，因此深分页语义不能简单按 `total` 推断。
 
-### 6.2 用户拉黑流程
+### 6.2 评论写入与聚合刷新
 
-1. 前端请求 `POST /api/v1/users/{userId}/blacklist`
-2. 后端校验 Bearer Token 与路径 `userId` 一致，并检查唯一键（`user_id + poi_id`）
-3. 持久化写入 `user_blacklist`
-4. 返回统一成功响应
+1. 前端调用 `PUT /api/v1/users/{userId}/restaurant-reviews/{poiId}`
+2. 后端校验 Bearer Token 与路径 `userId` 一致
+3. 校验评分 / 人均 / 文本合法性
+4. upsert `restaurant_review`
+5. 调 `RestaurantMetricAggregationService.refreshSnapshot(poiId)`
+6. 调 `RestaurantReviewAiApplicationService.refreshTagsForPoi(poiId)`
+7. 返回当前用户评论详情
+
+### 6.3 评论聚合摘要查询
+
+1. 前端调用 `GET /api/v1/restaurants/{poiId}/review-summary`
+2. 后端从 `restaurant_metric_snapshot` 读取：
+   - 评论数
+   - 平均评分
+   - 平均人均
+   - AI 标签
+   - AI 摘要
+3. 若无快照则稳定返回空态结构
+
+### 6.4 AI 推荐问答
+
+1. 前端可调用 `/api/v1/recommendations/ask` 或 `/ask/stream`，但正式聊天链路应优先 `/ask/stream`
+2. 后端从高德拉取候选池
+3. 可选应用 `userId` 对应黑名单过滤
+4. 合并 `restaurant_metric_snapshot` 形成增强候选卡
+5. 后端基于服务端 `Clock` 自动补充轻量时间语境（日期、星期、当前时段），前端无需再额外传时间/日期/天气字段
+6. 把候选卡送入 AI Service
+7. AI 只能从给定候选中做推荐
+8. 后端返回：
+   - 同步：`answer + recommendations[]`
+   - 流式：`session.created / retrieval.* / recommendation.card / answer.* / done / error`
+
+补充说明：
+
+- 当前推荐主链路对 AI Service 使用的是流式推荐接口；同步接口也是由服务端聚合流式结果得到
+- 因此前端若要做正式聊天体验，应优先接 `/ask/stream`
 
 ---
 
-## 7. 异常与稳定性设计
+## 7. 稳定性与鲁棒性设计
 
-### 7.1 异常分层
+### 7.1 上游隔离
 
-- 参数异常：400（参数缺失/格式错误）
-- 业务异常：4xx（例如重复拉黑）
-- 上游异常：502/503（高德接口失败或超时）
-- 系统异常：500
+- 高德异常统一映射为：`3001 / 3002 / 3003`
+- AI 服务异常统一映射为：`3004 / 3005`
+- 前端不需要感知内部模型协议，只消费 backend 统一结构
 
-### 7.2 韧性建议（实现阶段落地）
+### 7.2 权限与一致性
 
-- 外部调用设置连接与读取超时
-- 对高德返回做错误码映射，避免错误透传前端
-- 记录关键链路日志（请求 ID / userId / poiId）
+- 评论接口要求 Bearer Token
+- `token user != path userId` 时直接返回 `401 / 1003`
+- 黑名单与评论的“用户身份”都以服务端认证结果为准，不能依赖前端本地缓存推断
+
+### 7.3 空态设计
+
+- 周边无结果：`404 / 3003`
+- 当前用户未评论某店：`404 / 2104`
+- 公开评论为空：`200 + items: []`
+- 评论摘要为空：`200 + reviewCount=0 + aiTags=[]`
+
+### 7.4 当前需要前后端共同认知的限制
+
+1. `review-summary` 当前**不暴露 `aiStatus`**，所以前端无法严格区分“还在生成 / 生成失败 / 暂无摘要”，只能把 `aiSummary == null` 视为“摘要暂不可用”
+2. 增强排序是候选池内本地排序，深翻页需要双重停止条件（`items.length === 0` 或达到 `total`）
+3. `choice-history` 与 `recommendation-feedback` 已进入推荐过滤与 AI 上下文，但前端若不主动调用，对用户仍不会产生真实效果
 
 ---
 
@@ -229,100 +339,49 @@ sequenceDiagram
 flowchart LR
     USER[用户]
     WX[微信小程序]
-    APP[Spring Boot 单体服务]
-    MYSQL[(MySQL 8\n dev profile)]
-    H2[(H2 In-Memory\n test profile)]
-    AMAP[高德 Web 服务 API]
-    CONF[application.properties\napplication-dev.yml\napplication-test.yml]
-    FLYWAY[Flyway Migration]
+    APP[Spring Boot Backend]
+    AI[FastAPI AI Service]
+    MYSQL[(MySQL 8)]
+    H2[(H2 In-Memory)]
+    AMAP[高德 API]
 
     USER --> WX
     WX --> APP
     APP --> AMAP
+    APP --> AI
     APP --> MYSQL
-    APP -.测试模式.-> H2
-    CONF --> APP
-    FLYWAY --> MYSQL
+    APP -. test profile .-> H2
 ```
 
-### 8.1 环境划分
+### 8.1 当前环境形态
 
-- `dev`：本地开发，连接本机 MySQL `whattoeat_dev`
-- `test`：本地无 MySQL 验证或测试环境，使用 H2 内存数据库
-- `prod`：生产环境（后续）
+- `dev`：本地 MySQL + 本地/外部 AI Service
+- `test`：H2 + mock/stub 外部依赖
+- `docker`：`docker-compose.yml` 同时拉起 `mysql + ai-service + backend`
 
-### 8.2 配置管理
+### 8.2 配置要点
 
-- `application.properties` + `application-{profile}.yml`
-- 敏感信息（如高德 key）通过环境变量或密钥管理注入
-
-### 8.3 本地运行命令
-
-1. 使用开发库运行：
-
-```bash
-cd backend
-JAVA_HOME=$(/usr/libexec/java_home -v 17) ./mvnw spring-boot:run
-```
-
-2. 在未启动 MySQL 时验证后端启动：
-
-```bash
-cd backend
-JAVA_HOME=$(/usr/libexec/java_home -v 17) ./mvnw spring-boot:run \
-  -Dspring-boot.run.profiles=test \
-  -Dspring-boot.run.useTestClasspath=true
-```
-
-3. 运行后端测试：
-
-```bash
-cd backend
-JAVA_HOME=$(/usr/libexec/java_home -v 17) ./mvnw test
-```
+- `amap.*`：高德配置
+- `wechat.auth.*`：登录配置
+- `ai.service.*`：backend 到 AI Service 的调用配置
+- AI Service 自身再通过环境变量连接 OpenAI-compatible 模型
 
 ---
 
-## 9. 与实现阶段的映射关系
+## 9. 文档对齐要求
 
-- `docs/api.md`：接口契约与参数定义
-- `docs/database.md`：ER、表结构、索引、迁移方案
-- 本文档：系统边界与模块职责
+以下文档必须以“当前实现”而不是早期方案为准：
 
-三者共同作为后端实现与联调的基线。
+- `docs/api.md`
+- `docs/api.yaml`
+- `docs/database.md`
+- `docs/backend.md`
+- `docs/frontend-ai-review-integration.md`
 
----
+尤其要避免继续使用以下旧说法：
 
-## 10. 前端架构
+- “本地数据库只保存黑名单、备注、历史”
+- “当前只有随机推荐和卡片候选列表，没有评论与 AI”
+- “recommendation 只基于高德结果池随机挑选”
 
-### 10.1 页面与组件结构
-
-```mermaid
-graph TD
-    subgraph "微信小程序 (WhatToEat Frontend)"
-        direction LR
-        A[app.js / app.json] --> B((页面))
-        B --> P_Home[pages/home<br>首页]
-        B --> P_Restaurants[pages/restaurants<br>餐厅列表]
-        B --> P_Spin[pages/spin<br>转盘决定]
-        B --> P_Swipe[pages/swipe<br>卡片决定]
-        B --> P_Mine[pages/mine<br>我的]
-    end
-
-    subgraph "可复用组件 (Components)"
-        C_Nav[components/navigation-bar<br>自定义导航栏]
-    end
-
-    P_Home --> C_Nav
-    P_Restaurants --> C_Nav
-    P_Spin --> C_Nav
-    P_Swipe --> C_Nav
-    P_Mine --> C_Nav
-
-    style P_Home fill:#D6EAF8
-    style P_Restaurants fill:#D6EAF8
-    style P_Spin fill:#D6EAF8
-    style P_Swipe fill:#D6EAF8
-    style P_Mine fill:#D6EAF8
-    style C_Nav fill:#D5F5E3
-```
+这些说法都已经与仓库真实状态不一致。

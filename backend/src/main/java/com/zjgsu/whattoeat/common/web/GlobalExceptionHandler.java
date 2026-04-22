@@ -75,12 +75,13 @@ public class GlobalExceptionHandler {
 
     private HttpStatus mapHttpStatus(ErrorCode errorCode) {
         return switch (errorCode) {
-            case VALIDATION_FAILED, LOGIN_CODE_INVALID, NOTE_CONTENT_INVALID -> HttpStatus.BAD_REQUEST;
+            case VALIDATION_FAILED, LOGIN_CODE_INVALID, NOTE_CONTENT_INVALID,
+                    REVIEW_CONTENT_INVALID, REVIEW_RATING_INVALID, REVIEW_PRICE_INVALID -> HttpStatus.BAD_REQUEST;
             case UNAUTHORIZED -> HttpStatus.UNAUTHORIZED;
-            case USER_NOT_FOUND, BLACKLIST_NOT_FOUND, NOTE_NOT_FOUND, AMAP_NO_RESULT -> HttpStatus.NOT_FOUND;
+            case USER_NOT_FOUND, BLACKLIST_NOT_FOUND, NOTE_NOT_FOUND, REVIEW_NOT_FOUND, AMAP_NO_RESULT -> HttpStatus.NOT_FOUND;
             case BLACKLIST_ALREADY_EXISTS, NOTE_ALREADY_EXISTS -> HttpStatus.CONFLICT;
-            case AMAP_UPSTREAM_ERROR -> HttpStatus.BAD_GATEWAY;
-            case AMAP_UPSTREAM_TIMEOUT -> HttpStatus.GATEWAY_TIMEOUT;
+            case AMAP_UPSTREAM_ERROR, AI_UPSTREAM_ERROR -> HttpStatus.BAD_GATEWAY;
+            case AMAP_UPSTREAM_TIMEOUT, AI_UPSTREAM_TIMEOUT -> HttpStatus.GATEWAY_TIMEOUT;
             case SYSTEM_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
         };
     }

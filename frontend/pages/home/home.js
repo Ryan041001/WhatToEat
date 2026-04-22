@@ -136,6 +136,18 @@ Page({
     });
   },
 
+  goToAiChat() {
+    if (!app.globalData) {
+      app.globalData = {};
+    }
+    app.globalData.aiShouldPreheat = true;
+    app.globalData.aiPreheatQuestion = '你好，先帮我看看现在适合吃什么';
+
+    wx.navigateTo({
+      url: '/pages/ai-chat/ai-chat'
+    });
+  },
+
   // 跳转到我的
   goToMine() {
     wx.navigateTo({

@@ -10,13 +10,18 @@
 /api/v1
 ```
 
-当前已实现五组资源：
+当前已实现十组资源：
 
 - `auth`：登录、登出、当前用户
-- `restaurants`：餐厅查询
-- `recommendations`：随机推荐与卡片候选列表
+- `restaurants`：餐厅查询、排序增强、公开评论与聚合摘要
+- `recommendations`：随机推荐、卡片候选列表、AI 推荐问答与流式问答
 - `users/{userId}/blacklist`：用户黑名单新增、删除、分页查询
 - `users/{userId}/notes`：用户备注 CRUD、分页查询与内容筛选
+- `users/{userId}/restaurant-reviews`：当前用户对单店评论的查询、创建/更新、删除
+- `users/{userId}/choice-history`：最近吃过记录的写入与分页查询
+- `users/{userId}/recommendation-feedback`：推荐反馈闭环写入与分页查询
+- `users/{userId}/preference-profile`：轻量口味画像
+- `restaurants/{poiId}/review-summary`：餐厅评论聚合摘要、AI 标签与场景解释
 
 ---
 
@@ -87,6 +92,14 @@ Authorization: Bearer <token>
 - `GET /api/v1/users/{userId}/notes/{noteId}`
 - `PUT /api/v1/users/{userId}/notes/{noteId}`
 - `DELETE /api/v1/users/{userId}/notes/{noteId}`
+- `GET /api/v1/users/{userId}/restaurant-reviews/{poiId}`
+- `PUT /api/v1/users/{userId}/restaurant-reviews/{poiId}`
+- `DELETE /api/v1/users/{userId}/restaurant-reviews/{poiId}`
+- `POST /api/v1/users/{userId}/choice-history`
+- `GET /api/v1/users/{userId}/choice-history`
+- `POST /api/v1/users/{userId}/recommendation-feedback`
+- `GET /api/v1/users/{userId}/recommendation-feedback`
+- `GET /api/v1/users/{userId}/preference-profile`
 
 说明：当前 blacklist 创建接口仍以 `userId` 作为资源定位参数，但服务端会校验 Bearer Token 对应用户与路径参数一致；后续如收敛到“当前用户上下文”，可在不改变资源语义的前提下进一步演进。
 
@@ -100,8 +113,8 @@ Authorization: Bearer <token>
 - `401 Unauthorized`：未登录或 token 无效
 - `404 Not Found`：用户或目标资源不存在
 - `409 Conflict`：重复创建或资源冲突
-- `502 Bad Gateway`：高德上游失败
-- `504 Gateway Timeout`：高德上游超时
+- `502 Bad Gateway`：高德或 AI 上游失败
+- `504 Gateway Timeout`：高德或 AI 上游超时
 - `500 Internal Server Error`：系统内部异常
 
 ---
@@ -126,13 +139,22 @@ Authorization: Bearer <token>
 - `2004`：备注不存在
 - `2005`：备注已存在
 
-### 5.4 高德上游
+### 5.4 评论
+
+- `2101`：评论内容非法
+- `2102`：评分非法
+- `2103`：人均价格非法
+- `2104`：评论不存在
+
+### 5.5 上游服务
 
 - `3001`：高德上游失败
 - `3002`：高德上游超时
 - `3003`：高德无结果
+- `3004`：AI 服务失败
+- `3005`：AI 服务超时
 
-### 5.5 系统兜底
+### 5.6 系统兜底
 
 - `9000`：系统异常
 
@@ -145,6 +167,12 @@ Authorization: Bearer <token>
 - `page`：页码，从 `1` 开始
 - `size`：每页条数
 - `keyword`：可选筛选条件，适用于餐厅搜索与备注内容筛选
+
+补充约定：
+
+- 餐厅查询接口额外支持 `sort`
+- 备注分页接口额外支持 `keyword`
+- 评论分页接口当前不支持 `keyword` 与 `sort`
 
 分页返回统一结构：
 
@@ -177,6 +205,7 @@ Authorization: Bearer <token>
 - `radius`：搜索半径（米），默认 `1000`
 - `page`：页码，默认 `1`
 - `size`：每页条数，默认 `10`
+- `sort`：排序方式，可选；支持 `distance`、`avgRating`、`reviewCount`、`avgPriceAsc`、`avgPriceDesc`、`smart`
 
 调用提示：
 
@@ -192,6 +221,8 @@ curl 'http://127.0.0.1:8080/api/v1/restaurants/nearby?longitude=120.35&latitude=
 结果语义说明：
 - 当 `total == 0` 时，返回 `404 Not Found`，业务码 `3003`（高德无结果）
 - 当 `total > 0` 且当前页 `items` 为空时，返回 `200 OK`，`items: []`
+- 返回项除基础 POI 字段外，还会补充本地聚合增强字段：`avgRating`、`reviewCount`、`avgPerCapitaPrice`、`aiTags`
+- `sort` 为空时默认按 `distance`；如果传入未支持值，返回 `400 Bad Request` / `1001`
 
 返回示例：
 
@@ -231,6 +262,7 @@ curl 'http://127.0.0.1:8080/api/v1/restaurants/nearby?longitude=120.35&latitude=
 - `radius`：搜索半径，默认 `1000`
 - `page`：页码
 - `size`：每页条数
+- `sort`：排序方式，可选；支持 `distance`、`avgRating`、`reviewCount`、`avgPriceAsc`、`avgPriceDesc`、`smart`
 
 请求示例：
 
@@ -241,16 +273,20 @@ curl 'http://127.0.0.1:8080/api/v1/restaurants/search?keyword=拉面&longitude=1
 结果语义说明：
 - 当 `total == 0` 时，返回 `404 Not Found`，业务码 `3003`（高德无结果）
 - 当 `total > 0` 且当前页 `items` 为空时，返回 `200 OK`，`items: []`
+- 返回项除基础 POI 字段外，还会补充本地聚合增强字段：`avgRating`、`reviewCount`、`avgPerCapitaPrice`、`aiTags`
+- `sort` 为空时默认按 `distance`；如果传入未支持值，返回 `400 Bad Request` / `1001`
 
 ---
 
 ## 8. 推荐接口
 
-推荐接口当前不要求 Bearer Token；`userId` 为可选参数，仅用于应用黑名单过滤。
+推荐接口当前不要求 Bearer Token；`userId` 为可选参数，用于加载该用户的候选过滤上下文。
 若传入 `userId`：
 
 - 必须为正整数，否则返回 `400 Bad Request` / `1001`
 - 对应用户必须存在，否则返回 `404 Not Found` / `1002`
+- 会始终应用黑名单过滤
+- 对 `random` / `cards` 还会额外优先避开近 3 天内吃过的店，以及近 7 天内带 `poiId` 的负向反馈；若软过滤后完全无候选，后端会自动回退到只应用黑名单的较宽松候选集
 
 
 ### 8.1 随机推荐餐厅
@@ -263,7 +299,7 @@ curl 'http://127.0.0.1:8080/api/v1/restaurants/search?keyword=拉面&longitude=1
 - `longitude`：经度，必填，坐标系 GCJ-02
 - `latitude`：纬度，必填，坐标系 GCJ-02
 - `radius`：搜索半径（米），默认 `1000`
-- `userId`：可选；传入后会过滤该用户黑名单中的 `poiId`
+- `userId`：可选；传入后会过滤该用户黑名单中的 `poiId`，并优先避开近 3 天内吃过以及近 7 天内被负反馈过的 `poiId`
 
 调用提示：
 
@@ -279,6 +315,7 @@ curl 'http://127.0.0.1:8080/api/v1/recommendations/random?longitude=120.35&latit
 结果语义说明：
 - 使用高德 nearby 结果作为候选池，内部会按页继续拉取并补足最多 `20` 条可用候选，再随机返回一条
 - 过滤黑名单后若候选为空，返回 `404 Not Found`，业务码 `3003`
+- 如果近期软过滤把候选全部排空，后端会自动回退到仅应用黑名单过滤的候选集
 - 高德上游失败 / 超时分别返回 `502 / 504`
 
 返回示例：
@@ -311,7 +348,7 @@ curl 'http://127.0.0.1:8080/api/v1/recommendations/random?longitude=120.35&latit
 - `latitude`：纬度，必填，坐标系 GCJ-02
 - `radius`：搜索半径（米），默认 `1000`
 - `size`：候选数量，默认 `20`
-- `userId`：可选；传入后会过滤该用户黑名单中的 `poiId`
+- `userId`：可选；传入后会过滤该用户黑名单中的 `poiId`，并优先避开近 3 天内吃过以及近 7 天内被负反馈过的 `poiId`
 
 请求示例：
 
@@ -323,6 +360,7 @@ curl 'http://127.0.0.1:8080/api/v1/recommendations/cards?longitude=120.35&latitu
 - 会按页继续拉取高德结果，直到收集满请求的 `size` 条可用候选或上游结果耗尽
 - 返回过滤后的候选列表，顺序与高德返回顺序一致
 - 过滤黑名单后若候选为空，返回 `404 Not Found`，业务码 `3003`
+- 如果近期软过滤把候选全部排空，后端会自动回退到仅应用黑名单过滤的候选集
 - 高德上游失败 / 超时分别返回 `502 / 504`
 
 返回示例：
@@ -345,7 +383,128 @@ curl 'http://127.0.0.1:8080/api/v1/recommendations/cards?longitude=120.35&latitu
 }
 ```
 
+### 8.3 AI 推荐问答
+
+- 方法：`POST`
+- 路径：`/api/v1/recommendations/ask`
+
+请求体字段：
+
+- `question`：必填，用户自然语言问题
+- `longitude` / `latitude`：必填，GCJ-02 坐标
+- `radius`：可选，默认 `1000`
+- `size`：可选，默认 `3`，最大 `10`
+- `userId`：可选；传入后会先校验用户存在，并应用该用户黑名单过滤
+- `context`：可选；用于 refine/连续追问。可传 `previousQuestion`、`rejectedPoiIds`、`selectedPoiIds`、`userSignals`（例如 `健身`）
+
+结果语义说明：
+
+- 返回 `answer` 和结构化 `recommendations` 列表
+- 后端会自动把服务端当前时间注入 AI 上下文，包括日期、星期和当前时段；前端**不要**再额外传日期、星期、早中晚餐标签或天气字段
+- 后端只会从当前候选集中返回推荐餐厅，前端不要从 `answer` 文本里自行解析店名
+- `context.rejectedPoiIds` 会参与本轮过滤，适合做“换一家，但保持条件”
+- 当传入 `userId` 时，后端会自动参考最近吃过、近期反馈、口味画像来增强 AI 推荐上下文
+- 若因为“最近吃过 / 最近明确拒绝”过滤后仍有可用候选，后端会优先保留这些过滤；只有完全无候选时才回退到较宽松候选集
+- 该接口是对外同步兼容接口；后端调用 AI Service 时仍走内部流式推荐链路，再在服务端聚合同步结果，因此 backend -> ai-service 仍然是**只请求流式**
+- `userId` 非正整数返回 `400 / 1001`，用户不存在返回 `404 / 1002`
+- 高德或 AI 上游异常分别返回 `502 / 504`
+
+### 8.4 AI 流式推荐问答
+
+- 方法：`POST`
+- 路径：`/api/v1/recommendations/ask/stream`
+- 响应类型：`text/event-stream`
+
+当前前端可见事件：
+
+- `session.created`
+- `retrieval.started`
+- `retrieval.completed`
+- `recommendation.card`
+- `answer.delta`
+- `answer.done`
+- `done`
+- `error`
+
+主要事件数据字段：
+
+- `session.created`：`messageId`、`requestId`
+- `retrieval.started` / `retrieval.completed`：`candidateCount`
+- `recommendation.card`：`rank`、`poiId`、`name`、`address`、`category`、`distance`、`avgRating`、`reviewCount`、`avgPerCapitaPrice`、`aiTags`、`matchReason`
+- `answer.delta`：`delta`
+- `answer.done`：`answer`
+- `done`：`finishReason`
+- `error`：`code`、`message`
+
+结果语义说明：
+
+- 后端同样会自动注入服务端当前日期、星期和时间段语境；前端只需传问题、坐标、候选上下文，不要自行拼接时间提示词
+- 对于小程序正式接入，`/ask/stream` 应作为默认且唯一的 AI 请求入口；如果需要“进入对话页就看到输出”，可以在餐厅列表和定位拿到后提前发起流式请求
+- `recommendation.card` 与最终回答使用的是同一批已选餐厅；为了保证卡片和文本一致，流里卡片可能先于 `answer.delta` 出现
+- `tool.call` 属于服务端内部协作语义，不作为当前前端对外契约
+- 收到 `error` 事件后，流可能直接结束，前端不应继续等待 `done`
+- 前端应忽略未来新增但暂未识别的事件类型，以保证向前兼容
+
 ---
+
+## 8.5 最近选择历史 / 反馈闭环 / 口味画像
+
+### 8.5.1 记录最近吃过
+
+- `POST /api/v1/users/{userId}/choice-history`
+- 受保护接口，需要 `Authorization: Bearer <token>`
+- 请求体字段：
+  - `poiId`：必填
+  - `poiName`：可选
+- 语义：用于把“最近吃过”真正写入服务端，后续推荐会优先避开近 3 天内吃过的店；若过滤后完全无候选，后端才会回退到较宽松候选集，避免直接空结果。
+
+### 8.5.2 查询最近选择历史
+
+- `GET /api/v1/users/{userId}/choice-history`
+- 受保护接口，需要 `Authorization: Bearer <token>`
+- 分页返回 `items / page / size / total`，当前按 `chosenAt DESC, id DESC` 排序
+
+### 8.5.3 记录推荐反馈
+
+- `POST /api/v1/users/{userId}/recommendation-feedback`
+- 受保护接口，需要 `Authorization: Bearer <token>`
+- 请求体字段：
+  - `feedbackType`：必填，当前支持
+    - `TOO_EXPENSIVE`
+    - `TOO_FAR`
+    - `DONT_WANT_THIS_TODAY`
+    - `LOOKS_UNHYGIENIC`
+    - `ALREADY_ATE`
+  - `poiId` / `poiNameSnapshot`：可选，但强烈建议前端在针对某个候选做反馈时一并传入
+  - `detail`：可选，自然语言补充
+  - `requestQuestion`：可选，记录当时的推荐语境
+- 语义：
+  - `ALREADY_ATE` 会同步写入 choice-history，形成“最近吃过，先别推”的闭环
+  - 其他近期反馈会进入 AI 推荐上下文，并在有 `poiId` 时参与短期软过滤
+
+### 8.5.4 查询推荐反馈
+
+- `GET /api/v1/users/{userId}/recommendation-feedback`
+- 受保护接口，需要 `Authorization: Bearer <token>`
+- 分页返回当前用户的反馈记录，按 `createdAt DESC, id DESC` 排序
+
+### 8.5.5 轻量口味画像
+
+- `GET /api/v1/users/{userId}/preference-profile`
+- 受保护接口，需要 `Authorization: Bearer <token>`
+- 数据来源：
+  - `restaurant_review`
+  - `user_restaurant_note`
+  - `user_blacklist.reason`
+  - `user_choice_history` + `restaurant_metric_snapshot`
+  - `recommendation_feedback`
+- 返回重点字段：
+  - `summary`：一句话画像摘要
+  - `preferredTags` / `avoidedTags`
+  - `avgPerCapitaBudget` / `budgetRange`
+  - `recentChoiceCount`：近 3 天内的选择次数
+  - `reviewCount` / `blacklistCount`
+  - `lifestyleSignals` / `recentFeedbackSignals`
 
 ## 9. 黑名单接口
 
@@ -651,11 +810,43 @@ docs/api.yaml
 
 - 当前认证实现为 mock 微信登录，接口形状贴近真实小程序登录流程
 - 餐厅主数据来源于高德，不在本地维护完整餐厅主表
-- 当前已实现的用户侧写接口包括黑名单与备注 CRUD、推荐查询
+- 当前已实现的用户侧写接口包括黑名单 CRUD、备注 CRUD、餐厅评论 CRUD、推荐查询、公开评论与聚合摘要查询
 
 ---
 
-## 13. 与旧版文档的差异
+## 13. 评论与聚合增强接口（补充）
+
+### 13.1 当前用户评论接口
+
+- `GET /api/v1/users/{userId}/restaurant-reviews/{poiId}`：查询当前用户对单店评论
+- `PUT /api/v1/users/{userId}/restaurant-reviews/{poiId}`：创建或更新当前用户评论
+- `DELETE /api/v1/users/{userId}/restaurant-reviews/{poiId}`：删除当前用户评论
+
+约定：
+
+- 三个接口都要求 `Authorization: Bearer <token>`
+- token 对应用户与路径 `userId` 不一致时返回 `401 / 1003`
+- `GET` 在“用户未评论该店”时返回 `404 / 2104`，前端按空态处理
+- `PUT` 当前无论新建还是更新都返回 `200 OK`
+- `ratingScore` 仅允许 `0.5 ~ 5.0` 且按 `0.5` 步进；非法时返回 `400 / 2102`
+- `perCapitaPrice` 必须为正整数；非法时返回 `400 / 2103`
+- `content` 去除首尾空白后不能为空，且长度不能超过 `1000`；非法时返回 `400 / 2101`
+
+### 13.2 公开评论与聚合摘要接口
+
+- `GET /api/v1/restaurants/{poiId}/reviews`：分页查询公开评论
+- `GET /api/v1/restaurants/{poiId}/review-summary`：查询评分、人均、AI 标签、AI 摘要，以及 recommendedScenarios 场景解释
+
+约定：
+
+- `reviews` 在无评论时返回 `200 OK` + `items: []`
+- `review-summary` 在无评论/无快照时也返回 `200 OK`
+- 空态下当前稳定返回：`reviewCount=0`、`avgRating=null`、`avgPerCapitaPrice=null`、`aiTags=[]`、`aiSummary=null`、`recommendedScenarios=[]`
+- 后端内部存在 AI 摘要生成状态，但 **当前接口不对外暴露 `aiStatus`**
+- 因此对前端来说，只要 AI 结果还没有进入 `ready` 状态（例如生成失败、生成中、尚未触发），`review-summary` 都统一表现为：`aiTags=[]`、`aiSummary=null`
+- 也就是说：前端不应把 `aiSummary=null` 解释为“数据库里一定没有旧值”，而应理解为“当前没有可对外展示的 AI 结果”
+
+## 14. 与旧版文档的差异
 
 本版相较于早期草稿，做了以下收敛：
 

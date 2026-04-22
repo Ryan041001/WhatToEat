@@ -3,6 +3,7 @@
     "pages/index/index",
     "pages/detail/detail",
     "pages/home/home",
+    "pages/ai-chat/ai-chat",
     "pages/mine/mine",
     "pages/restaurants/restaurants",
     "pages/spin/spin",

@@ -15,6 +15,10 @@ function extractRestaurantList(payload) {
 	}
 
 	const data = payload && payload.data ? payload.data : payload;
+  if (data && Array.isArray(data.items)) {
+	  return data.items;
+  }
+
 	if (Array.isArray(data)) {
 		return data;
 	}
@@ -28,24 +32,6 @@ function extractRestaurantList(payload) {
 	}
 
 	return [];
-}
-
-function mergeWithMockRestaurants(list = [], minCount = 12) {
-	if (!Array.isArray(list)) {
-		return [];
-	}
-
-	if (list.length >= minCount) {
-		return list;
-	}
-
-	const existedKeys = new Set(list.map((item) => item.poiId || item.id));
-	const mockExtras = getMockRestaurants().filter((item) => {
-		const key = item.poiId || item.id;
-		return !existedKeys.has(key);
-	});
-
-	return [...list, ...mockExtras].slice(0, minCount);
 }
 
 App({
@@ -101,8 +87,8 @@ App({
 	},
 
 	async bootstrapRestaurants(options = {}) {
-		const { force = false } = options;
-		if (!force && this.globalData.restaurants.length >= 12) {
+		  const { force = false, sort = 'distance' } = options;
+		  if (!force && sort === 'distance' && this.globalData.restaurants.length >= 12) {
 			return this.globalData.restaurants;
 		}
 
@@ -111,15 +97,13 @@ App({
 			latitude: 30.2741,
 			radius: 3000,
 			page: 1,
-			pageSize: 30
+			  size: 30,
+			  sort
 		};
 
 		try {
 			const response = await GetNearbyRestaurants(params);
-			const list = mergeWithMockRestaurants(
-				extractRestaurantList(response).map(mapApiRestaurantToCard),
-				12
-			);
+			  const list = extractRestaurantList(response).map(mapApiRestaurantToCard);
 			if (list.length === 0) {
 				throw new Error('餐厅列表为空');
 			}

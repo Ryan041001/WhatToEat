@@ -31,3 +31,8 @@ wechat:
     app-secret: ${WECHAT_APP_SECRET:}
     base-url: ${WECHAT_AUTH_BASE_URL:https://api.weixin.qq.com}
     mock-login-enabled: true
+
+ai:
+  service:
+    base-url: ${AI_SERVICE_BASE_URL:http://localhost:8000}
+    timeout-seconds: ${AI_SERVICE_TIMEOUT_SECONDS:1}

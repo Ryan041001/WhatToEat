@@ -22,4 +22,51 @@ public class UserChoiceHistoryEntity {
 
     @Column(name = "chosen_at")
     private LocalDateTime chosenAt;
+
+    @PrePersist
+    public void prePersist() {
+        if (chosenAt == null) {
+            chosenAt = LocalDateTime.now();
+        }
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public String getPoiId() {
+        return poiId;
+    }
+
+    public void setPoiId(String poiId) {
+        this.poiId = poiId;
+    }
+
+    public String getPoiName() {
+        return poiName;
+    }
+
+    public void setPoiName(String poiName) {
+        this.poiName = poiName;
+    }
+
+    public LocalDateTime getChosenAt() {
+        return chosenAt;
+    }
+
+    public void setChosenAt(LocalDateTime chosenAt) {
+        this.chosenAt = chosenAt;
+    }
 }
