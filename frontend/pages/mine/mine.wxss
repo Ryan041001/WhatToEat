@@ -48,6 +48,13 @@
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 36rpx;
+  display: block;
+}
+
 .avatar-icon-shell {
   width: 56rpx;
   height: 56rpx;
@@ -136,6 +143,19 @@
   z-index: 2;
   margin-top: -28rpx;
   margin-bottom: 24rpx;
+}
+
+.load-warning {
+  margin-bottom: 24rpx;
+  padding: 18rpx 22rpx;
+  border-radius: 22rpx;
+  background: rgba(255, 240, 239, 0.92);
+}
+
+.load-warning-text {
+  font-size: 22rpx;
+  color: #B42318;
+  line-height: 1.6;
 }
 
 .stats-card {

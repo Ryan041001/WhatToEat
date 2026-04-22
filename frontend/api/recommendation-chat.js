@@ -34,7 +34,27 @@ function parseEventFrame(frameText) {
   }
 }
 
-function mapNetworkErrorMessage(err) {
+function decodeChunk(arrayBuffer) {
+  if (typeof TextDecoder !== 'undefined') {
+    return new TextDecoder('utf-8').decode(arrayBuffer, { stream: true });
+  }
+
+  const bytes = new Uint8Array(arrayBuffer);
+  let binary = '';
+  const chunkSize = 0x8000;
+
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(index, index + chunkSize));
+  }
+
+  try {
+    return decodeURIComponent(escape(binary));
+  } catch (error) {
+    return binary;
+  }
+}
+
+function mapNetworkErrorMessage(err, requestUrl) {
   const rawMessage = (err && err.errMsg ? err.errMsg : '') || '';
   const normalized = String(rawMessage).toLowerCase();
 
@@ -44,6 +64,10 @@ function mapNetworkErrorMessage(err) {
 
   if (normalized.includes('ssl') || normalized.includes('certificate')) {
     return 'HTTPS 证书异常，请检查后端证书或改用开发模式调试';
+  }
+
+  if (normalized.includes('err_connection_refused')) {
+    return `无法连接到 ${requestUrl}。如果是微信开发者工具，请确认后端正在宿主机 8080 监听；如果是真机调试，请把 API 地址改成宿主机局域网 IP。`;
   }
 
   return rawMessage || '网络异常';
@@ -57,11 +81,11 @@ export function startRecommendationStream(payload, handlers = {}) {
   } = handlers;
 
   const token = wx.getStorageSync('token') || '';
-  const decoder = new TextDecoder('utf-8');
   let rawBuffer = '';
+  const requestUrl = `${getApiBaseUrl()}/recommendations/ask/stream`;
 
   const requestTask = wx.request({
-    url: `${getApiBaseUrl()}/recommendations/ask/stream`,
+    url: requestUrl,
     method: 'POST',
     enableChunked: true,
     responseType: 'arraybuffer',
@@ -93,7 +117,7 @@ export function startRecommendationStream(payload, handlers = {}) {
         onError({
           statusCode: 0,
           code: 0,
-          message: mapNetworkErrorMessage(err)
+          message: mapNetworkErrorMessage(err, requestUrl)
         });
       }
     }
@@ -101,7 +125,7 @@ export function startRecommendationStream(payload, handlers = {}) {
 
   requestTask.onChunkReceived((res) => {
     try {
-      rawBuffer += decoder.decode(res.data, { stream: true });
+      rawBuffer += decodeChunk(res.data);
       let delimiterIndex = rawBuffer.indexOf('\n\n');
 
       while (delimiterIndex !== -1) {

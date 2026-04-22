@@ -32,7 +32,7 @@ public class AuthApplicationService {
     }
 
     @Transactional
-    public LoginResult wechatLogin(String code, String nickname) {
+    public LoginResult wechatLogin(String code, String nickname, String avatarUrl) {
         if (code == null || code.isBlank()) {
             throw new BusinessException(ErrorCode.LOGIN_CODE_INVALID);
         }
@@ -42,13 +42,15 @@ public class AuthApplicationService {
             UserEntity created = new UserEntity();
             created.setOpenid(openid);
             created.setNickname(nickname);
+            created.setAvatarUrl(normalizeAvatarUrl(avatarUrl));
             return userRepository.save(created);
         });
 
         if (nickname != null && !nickname.isBlank()) {
             user.setNickname(nickname);
-            user = userRepository.save(user);
         }
+        user.setAvatarUrl(normalizeAvatarUrl(avatarUrl));
+        user = userRepository.save(user);
 
         String token = sessionStore.generateToken();
         sessionStore.save(token, user.getId());
@@ -80,6 +82,13 @@ public class AuthApplicationService {
 
     private boolean isNotBlank(String value) {
         return value != null && !value.isBlank();
+    }
+
+    private String normalizeAvatarUrl(String avatarUrl) {
+        if (avatarUrl == null || avatarUrl.isBlank()) {
+            return null;
+        }
+        return avatarUrl.trim();
     }
 
     public void logout(String token) {

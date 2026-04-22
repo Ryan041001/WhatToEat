@@ -25,16 +25,16 @@
         </view>
       </view>
 
-      <view class="today-pick" bindtap="goToSpin">
+      <view class="today-pick" bindtap="goToAiChat">
         <view class="pick-left">
-          <view class="pick-icon-shell"><view class="svg-icon icon-slot"></view></view>
+          <view class="pick-icon-shell"><view class="svg-icon icon-stars"></view></view>
           <view class="pick-text">
-            <text class="pick-title">随机替我选一个！</text>
-            <text class="pick-subtitle">告别选择困难症</text>
+            <text class="pick-title">AI 推荐问答</text>
+            <text class="pick-subtitle">说下预算和口味，直接给你推荐理由</text>
           </view>
         </view>
         <view class="pick-btn">
-          <text class="pick-btn-text">开始</text>
+          <text class="pick-btn-text">去问问</text>
         </view>
       </view>
     </view>
@@ -57,12 +57,6 @@
           <view class="svg-icon icon-swipe"></view>
         </view>
         <text class="action-text">卡片滑</text>
-      </view>
-      <view class="action-btn action-ai" bindtap="goToAiChat">
-        <view class="action-icon-shell">
-          <view class="svg-icon icon-star"></view>
-        </view>
-        <text class="action-text">AI 推荐</text>
       </view>
     </view>
   </view>

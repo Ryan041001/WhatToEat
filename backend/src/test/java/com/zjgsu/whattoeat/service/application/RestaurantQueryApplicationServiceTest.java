@@ -151,11 +151,89 @@ class RestaurantQueryApplicationServiceTest {
         assertEquals(List.of(), page.items().get(0).aiTags());
     }
 
+    @Test
+    void nearbyShouldFilterByCategoryAndPriceRange() {
+        AmapClient amapClient = mock(AmapClient.class);
+        RestaurantMetricSnapshotRepository snapshotRepository = mock(RestaurantMetricSnapshotRepository.class);
+        RestaurantQueryApplicationService service = new RestaurantQueryApplicationService(
+                amapClient,
+                snapshotRepository,
+                new SimpleMeterRegistry());
+        AmapPoi noodle = new AmapPoi("id-3", "兰州拉面", "文一路", 120.35, 30.31, "面馆", 180);
+        AmapPoi rice = new AmapPoi("id-4", "黄焖鸡米饭", "文二路", 120.36, 30.32, "快餐", 220);
+        when(amapClient.searchNearby(120.35, 30.31, 1000, 1, 50))
+                .thenReturn(new AmapClient.AmapSearchResult(List.of(noodle, rice), 2));
+        when(snapshotRepository.findAllById(anyIterable())).thenReturn(List.of(
+                snapshot("id-3", "4.5", 11, 22, "热汤", null),
+                snapshot("id-4", "4.7", 19, 34, "下饭", null)));
+
+        RestaurantQueryApplicationService.RestaurantPage page = service.nearby(
+                120.35,
+                30.31,
+                1000,
+                1,
+                10,
+                "distance",
+                "面馆",
+                20,
+                25);
+
+        assertEquals(1, page.items().size());
+        assertEquals(1, page.total());
+        assertEquals("id-3", page.items().get(0).poiId());
+    }
+
+    @Test
+    void nearbyShouldExcludeNullPriceWhenPriceBoundsPresent() {
+        AmapClient amapClient = mock(AmapClient.class);
+        RestaurantMetricSnapshotRepository snapshotRepository = mock(RestaurantMetricSnapshotRepository.class);
+        RestaurantQueryApplicationService service = new RestaurantQueryApplicationService(
+                amapClient,
+                snapshotRepository,
+                new SimpleMeterRegistry());
+        AmapPoi noodle = new AmapPoi("id-5", "素面馆", "文三路", 120.35, 30.31, "面馆", 180);
+        AmapPoi rice = new AmapPoi("id-6", "拌饭铺子", "文四路", 120.36, 30.32, "快餐", 220);
+        when(amapClient.searchNearby(120.35, 30.31, 1000, 1, 50))
+                .thenReturn(new AmapClient.AmapSearchResult(List.of(noodle, rice), 2));
+        when(snapshotRepository.findAllById(anyIterable())).thenReturn(List.of(
+                snapshot("id-5", "4.4", 8, null, "热汤", null),
+                snapshot("id-6", "4.6", 12, 26, "下饭", null)));
+
+        RestaurantQueryApplicationService.RestaurantPage page = service.nearby(
+                120.35,
+                30.31,
+                1000,
+                1,
+                10,
+                "distance",
+                null,
+                20,
+                30);
+
+        assertEquals(1, page.items().size());
+        assertEquals("id-6", page.items().get(0).poiId());
+    }
+
+    @Test
+    void nearbyShouldRejectPriceRangeWhenMinGreaterThanMax() {
+        AmapClient amapClient = mock(AmapClient.class);
+        RestaurantMetricSnapshotRepository snapshotRepository = mock(RestaurantMetricSnapshotRepository.class);
+        RestaurantQueryApplicationService service = new RestaurantQueryApplicationService(
+                amapClient,
+                snapshotRepository,
+                new SimpleMeterRegistry());
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> service.nearby(120.35, 30.31, 1000, 1, 10, "distance", null, 50, 20));
+
+        assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
+    }
+
     private RestaurantMetricSnapshotEntity snapshot(
             String poiId,
             String avgRating,
             int reviewCount,
-            int avgPerCapitaPrice,
+            Integer avgPerCapitaPrice,
             String aiTag1,
             String aiTag2) {
         return snapshot(poiId, avgRating, reviewCount, avgPerCapitaPrice, aiTag1, aiTag2, "ready");
@@ -165,7 +243,7 @@ class RestaurantQueryApplicationServiceTest {
             String poiId,
             String avgRating,
             int reviewCount,
-            int avgPerCapitaPrice,
+            Integer avgPerCapitaPrice,
             String aiTag1,
             String aiTag2,
             String aiStatus) {
@@ -173,7 +251,9 @@ class RestaurantQueryApplicationServiceTest {
         entity.setPoiId(poiId);
         entity.setAvgRating(new BigDecimal(avgRating));
         entity.setReviewCount(reviewCount);
-        entity.setAvgPerCapitaPrice(avgPerCapitaPrice);
+        if (avgPerCapitaPrice != null) {
+            entity.setAvgPerCapitaPrice(avgPerCapitaPrice);
+        }
         entity.setAiTag1(aiTag1);
         entity.setAiTag2(aiTag2);
         entity.setAiStatus(aiStatus);

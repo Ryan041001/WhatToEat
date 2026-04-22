@@ -50,6 +50,99 @@ page {
   line-height: 1.6;
 }
 
+.profile-setup {
+  margin-top: 40rpx;
+}
+
+.avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.avatar-picker {
+  width: 136rpx;
+  height: 136rpx;
+  padding: 0;
+  border-radius: 24rpx;
+  overflow: hidden;
+  background: #f2f2f2;
+  border: none;
+  line-height: 0;
+}
+
+.avatar-picker::after {
+  border: none;
+}
+
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 24rpx;
+  background: #f2f2f2;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 24rpx;
+  background: #f2f2f2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #a3a3a3;
+}
+
+.avatar-placeholder-icon {
+  width: 42rpx;
+  height: 42rpx;
+}
+
+.avatar-placeholder-text {
+  margin-top: 10rpx;
+  font-size: 20rpx;
+  line-height: 1;
+  color: #8a8a8a;
+}
+
+.avatar-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.field-group {
+  margin-top: 32rpx;
+}
+
+.field-label {
+  display: block;
+  font-size: 24rpx;
+  color: #7a6758;
+  font-weight: 600;
+}
+
+.field-tip {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: #9c8a7b;
+}
+
+.nickname-input {
+  margin-top: 14rpx;
+  height: 88rpx;
+  padding: 0 28rpx;
+  border-radius: 24rpx;
+  background: #fff7ef;
+  border: 2rpx solid rgba(249, 115, 22, 0.12);
+  color: #2a1a0e;
+  font-size: 28rpx;
+  box-sizing: border-box;
+}
+
 .login-btn {
   margin-top: 48rpx;
   background: #f97316;

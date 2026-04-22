@@ -18,6 +18,9 @@ public class UserEntity {
     @Column
     private String nickname;
 
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -60,6 +63,14 @@ public class UserEntity {
 
     public void setNickname(String nickname) {
         this.nickname = nickname;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
     }
 
     public LocalDateTime getCreatedAt() {

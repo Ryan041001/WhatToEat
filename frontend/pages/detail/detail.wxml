@@ -65,6 +65,14 @@
           <view class="summary-metric-item">
             <text class="summary-metric-label">平均评分</text>
             <text class="summary-metric-value">{{summary.avgRating !== null && summary.avgRating !== undefined ? summary.avgRating : '暂无评分'}}</text>
+            <view class="mini-stars" wx:if="{{summary.avgRating !== null && summary.avgRating !== undefined}}">
+              <view class="mini-star-shell" wx:for="{{summary.ratingStars}}" wx:key="id">
+                <view class="mini-star-track"><view class="app-icon icon-star-solid icon-fill"></view></view>
+                <view class="mini-star-fill">
+                  <view class="app-icon icon-star-solid mini-star-face mini-star-face-{{item.fill}}"></view>
+                </view>
+              </view>
+            </view>
           </view>
           <view class="summary-metric-item">
             <text class="summary-metric-label">评论数</text>
@@ -106,17 +114,34 @@
 
         <view class="comment-editor">
           <view class="rating-field">
-            <text class="field-label">评分（0.5 ~ 5.0）</text>
-            <view class="rating-options">
-              <view
-                wx:for="{{ratingOptions}}"
-                wx:key="value"
-                class="rating-pill {{reviewForm.ratingScore === item.value ? 'active' : ''}}"
-                data-value="{{item.value}}"
-                bindtap="onRatingSelect"
-              >
-                {{item.label}}
+            <view class="field-head">
+              <text class="field-label">评分</text>
+              <text class="field-value {{reviewForm.ratingScore !== null && reviewForm.ratingScore !== undefined ? 'active' : ''}}">{{ratingText}}</text>
+            </view>
+            <view class="rating-stars">
+              <view class="rating-star-shell" wx:for="{{ratingStars}}" wx:key="id">
+                <view class="rating-star-track"><view class="app-icon icon-star-solid icon-fill"></view></view>
+                <view class="rating-star-fill">
+                  <view class="app-icon icon-star-solid rating-star-face rating-star-face-{{item.fill}}"></view>
+                </view>
               </view>
+            </view>
+            <slider
+              class="rating-slider"
+              min="0"
+              max="10"
+              step="1"
+              value="{{reviewForm.ratingSliderValue}}"
+              activeColor="#FF9E2A"
+              backgroundColor="#FFDCC8"
+              block-color="#FF6B6B"
+              block-size="20"
+              bindchanging="onRatingSliderChange"
+              bindchange="onRatingSliderChange"
+            />
+            <view class="rating-scale">
+              <text>未评分</text>
+              <text>5 星</text>
             </view>
           </view>
 
@@ -170,7 +195,17 @@
               <text class="comment-time">{{item.displayTime}}</text>
             </view>
             <view class="comment-extra">
-              <text class="comment-extra-item">评分：{{item.ratingScore !== null && item.ratingScore !== undefined ? item.ratingScore : '--'}}</text>
+              <view class="comment-rating-inline">
+                <text class="comment-extra-item">评分 {{item.ratingScore !== null && item.ratingScore !== undefined ? item.ratingScore : '--'}}</text>
+                <view class="mini-stars" wx:if="{{item.ratingScore !== null && item.ratingScore !== undefined}}">
+                  <view class="mini-star-shell" wx:for="{{item.ratingStars}}" wx:key="id">
+                    <view class="mini-star-track"><view class="app-icon icon-star-solid icon-fill"></view></view>
+                    <view class="mini-star-fill">
+                      <view class="app-icon icon-star-solid mini-star-face mini-star-face-{{item.fill}}"></view>
+                    </view>
+                  </view>
+                </view>
+              </view>
               <text class="comment-extra-item">人均：{{item.perCapitaPrice !== null && item.perCapitaPrice !== undefined ? '¥' + item.perCapitaPrice : '--'}}</text>
             </view>
             <text class="comment-content">{{item.content}}</text>

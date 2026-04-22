@@ -8,18 +8,14 @@ import {
 
 const app = getApp();
 
-const RATING_OPTIONS = [
-  { value: 0.5, label: '0.5 星' },
-  { value: 1.0, label: '1.0 星' },
-  { value: 1.5, label: '1.5 星' },
-  { value: 2.0, label: '2.0 星' },
-  { value: 2.5, label: '2.5 星' },
-  { value: 3.0, label: '3.0 星' },
-  { value: 3.5, label: '3.5 星' },
-  { value: 4.0, label: '4.0 星' },
-  { value: 4.5, label: '4.5 星' },
-  { value: 5.0, label: '5.0 星' }
-];
+import { buildRatingStars } from '../../utils/rating-stars';
+
+const EMPTY_REVIEW_FORM = {
+  ratingScore: null,
+  ratingSliderValue: 0,
+  perCapitaPrice: '',
+  content: ''
+};
 
 function unwrapData(payload) {
   if (!payload) {
@@ -56,9 +52,11 @@ function extractItems(payload) {
 
 function normalizeSummary(payload) {
   const raw = unwrapData(payload) || {};
+  const avgRating = Number.isFinite(Number(raw.avgRating)) ? Number(raw.avgRating) : null;
   return {
     reviewCount: Number.isFinite(Number(raw.reviewCount)) ? Number(raw.reviewCount) : 0,
-    avgRating: Number.isFinite(Number(raw.avgRating)) ? Number(raw.avgRating) : null,
+    avgRating,
+    ratingStars: buildRatingStars(avgRating),
     avgPerCapitaPrice: Number.isFinite(Number(raw.avgPerCapitaPrice)) ? Number(raw.avgPerCapitaPrice) : null,
     aiTags: Array.isArray(raw.aiTags) ? raw.aiTags : [],
     aiSummary: raw.aiSummary || '',
@@ -67,10 +65,12 @@ function normalizeSummary(payload) {
 }
 
 function normalizePublicReview(item = {}) {
+  const ratingScore = Number.isFinite(Number(item.ratingScore)) ? Number(item.ratingScore) : null;
   return {
     id: item.id || item.reviewId || `${item.userNickname || 'user'}_${item.updatedAt || Date.now()}`,
     author: item.userNickname || item.nickname || '匿名用户',
-    ratingScore: Number.isFinite(Number(item.ratingScore)) ? Number(item.ratingScore) : null,
+    ratingScore,
+    ratingStars: buildRatingStars(ratingScore),
     perCapitaPrice: Number.isFinite(Number(item.perCapitaPrice)) ? Number(item.perCapitaPrice) : null,
     content: item.content || '',
     updatedAt: item.updatedAt || item.createdAt || ''
@@ -79,11 +79,34 @@ function normalizePublicReview(item = {}) {
 
 function normalizeMyReview(payload) {
   const raw = unwrapData(payload) || {};
+  const ratingScore = Number.isFinite(Number(raw.ratingScore)) ? Number(raw.ratingScore) : null;
   return {
-    ratingScore: Number.isFinite(Number(raw.ratingScore)) ? Number(raw.ratingScore) : null,
+    ratingScore,
+    ratingSliderValue: ratingScore !== null ? Math.round(ratingScore * 2) : 0,
     perCapitaPrice: Number.isFinite(Number(raw.perCapitaPrice)) ? String(Number(raw.perCapitaPrice)) : '',
     content: raw.content || ''
   };
+}
+
+function createReviewForm(payload = {}) {
+  const normalized = {
+    ...EMPTY_REVIEW_FORM,
+    ...payload
+  };
+  const ratingScore = Number.isFinite(Number(normalized.ratingScore)) ? Number(normalized.ratingScore) : null;
+  return {
+    ratingScore,
+    ratingSliderValue: ratingScore !== null ? Math.round(ratingScore * 2) : Number(normalized.ratingSliderValue || 0),
+    perCapitaPrice: normalized.perCapitaPrice || '',
+    content: normalized.content || ''
+  };
+}
+
+function formatRatingText(ratingScore) {
+  if (!Number.isFinite(Number(ratingScore))) {
+    return '滑动选择评分';
+  }
+  return `${Number(ratingScore).toFixed(1)} 星`;
 }
 
 Page({
@@ -101,6 +124,7 @@ Page({
     summary: {
       reviewCount: 0,
       avgRating: null,
+      ratingStars: buildRatingStars(null),
       avgPerCapitaPrice: null,
       aiTags: [],
       aiSummary: '',
@@ -108,12 +132,9 @@ Page({
     },
     publicReviews: [],
     hasReviewed: false,
-    reviewForm: {
-      ratingScore: null,
-      perCapitaPrice: '',
-      content: ''
-    },
-    ratingOptions: RATING_OPTIONS
+    reviewForm: createReviewForm(),
+    ratingStars: buildRatingStars(null),
+    ratingText: formatRatingText(null)
   },
 
   onLoad(options) {
@@ -152,13 +173,26 @@ Page({
     return `${month}-${day} ${hour}:${minute}`;
   },
 
-  onRatingSelect(event) {
-    const value = Number(event.currentTarget.dataset.value);
-    if (!Number.isFinite(value)) {
+  setReviewForm(payload = {}) {
+    const reviewForm = createReviewForm(payload);
+    this.setData({
+      reviewForm,
+      ratingStars: buildRatingStars(reviewForm.ratingScore),
+      ratingText: formatRatingText(reviewForm.ratingScore)
+    });
+  },
+
+  onRatingSliderChange(event) {
+    const sliderValue = Number(event.detail && event.detail.value);
+    if (!Number.isFinite(sliderValue)) {
       return;
     }
-    this.setData({
-      'reviewForm.ratingScore': value
+
+    const ratingScore = sliderValue > 0 ? Number((sliderValue / 2).toFixed(1)) : null;
+    this.setReviewForm({
+      ...this.data.reviewForm,
+      ratingScore,
+      ratingSliderValue: sliderValue
     });
   },
 
@@ -294,6 +328,7 @@ Page({
         summary: {
           reviewCount: 0,
           avgRating: null,
+          ratingStars: buildRatingStars(null),
           avgPerCapitaPrice: null,
           aiTags: [],
           aiSummary: '',
@@ -327,14 +362,8 @@ Page({
   async loadMyReview() {
     const userId = this.getCurrentUserId();
     if (!userId || !this.data.poiId) {
-      this.setData({
-        hasReviewed: false,
-        reviewForm: {
-          ratingScore: null,
-          perCapitaPrice: '',
-          content: ''
-        }
-      });
+      this.setData({ hasReviewed: false });
+      this.setReviewForm();
       return;
     }
 
@@ -346,31 +375,17 @@ Page({
       const bizCode = body && body.code;
 
       if (statusCode === 404 && bizCode === 2104) {
-        this.setData({
-          hasReviewed: false,
-          reviewForm: {
-            ratingScore: null,
-            perCapitaPrice: '',
-            content: ''
-          }
-        });
+        this.setData({ hasReviewed: false });
+        this.setReviewForm();
         return;
       }
 
       const myReview = normalizeMyReview(body);
-      this.setData({
-        hasReviewed: true,
-        reviewForm: myReview
-      });
+      this.setData({ hasReviewed: true });
+      this.setReviewForm(myReview);
     } catch (error) {
-      this.setData({
-        hasReviewed: false,
-        reviewForm: {
-          ratingScore: null,
-          perCapitaPrice: '',
-          content: ''
-        }
-      });
+      this.setData({ hasReviewed: false });
+      this.setReviewForm();
     } finally {
       this.setData({ myReviewLoading: false });
     }
@@ -412,19 +427,25 @@ Page({
     }
   },
 
-  toggleBlacklist() {
+  async toggleBlacklist() {
     if (!this.data.restaurant) {
       return;
     }
 
-    app.toggleBlacklist(this.data.restaurant.id);
-    const next = app.getRestaurantById(this.data.restaurant.id);
-    this.setData({ restaurant: next });
+    try {
+      const next = await app.toggleBlacklist(this.data.restaurant.id);
+      this.setData({ restaurant: next });
 
-    wx.showToast({
-      title: next && next.isBlacklisted ? '已设为不感兴趣' : '已恢复展示',
-      icon: 'none'
-    });
+      wx.showToast({
+        title: next && next.isBlacklisted ? '已设为不感兴趣' : '已恢复展示',
+        icon: 'none'
+      });
+    } catch (error) {
+      wx.showToast({
+        title: error.message || '操作失败，请稍后重试',
+        icon: 'none'
+      });
+    }
   },
 
   goBack() {

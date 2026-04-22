@@ -30,7 +30,10 @@ public class AuthController {
 
     @PostMapping("/wechat-login")
     public ResponseEntity<ApiResponse<LoginResponse>> wechatLogin(@Valid @RequestBody WechatLoginRequest request) {
-        AuthApplicationService.LoginResult loginResult = authApplicationService.wechatLogin(request.code(), request.nickname());
+        AuthApplicationService.LoginResult loginResult = authApplicationService.wechatLogin(
+                request.code(),
+                request.nickname(),
+                request.avatarUrl());
         LoginResponse response = new LoginResponse(loginResult.token(), UserInfo.from(loginResult.user()));
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(response));
     }
@@ -60,15 +63,15 @@ public class AuthController {
         return token;
     }
 
-    public record WechatLoginRequest(@NotBlank String code, String nickname) {
+    public record WechatLoginRequest(@NotBlank String code, String nickname, String avatarUrl) {
     }
 
     public record LoginResponse(String token, UserInfo user) {
     }
 
-    public record UserInfo(Long id, String openid, String nickname) {
+    public record UserInfo(Long id, String openid, String nickname, String avatarUrl) {
         public static UserInfo from(UserEntity user) {
-            return new UserInfo(user.getId(), user.getOpenid(), user.getNickname());
+            return new UserInfo(user.getId(), user.getOpenid(), user.getNickname(), user.getAvatarUrl());
         }
     }
 }

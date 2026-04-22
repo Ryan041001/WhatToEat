@@ -2,6 +2,19 @@
 
 import client from './client';
 
+function getCategoryLabel(category) {
+  if (typeof category !== 'string' || !category.trim()) {
+    return '其他';
+  }
+
+  const segments = category
+    .split(';')
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  return segments[segments.length - 1] || category.trim();
+}
+
 export const GetNearbyRestaurants = async (params) => {
   return await client.get('/restaurants/nearby', params);
 };
@@ -38,7 +51,8 @@ export const mapApiRestaurantToCard = (item = {}) => {
     id: item.poiId || item.id || `${Date.now()}-${Math.random()}`,
     poiId: item.poiId || '',
     name,
-    category: (item.category || '其他').split(';')[0] || '其他',
+    category: getCategoryLabel(item.category),
+    rawCategory: item.category || '其他',
     distance: distanceText,
     distanceValue: distanceMeters,
     avgRating,

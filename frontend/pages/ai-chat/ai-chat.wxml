@@ -1,56 +1,123 @@
 <view class="page">
-  <view class="header">
-    <text class="title">AI 推荐问答</text>
-    <text class="subtitle">基于当前位置和候选餐厅给出推荐</text>
+  <view class="chat-header">
+    <text class="title">AI 推荐</text>
+    <text class="subtitle">像聊天一样问我预算、口味和距离，我会边回复边给你候选</text>
   </view>
 
-  <view class="profile-hint" wx:if="{{profileLoading || preferenceSummary}}">
-    <text wx:if="{{profileLoading}}">正在读取口味画像...</text>
-    <text wx:elif="{{preferenceSummary}}">你的近期偏好：{{preferenceSummary}}</text>
-  </view>
+  <scroll-view
+    class="chat-scroll"
+    scroll-y
+    enhanced
+    show-scrollbar="{{false}}"
+    scroll-with-animation
+    scroll-into-view="{{scrollIntoView}}"
+  >
+    <view class="chat-list">
+      <view class="profile-hint" wx:if="{{profileLoading || preferenceSummary}}">
+        <text wx:if="{{profileLoading}}">正在读取口味画像...</text>
+        <text wx:elif="{{preferenceSummary}}">你的近期偏好：{{preferenceSummary}}</text>
+      </view>
 
-  <view class="panel">
-    <textarea
-      class="question-input"
-      maxlength="200"
-      auto-height
-      placeholder="例如：想吃热汤，预算 35 以内，别太远"
-      value="{{question}}"
-      bindinput="onQuestionInput"
-    ></textarea>
-    <view class="action-row">
-      <button class="btn primary" loading="{{loading}}" bindtap="askAi">开始推荐</button>
-      <button class="btn ghost" wx:if="{{status === 'error' || status === 'interrupted'}}" bindtap="retry">重试</button>
+      <view class="empty-state" wx:if="{{messages.length === 0}}">
+        <text class="empty-title">开始一轮新的推荐对话</text>
+        <text class="empty-text">试试告诉我“预算 35 以内”“想吃热汤”“别太远”这种明确条件。</text>
+      </view>
+
+      <view
+        class="message-row message-row-{{item.role}}"
+        wx:for="{{messages}}"
+        wx:key="id"
+        id="message-{{item.id}}"
+      >
+        <view class="message-bubble bubble-{{item.role}}">
+          <text class="message-name" wx:if="{{item.role === 'assistant'}}">今天吃什么 AI</text>
+          <text class="user-text" wx:if="{{item.role === 'user'}}">{{item.rawText}}</text>
+          <text
+            class="assistant-text assistant-text-draft"
+            wx:if="{{item.role === 'assistant' && item.rawText && !item.contentHtml}}"
+          >{{item.rawText}}</text>
+          <rich-text
+            class="assistant-rich-text"
+            wx:if="{{item.role === 'assistant' && item.contentHtml}}"
+            nodes="{{item.contentHtml}}"
+          ></rich-text>
+
+          <view class="typing-indicator" wx:if="{{item.role === 'assistant' && item.isStreaming && !item.contentHtml}}">
+            <view class="typing-dot"></view>
+            <view class="typing-dot"></view>
+            <view class="typing-dot"></view>
+          </view>
+
+          <text class="stream-hint" wx:if="{{item.role === 'assistant' && item.isStreaming}}">{{item.progressText || '正在帮你整理推荐'}}</text>
+
+          <view class="assistant-card-list" wx:if="{{item.role === 'assistant' && item.cards && item.cards.length > 0}}">
+            <view
+              class="assistant-card {{card.animateIn ? 'card-enter' : ''}}"
+              wx:for="{{item.cards}}"
+              wx:for-item="card"
+              wx:key="poiId"
+              style="{{card.enterStyle}}"
+            >
+              <image class="card-image" src="{{card.image}}" mode="aspectFill"></image>
+              <view class="card-info">
+                <view class="card-header">
+                  <view class="card-name-row">
+                    <text class="card-rank">#{{card.rank}}</text>
+                    <text class="card-name">{{card.name}}</text>
+                  </view>
+                  <view class="card-rating">
+                    <view class="star-shell"><view class="app-icon icon-star icon-fill"></view></view>
+                    <text class="rating-value">{{card.displayRating}}</text>
+                  </view>
+                </view>
+                <view class="card-meta">
+                  <text class="meta-chip">{{card.category}}</text>
+                  <text class="meta-dot">•</text>
+                  <text class="meta-item">{{card.distanceText}}</text>
+                  <text class="meta-dot">•</text>
+                  <text class="meta-item">{{card.displayAvgPerCapitaPrice}}</text>
+                  <text class="meta-dot">•</text>
+                  <text class="meta-item">{{card.displayReviewCount}} 条评论</text>
+                </view>
+                <view class="card-tags" wx:if="{{card.aiTags && card.aiTags.length > 0}}">
+                  <text class="tag" wx:for="{{card.aiTags}}" wx:for-item="tag" wx:key="*this">{{tag}}</text>
+                </view>
+                <text class="card-desc">{{card.description}}</text>
+                <view class="card-footer">
+                  <button class="action-btn btn-pick" catchtap="chooseThisRestaurant" data-poiid="{{card.poiId}}">就吃这家</button>
+                  <button class="action-btn btn-detail" catchtap="openDetail" data-poiid="{{card.poiId}}">查看详情</button>
+                  <button class="action-btn btn-reject" catchtap="rejectCard" data-poiid="{{card.poiId}}">换一家</button>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view id="chat-bottom"></view>
     </view>
-    <text class="status">{{statusText}}</text>
-  </view>
+  </scroll-view>
 
-  <view class="panel" wx:if="{{answerText}}">
-    <text class="section-title">推荐理由</text>
-    <text class="answer-text">{{answerText}}</text>
-  </view>
-
-  <view class="panel" wx:if="{{cards.length > 0}}">
-    <text class="section-title">推荐餐厅</text>
-    <view class="card-list">
-      <view class="card" wx:for="{{cards}}" wx:key="poiId">
-        <view class="card-head">
-          <text class="card-name">{{item.rank}}. {{item.name}}</text>
-          <text class="card-distance">{{item.distance}}m</text>
+  <view class="composer">
+    <view class="composer-shell">
+      <view class="composer-input-wrap">
+        <textarea
+          class="composer-input"
+          maxlength="200"
+          auto-height
+          value="{{question}}"
+          bindinput="onQuestionInput"
+          bindfocus="onQuestionFocus"
+          bindblur="onQuestionBlur"
+        ></textarea>
+        <text class="composer-preset" wx:if="{{!question && !composerFocused && presetQuestion}}">{{presetQuestion}}</text>
+      </view>
+      <view class="send-btn {{loading ? 'send-btn-loading' : ''}}" catchtap="askAi">
+        <view class="send-icon-shell" wx:if="{{!loading}}">
+          <view class="app-icon icon-arrow-right icon-fill"></view>
         </view>
-        <view class="card-meta">
-          <text>{{item.category}}</text>
-          <text>评分：{{item.avgRating !== null && item.avgRating !== undefined ? item.avgRating : '--'}}</text>
-          <text>人均：{{item.avgPerCapitaPrice !== null && item.avgPerCapitaPrice !== undefined ? '¥' + item.avgPerCapitaPrice : '--'}}</text>
-        </view>
-        <view class="tag-row" wx:if="{{item.aiTags && item.aiTags.length > 0}}">
-          <text class="tag" wx:for="{{item.aiTags}}" wx:for-item="tag" wx:key="*this">{{tag}}</text>
-        </view>
-        <text class="reason" wx:if="{{item.matchReason}}">{{item.matchReason}}</text>
-        <view class="card-actions">
-          <button class="mini-btn success" data-poiid="{{item.poiId}}" bindtap="chooseThisRestaurant">就吃这家</button>
-          <button class="mini-btn" data-poiid="{{item.poiId}}" bindtap="openDetail">查看详情</button>
-          <button class="mini-btn warn" data-poiid="{{item.poiId}}" bindtap="rejectCard">不想吃这家</button>
+        <view class="send-icon-shell send-icon-loading" wx:else>
+          <view class="app-icon icon-loader icon-fill icon-spin"></view>
         </view>
       </view>
     </view>

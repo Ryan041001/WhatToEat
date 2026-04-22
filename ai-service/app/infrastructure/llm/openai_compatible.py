@@ -56,6 +56,8 @@ class StructuredModelClient(ABC):
 
 
 class OpenAICompatibleClient(StructuredModelClient):
+    TEXT_RESPONSE_MAX_TOKENS = 180
+
     def __init__(self, settings: AISettings) -> None:
         self.settings = settings
         self.client = OpenAI(
@@ -135,7 +137,10 @@ class OpenAICompatibleClient(StructuredModelClient):
     ) -> str:
         self._ensure_configured()
         messages = self._build_messages(system_prompt, user_prompt, tool_calls, tool_outputs)
-        completion = self._create_chat_completion(messages=messages)
+        completion = self._create_chat_completion(
+            messages=messages,
+            max_tokens=self.TEXT_RESPONSE_MAX_TOKENS,
+        )
         return self._extract_content(completion)
 
     def stream_text(
@@ -153,6 +158,7 @@ class OpenAICompatibleClient(StructuredModelClient):
                 model=self.settings.model,
                 temperature=0.2,
                 messages=messages,
+                max_tokens=self.TEXT_RESPONSE_MAX_TOKENS,
                 stream=True,
             )
             for chunk in stream:

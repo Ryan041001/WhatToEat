@@ -2,8 +2,8 @@
 
 import client from './client';
 
-export const WechatLogin = async (code) => {
-  return await client.post('/auth/wechat-login', { code });
+export const WechatLogin = async (code, nickname = '微信用户', avatarUrl = '') => {
+  return await client.post('/auth/wechat-login', { code, nickname, avatarUrl });
 };
 
 export const Logout = async () => {

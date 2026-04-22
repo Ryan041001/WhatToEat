@@ -40,12 +40,13 @@ class AuthControllerRealWechatLoginTest {
     void wechatLoginShouldSupportRealCodeWhenMockLoginDisabled() throws Exception {
         mockMvc.perform(post("/api/v1/auth/wechat-login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"code\":\"wx-real-code-001\",\"nickname\":\"Alice\"}"))
+                        .content("{\"code\":\"wx-real-code-001\",\"nickname\":\"Alice\",\"avatarUrl\":\"https://example.com/avatar-alice.png\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.token").isString())
                 .andExpect(jsonPath("$.data.user.openid").value("real-openid-wx-real-code-001"))
-                .andExpect(jsonPath("$.data.user.nickname").value("Alice"));
+                .andExpect(jsonPath("$.data.user.nickname").value("Alice"))
+                .andExpect(jsonPath("$.data.user.avatarUrl").value("https://example.com/avatar-alice.png"));
     }
 
     @Test

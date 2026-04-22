@@ -162,18 +162,43 @@ class RestaurantControllerTest {
                 .andExpect(jsonPath("$.data.items[1].poiId").value("id-3"));
     }
 
+    @Test
+    void nearbyShouldApplyCategoryAndPriceFilters() throws Exception {
+        AmapPoi noodle = new AmapPoi("id-5", "兰州拉面", "文一路", 120.35, 30.31, "面馆", 180);
+        AmapPoi rice = new AmapPoi("id-6", "黄焖鸡米饭", "文二路", 120.36, 30.32, "快餐", 220);
+        when(amapClient.searchNearby(120.35, 30.31, 1000, 1, 50))
+                .thenReturn(new AmapClient.AmapSearchResult(List.of(noodle, rice), 2));
+        when(restaurantMetricSnapshotRepository.findAllById(anyIterable()))
+                .thenReturn(List.of(
+                        snapshot("id-5", "4.5", 10, 22, "热汤", null),
+                        snapshot("id-6", "4.7", 18, 34, "下饭", null)));
+
+        mockMvc.perform(get("/api/v1/restaurants/nearby")
+                        .param("longitude", "120.35")
+                        .param("latitude", "30.31")
+                        .param("category", "面馆")
+                        .param("minAvgPerCapitaPrice", "20")
+                        .param("maxAvgPerCapitaPrice", "25"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.items[0].poiId").value("id-5"));
+    }
+
     private RestaurantMetricSnapshotEntity snapshot(
             String poiId,
             String avgRating,
             int reviewCount,
-            int avgPerCapitaPrice,
+            Integer avgPerCapitaPrice,
             String aiTag1,
             String aiTag2) {
         RestaurantMetricSnapshotEntity entity = new RestaurantMetricSnapshotEntity();
         entity.setPoiId(poiId);
         entity.setAvgRating(new BigDecimal(avgRating));
         entity.setReviewCount(reviewCount);
-        entity.setAvgPerCapitaPrice(avgPerCapitaPrice);
+        if (avgPerCapitaPrice != null) {
+            entity.setAvgPerCapitaPrice(avgPerCapitaPrice);
+        }
         entity.setAiTag1(aiTag1);
         entity.setAiTag2(aiTag2);
         entity.setAiStatus("ready");

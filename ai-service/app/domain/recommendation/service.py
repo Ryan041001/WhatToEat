@@ -7,6 +7,7 @@ from app.domain.recommendation.parser import parse_json_choices, parse_ranked_to
 from app.domain.recommendation.prompts import (
     answer_system_prompt,
     json_fallback_system_prompt,
+    streaming_answer_system_prompt,
     tool_selection_system_prompt,
 )
 from app.infrastructure.llm.openai_compatible import ModelToolCall, ModelToolDefinition, StructuredModelClient
@@ -142,7 +143,7 @@ class RecommendationService:
         sanitizer = StreamingAnswerSanitizer()
         try:
             for delta in self.model_client.stream_text(
-                system_prompt=answer_system_prompt(),
+                system_prompt=streaming_answer_system_prompt(),
                 user_prompt=self._build_answer_user_prompt(request, choices),
                 tool_calls=tool_calls,
                 tool_outputs=tool_outputs,
@@ -300,10 +301,10 @@ class RecommendationService:
             if choice.poi_id in candidate_by_poi_id
         ]
         if not selected_names:
-            return "我先按你当前的描述，从附近候选里挑了更匹配的几家。"
+            return "我先按你当前的描述，从附近候选里挑了更匹配的几家 😋"
         if len(selected_names) == 1:
-            return f"按你现在的需求，优先可以考虑{selected_names[0]}。"
-        return "按你现在的需求，优先可以考虑{}，其次是{}。".format(
+            return f"**首选** 可以考虑{selected_names[0]} 😋"
+        return "**首选** 可以考虑{}，其次是{} ✨".format(
             selected_names[0],
             "、".join(selected_names[1:]),
         )
