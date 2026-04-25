@@ -1,5 +1,8 @@
 # 今天吃什么 (WhatToEat)
 
+[![Backend Coverage](https://codecov.io/gh/Ryan041001/WhatToEat/branch/main/graph/badge.svg?flag=backend)](https://codecov.io/gh/Ryan041001/WhatToEat)
+[![Frontend Coverage](https://codecov.io/gh/Ryan041001/WhatToEat/branch/main/graph/badge.svg?flag=frontend)](https://codecov.io/gh/Ryan041001/WhatToEat)
+
 ## 团队成员
 | 姓名 | 学号 | 分工 |
 | :--- | :--- | :--- |
