@@ -16,8 +16,5 @@
 - [x] 错误处理（流中断、错误事件、重试）
 - [x] 推荐闭环接入（`choice-history`、`recommendation-feedback`、`preference-profile`）
 
-## PR 链接
-- PR #X: https://github.com/xxx/xxx/pull/X
-
 ## 心得体会
 本次实践重点是把 AI 能力从“后端可用”落到“前端可感知”。我学习到了流式事件解析、结构化卡片渲染、以及错误态保留部分结果的处理方式。后续会继续完善多轮 refine 和会话持久化能力。
