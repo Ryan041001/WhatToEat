@@ -42,7 +42,10 @@ Page({
   async loadData() {
     try {
       wx.removeStorageSync(SWIPE_RESULT_CACHE_KEY);
-      await app.bootstrapRestaurants();
+      await app.bootstrapRestaurants({
+        force: true,
+        forceLocationRefresh: true
+      });
       const restaurants = app.getActiveRestaurants();
       this.setData({
         restaurants,

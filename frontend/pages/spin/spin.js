@@ -82,7 +82,10 @@ Page({
     this.cancelSpinAnimation();
     this.clearRevealTimer();
 
-    await app.bootstrapRestaurants();
+    await app.bootstrapRestaurants({
+      force: true,
+      forceLocationRefresh: true
+    });
     const allRestaurants = app.getActiveRestaurants();
     const restaurants = attachDisplayNames(this.pickRandomRestaurants(allRestaurants, WHEEL_POOL_SIZE));
 

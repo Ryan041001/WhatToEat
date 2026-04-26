@@ -91,7 +91,9 @@ Page({
     this.setData({ loading: true, error: '', showSortModal: false });
 
     try {
-      const location = await app.resolveCurrentLocation();
+      const location = await app.resolveCurrentLocation({
+        forceRefresh: true
+      });
       await app.loadBlacklistPoiIds();
 
       const params = {

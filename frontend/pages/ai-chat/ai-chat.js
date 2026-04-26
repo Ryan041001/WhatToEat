@@ -476,7 +476,9 @@ Page({
   },
 
   async getCurrentLocation() {
-    return await app.resolveCurrentLocation();
+    return await app.resolveCurrentLocation({
+      forceRefresh: true
+    });
   },
 
   buildPayload(location, question) {

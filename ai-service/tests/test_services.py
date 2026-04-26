@@ -9,12 +9,25 @@ from app.schemas.tagging import ReviewTagRequest, ReviewText
 
 
 class FakeStructuredModelClient(StructuredModelClient):
-    def __init__(self, json_response=None, tool_calls=None, text_response=None, json_error=None, tool_call_error=None):
+    def __init__(
+        self,
+        json_response=None,
+        tool_calls=None,
+        text_response=None,
+        json_error=None,
+        tool_call_error=None,
+        text_error=None,
+        stream_error=None,
+        stream_chunks=None,
+    ):
         self.json_response = json_response or {}
         self.tool_calls = tool_calls or []
         self.text_response = text_response or ""
         self.json_error = json_error
         self.tool_call_error = tool_call_error
+        self.text_error = text_error
+        self.stream_error = stream_error
+        self.stream_chunks = stream_chunks
         self.last_json_user_prompt = None
         self.last_tool_user_prompt = None
         self.last_text_user_prompt = None
@@ -34,10 +47,17 @@ class FakeStructuredModelClient(StructuredModelClient):
 
     def generate_text(self, system_prompt: str, user_prompt: str, tool_calls=None, tool_outputs=None):
         self.last_text_user_prompt = user_prompt
+        if self.text_error is not None:
+            raise self.text_error
         return self.text_response
 
     def stream_text(self, system_prompt: str, user_prompt: str, tool_calls=None, tool_outputs=None):
         self.last_stream_user_prompt = user_prompt
+        if self.stream_error is not None:
+            raise self.stream_error
+        if self.stream_chunks is not None:
+            yield from self.stream_chunks
+            return
         if self.text_response:
             yield self.text_response
 
@@ -252,6 +272,86 @@ class RecommendationServiceTest(unittest.TestCase):
 
         self.assertEqual("兰州拉面更合适。", result.answer)
 
+    def test_recommend_should_fallback_when_text_generation_fails(self) -> None:
+        service = RecommendationService(
+            FakeStructuredModelClient(
+                tool_calls=[
+                    ModelToolCall(
+                        id="call-1",
+                        name="show_restaurant_card",
+                        arguments={"poiId": "poi-noodle", "reason": "热汤更稳", "rank": 1},
+                    ),
+                ],
+                text_error=RuntimeError("llm unavailable"),
+            )
+        )
+
+        result = service.recommend(
+            RecommendationRequest(
+                question="预算30以内，想吃点带汤的",
+                candidates=[
+                    RecommendationCandidate(
+                        poiId="poi-noodle",
+                        name="兰州拉面",
+                        address="文泽路",
+                        category="餐饮",
+                        distance=220,
+                        avgRating=Decimal("4.8"),
+                        reviewCount=25,
+                        avgPerCapitaPrice=29,
+                        aiTags=["性价比高", "汤底稳"],
+                    ),
+                ],
+            )
+        )
+
+        self.assertEqual("**首选** 可以考虑兰州拉面 😋", result.answer)
+
+    def test_recommend_should_fallback_when_json_answer_and_choices_invalid(self) -> None:
+        service = RecommendationService(
+            FakeStructuredModelClient(
+                json_response={
+                    "answer": "   ",
+                    "choices": [
+                        {"poiId": "poi-missing", "reason": "不在候选列表里"},
+                    ],
+                }
+            )
+        )
+
+        result = service.recommend(
+            RecommendationRequest(
+                question="随便来点",
+                candidates=[
+                    RecommendationCandidate(
+                        poiId="poi-noodle",
+                        name="兰州拉面",
+                        address="文泽路",
+                        category="餐饮",
+                        distance=220,
+                        avgRating=Decimal("4.8"),
+                        reviewCount=25,
+                        avgPerCapitaPrice=29,
+                        aiTags=["性价比高", "汤底稳"],
+                    ),
+                    RecommendationCandidate(
+                        poiId="poi-rice",
+                        name="桂香卤味拌饭",
+                        address="学林街",
+                        category="餐饮",
+                        distance=180,
+                        avgRating=Decimal("4.1"),
+                        reviewCount=12,
+                        avgPerCapitaPrice=18,
+                        aiTags=["出餐快", "学生友好"],
+                    ),
+                ],
+            )
+        )
+
+        self.assertEqual(["poi-noodle", "poi-rice"], [choice.poi_id for choice in result.choices])
+        self.assertEqual("**首选** 可以考虑兰州拉面，其次是桂香卤味拌饭 ✨", result.answer)
+
     def test_stream_recommend_should_emit_ranked_cards_and_final_answer(self) -> None:
         model_client = FakeStructuredModelClient(
                 tool_calls=[
@@ -459,6 +559,133 @@ class RecommendationServiceTest(unittest.TestCase):
         self.assertEqual("poi-noodle", events[first_tool_call_index][1]["arguments"]["poiId"])
         self.assertEqual("poi-rice", events[first_tool_call_index + 1][1]["arguments"]["poiId"])
         self.assertEqual(("done", {"finishReason": "stop"}), events[-1])
+
+    def test_stream_recommend_should_fallback_to_chunked_answer_when_stream_fails(self) -> None:
+        service = RecommendationService(
+            FakeStructuredModelClient(
+                tool_calls=[
+                    ModelToolCall(
+                        id="call-1",
+                        name="show_restaurant_card",
+                        arguments={"poiId": "poi-noodle", "reason": "热汤更稳", "rank": 1},
+                    ),
+                ],
+                stream_error=RuntimeError("stream failed"),
+            )
+        )
+
+        events = list(service.stream_recommend(
+            RecommendationRequest(
+                question="预算30以内，想吃点带汤的",
+                candidates=[
+                    RecommendationCandidate(
+                        poiId="poi-noodle",
+                        name="兰州拉面",
+                        address="文泽路",
+                        category="餐饮",
+                        distance=220,
+                        avgRating=Decimal("4.8"),
+                        reviewCount=25,
+                        avgPerCapitaPrice=29,
+                        aiTags=["性价比高", "汤底稳"],
+                    ),
+                ],
+            )
+        ))
+
+        answer_deltas = [payload["delta"] for name, payload in events if name == "answer.delta"]
+        self.assertEqual(["**首选** 可以考虑兰州拉面 😋"], answer_deltas)
+        answer_done = next(payload for name, payload in events if name == "answer.done")
+        self.assertEqual("**首选** 可以考虑兰州拉面 😋", answer_done["answer"])
+
+    def test_stream_recommend_should_fallback_when_stream_has_only_hidden_reasoning(self) -> None:
+        service = RecommendationService(
+            FakeStructuredModelClient(
+                tool_calls=[
+                    ModelToolCall(
+                        id="call-1",
+                        name="show_restaurant_card",
+                        arguments={"poiId": "poi-noodle", "reason": "热汤更稳", "rank": 1},
+                    ),
+                ],
+                stream_chunks=["<think>先分析预算", "和距离</think>"],
+            )
+        )
+
+        events = list(service.stream_recommend(
+            RecommendationRequest(
+                question="预算30以内，想吃点带汤的",
+                candidates=[
+                    RecommendationCandidate(
+                        poiId="poi-noodle",
+                        name="兰州拉面",
+                        address="文泽路",
+                        category="餐饮",
+                        distance=220,
+                        avgRating=Decimal("4.8"),
+                        reviewCount=25,
+                        avgPerCapitaPrice=29,
+                        aiTags=["性价比高", "汤底稳"],
+                    ),
+                ],
+            )
+        ))
+
+        answer_deltas = [payload["delta"] for name, payload in events if name == "answer.delta"]
+        self.assertEqual(["**首选** 可以考虑兰州拉面 😋"], answer_deltas)
+        answer_done = next(payload for name, payload in events if name == "answer.done")
+        self.assertEqual("**首选** 可以考虑兰州拉面 😋", answer_done["answer"])
+
+    def test_emit_tool_calls_should_generate_ranks_without_model_calls(self) -> None:
+        service = RecommendationService(FakeStructuredModelClient())
+        request = RecommendationRequest(
+            question="随便来点",
+            candidates=[
+                RecommendationCandidate(
+                    poiId="poi-noodle",
+                    name="兰州拉面",
+                    address="文泽路",
+                    category="餐饮",
+                    distance=220,
+                    avgRating=Decimal("4.8"),
+                    reviewCount=25,
+                    avgPerCapitaPrice=29,
+                    aiTags=["性价比高", "汤底稳"],
+                ),
+                RecommendationCandidate(
+                    poiId="poi-rice",
+                    name="桂香卤味拌饭",
+                    address="学林街",
+                    category="餐饮",
+                    distance=180,
+                    avgRating=Decimal("4.1"),
+                    reviewCount=12,
+                    avgPerCapitaPrice=18,
+                    aiTags=["出餐快", "学生友好"],
+                ),
+            ],
+        )
+
+        events = list(service._emit_tool_calls(service._fallback_choices(request)))
+
+        self.assertEqual(1, events[0][1]["arguments"]["rank"])
+        self.assertEqual(2, events[1][1]["arguments"]["rank"])
+        self.assertEqual("show_restaurant_card", events[0][1]["toolName"])
+
+    def test_streaming_answer_sanitizer_should_handle_split_tags(self) -> None:
+        from app.domain.recommendation.service import StreamingAnswerSanitizer
+
+        target = StreamingAnswerSanitizer()
+        self.assertEqual("兰州拉面", target.feed("兰州拉面<th"))
+        self.assertEqual("更稳", target.feed("ink>隐藏</think>更稳"))
+        self.assertEqual("", target.finish())
+
+    def test_streaming_answer_sanitizer_should_drop_unclosed_reasoning_tail(self) -> None:
+        from app.domain.recommendation.service import StreamingAnswerSanitizer
+
+        target = StreamingAnswerSanitizer()
+        self.assertEqual("", target.feed("<think>隐藏</thi"))
+        self.assertEqual("", target.finish())
 
 
 if __name__ == "__main__":

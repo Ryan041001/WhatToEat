@@ -1,6 +1,7 @@
 // frontend/api/restaurants.js
 
 import client from './client';
+import { resolveRestaurantImage } from '../utils/restaurant-images';
 
 function getCategoryLabel(category) {
   if (typeof category !== 'string' || !category.trim()) {
@@ -25,6 +26,7 @@ export const SearchRestaurants = async (params) => {
 
 export const mapApiRestaurantToCard = (item = {}) => {
   const name = item.name || '未命名餐厅';
+  const category = getCategoryLabel(item.category);
   const distanceMeters = Number(item.distance || 0);
   const distanceText = distanceMeters >= 1000
     ? `${(distanceMeters / 1000).toFixed(1)}km`
@@ -51,7 +53,7 @@ export const mapApiRestaurantToCard = (item = {}) => {
     id: item.poiId || item.id || `${Date.now()}-${Math.random()}`,
     poiId: item.poiId || '',
     name,
-    category: getCategoryLabel(item.category),
+    category,
     rawCategory: item.category || '其他',
     distance: distanceText,
     distanceValue: distanceMeters,
@@ -62,7 +64,7 @@ export const mapApiRestaurantToCard = (item = {}) => {
     rating: avgRating,
     tags: aiTags.slice(0, 3),
     priceLevel,
-    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800',
+    image: resolveRestaurantImage({ name, category: item.category || category }),
     isBlacklisted: false,
     description: item.address || '暂无简介',
     address: item.address || '暂无地址',
