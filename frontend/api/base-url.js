@@ -1,7 +1,7 @@
 const API_BASE_URL_STORAGE_KEY = 'apiBaseUrl';
 const DEVTOOLS_API_BASE_URL = 'http://127.0.0.1:8080/api/v1';
 // Update this when your laptop joins a different LAN.
-const REAL_DEVICE_API_BASE_URL = 'http://10.132.22.136:8080/api/v1';
+const REAL_DEVICE_API_BASE_URL = 'http://192.168.1.176:8080/api/v1';
 
 function normalizeApiBaseUrl(input) {
   if (typeof input !== 'string') {

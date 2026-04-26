@@ -12,6 +12,7 @@ import {
   shouldRestoreAiChatState
 } from '../utils/ai-chat-session.js';
 import { buildCategoryOptions } from '../utils/restaurant-filters.js';
+import { resolveRestaurantImage } from '../utils/restaurant-images.js';
 import { buildRatingStars } from '../utils/rating-stars.js';
 
 test('mergeBlacklistState marks matched poiIds as blacklisted', () => {
@@ -100,5 +101,54 @@ test('buildCategoryOptions keeps all category chips visible after selecting one 
   assert.deepEqual(
     buildCategoryOptions(filteredRestaurants, previousCategories, '面馆'),
     ['面馆', '快餐', '烧烤']
+  );
+});
+
+test('resolveRestaurantImage prefers brand logos for major chains', () => {
+  assert.equal(
+    resolveRestaurantImage({ name: '肯德基 杭州湖滨店', category: '餐饮服务;快餐厅' }),
+    'https://upload.wikimedia.org/wikipedia/commons/b/bf/KFC_logo.svg'
+  );
+});
+
+test('resolveRestaurantImage maps restaurant names and amap categories to local cartoon art', () => {
+  assert.equal(
+    resolveRestaurantImage({ name: '老李淮南牛肉汤', category: '餐饮服务;中餐厅' }),
+    '/assets/restaurant-images/noodles.svg'
+  );
+  assert.equal(
+    resolveRestaurantImage({ name: '隆江猪脚饭', category: '餐饮服务;快餐厅' }),
+    '/assets/restaurant-images/rice.svg'
+  );
+  assert.equal(
+    resolveRestaurantImage({ name: '小甜水糖水铺', category: '餐饮服务;甜品店' }),
+    '/assets/restaurant-images/drink.svg'
+  );
+  assert.equal(
+    resolveRestaurantImage({ name: '东北手工水饺', category: '餐饮服务;中餐厅' }),
+    '/assets/restaurant-images/jiaozi.svg'
+  );
+  assert.equal(
+    resolveRestaurantImage({ name: '老王蛋炒饭', category: '餐饮服务;快餐厅' }),
+    '/assets/restaurant-images/fried-rice.svg'
+  );
+  assert.equal(
+    resolveRestaurantImage({ name: '牛肉汉堡店', category: '餐饮服务;西餐厅' }),
+    '/assets/restaurant-images/burger.svg'
+  );
+  assert.equal(
+    resolveRestaurantImage({ name: '意式披萨', category: '餐饮服务;西餐厅' }),
+    '/assets/restaurant-images/pizza.svg'
+  );
+  assert.equal(
+    resolveRestaurantImage({ name: '湖滨大酒店餐厅', category: '住宿服务;宾馆酒店' }),
+    '/assets/restaurant-images/hotel.svg'
+  );
+});
+
+test('resolveRestaurantImage returns a stable cartoon fallback for unknown restaurants', () => {
+  assert.equal(
+    resolveRestaurantImage({ name: '随机小店', category: '其他' }),
+    '/assets/restaurant-images/default.svg'
   );
 });
