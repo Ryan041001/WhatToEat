@@ -1,6 +1,8 @@
 # 今天吃什么 (WhatToEat)
 
 [![Codecov](https://codecov.io/gh/Ryan041001/WhatToEat/graph/badge.svg?branch=main)](https://codecov.io/gh/Ryan041001/WhatToEat)
+[![Backend Coverage](https://codecov.io/gh/Ryan041001/WhatToEat/branch/main/graph/badge.svg?flag=backend)](https://codecov.io/gh/Ryan041001/WhatToEat)
+[![Frontend Coverage](https://codecov.io/gh/Ryan041001/WhatToEat/branch/main/graph/badge.svg?flag=frontend)](https://codecov.io/gh/Ryan041001/WhatToEat)
 ![Backend Coverage](.github/badges/backend-coverage.svg)
 ![AI Coverage](.github/badges/ai-coverage.svg)
 
