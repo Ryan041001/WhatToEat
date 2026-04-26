@@ -194,6 +194,18 @@ If a change affects API semantics, try to verify all of:
 - docs consistency
 - error / empty-state semantics
 
+## Review guidelines
+
+When Codex reviews pull requests in this repository, prioritize issues that can break the product contract or testability.
+
+- Treat backend implementation / `docs/api.md` / `docs/api.yaml` mismatches as P1 when API semantics change.
+- Treat frontend code that bypasses the backend and calls Amap or AI service directly as P1.
+- Treat recommendation changes that allow AI to invent restaurants outside the backend-provided candidate pool as P1.
+- Treat `review-summary` regressions that expose internal AI status or stop returning stable empty states as P1.
+- For frontend integration changes, verify whether behavior is truly backend-integrated or still local/mock.
+- For test and coverage changes, verify the documented command, CI workflow, and package/tooling files stay aligned.
+- Do not flag minor wording/style issues unless they make documentation materially misleading.
+
 ---
 
 ## 7. Current integration notes that matter
