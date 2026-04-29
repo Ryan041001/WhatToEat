@@ -47,6 +47,8 @@ pnpm-lock.yaml
 dist/
 build/
 out/
+coverage/
+frontend/coverage/
 *.tsbuildinfo
 
 # Python
