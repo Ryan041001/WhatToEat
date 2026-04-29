@@ -40,7 +40,7 @@
 - [x] 更新 `README.md` 的 CI/CD、覆盖率和 Secrets 说明
 
 ### 6. 额外加分项
-- [x] 新增 `.github/dependabot.yml`，自动检查 GitHub Actions、Maven、uv、npm 与 Dockerfile 依赖更新
+- [x] 新增并收紧 `.github/dependabot.yml`，自动检查 GitHub Actions、Maven、uv、npm 与 Dockerfile 依赖更新，同时按生态分组、限制 PR 数量，并忽略高风险大版本 / Java 25 Docker 升级
 - [x] 新增 `.coderabbit.yaml`，启用 CodeRabbit 中文 AI Review 配置；仓库侧仍需在 GitHub 安装 CodeRabbit App 才会自动出审查结果
 - [x] 使用 `act` 在本地 dry-run 验证 workflow 解析、job 选择和 matrix 展开，并在本文档记录验证过程
 - [x] 为 AI service 增加 Python 3.11 / 3.12 matrix，为前端增加 Node 18 / 20 matrix；后端保留 Java 17 matrix 以贴合当前 Spring Boot 4 / Java 17 项目约束

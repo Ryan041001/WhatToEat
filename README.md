@@ -138,7 +138,7 @@ uv run --with pytest pytest -q
 - `.github/workflows/backend-deploy.yml`：后端 CD，在 `main` / `v*` tag / 手动触发时构建并推送 backend 镜像到 GHCR；手动勾选 `deploy_to_server` 后可通过 SSH 部署到服务器
 - `.github/workflows/ai-service-coverage.yml`：AI service 测试与覆盖率上传
 - `.github/workflows/frontend-ci.yml`：前端 lint、测试与覆盖率上传
-- `.github/dependabot.yml`：Dependabot 依赖更新，覆盖 GitHub Actions、Maven、uv、npm 与 Dockerfile
+- `.github/dependabot.yml`：Dependabot 依赖更新，覆盖 GitHub Actions、Maven、uv、npm 与 Dockerfile；已按生态分组、限制 PR 数量，并忽略高风险大版本 / Java 25 Docker 升级
 - `.coderabbit.yaml`：CodeRabbit AI 代码审查配置；实际自动审查还需要在 GitHub 仓库安装并启用 CodeRabbit App
 - `README.md` 同时展示 Codecov 总徽章，以及仓库内生成的 `backend` / `ai-service` 本地覆盖率徽章
 - 后端 CI 已拆分为独立的“lint/compile”、“测试覆盖率”、“打包”和“Docker build check”任务，覆盖率上传不再依赖 `package/verify`
