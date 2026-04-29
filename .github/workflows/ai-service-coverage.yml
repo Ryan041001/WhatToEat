@@ -1,4 +1,4 @@
-name: AI Service Coverage
+name: AI Service CI
 
 on:
   push:
