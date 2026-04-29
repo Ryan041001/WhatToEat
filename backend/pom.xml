@@ -15,7 +15,7 @@
 	<description>今天吃什么 - 餐厅随机推荐 Spring Boot 后端</description>
 	<properties>
 		<java.version>17</java.version>
-		<jacoco.version>0.8.12</jacoco.version>
+		<jacoco.version>0.8.14</jacoco.version>
 	</properties>
 	<dependencies>
 		<!-- Web -->
