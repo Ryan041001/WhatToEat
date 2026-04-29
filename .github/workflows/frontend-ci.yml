@@ -1,11 +1,14 @@
-name: Frontend Coverage
+name: Frontend CI
 
 on:
   push:
     branches:
-      - feat/ai-homework-07
       - main
       - master
+      - develop
+      - feat/**
+      - feature/**
+      - fix/**
   pull_request:
   workflow_dispatch:
 
@@ -31,8 +34,11 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Run frontend lint
+        run: npm run lint
+
       - name: Run frontend tests with coverage
-        run: npm test -- --coverage
+        run: npm run test:ci
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
