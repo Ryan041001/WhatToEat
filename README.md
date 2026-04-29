@@ -1,9 +1,7 @@
 # 今天吃什么 (WhatToEat)
 
-[![Backend Codecov](https://codecov.io/gh/Ryan041001/WhatToEat/branch/feat/cicd-homework-ShenZhewei-09/graph/badge.svg?flag=backend)](https://codecov.io/gh/Ryan041001/WhatToEat)
-[![AI Service Codecov](https://codecov.io/gh/Ryan041001/WhatToEat/branch/feat/cicd-homework-ShenZhewei-09/graph/badge.svg?flag=ai-service)](https://codecov.io/gh/Ryan041001/WhatToEat)
-![Backend Coverage](.github/badges/backend-coverage.svg)
-![AI Coverage](.github/badges/ai-coverage.svg)
+后端覆盖率：[![Backend Codecov](https://codecov.io/gh/Ryan041001/WhatToEat/branch/feat/cicd-homework-ShenZhewei-09/graph/badge.svg?flag=backend)](https://codecov.io/gh/Ryan041001/WhatToEat)
+AI Service 覆盖率：[![AI Service Codecov](https://codecov.io/gh/Ryan041001/WhatToEat/branch/feat/cicd-homework-ShenZhewei-09/graph/badge.svg?flag=ai-service)](https://codecov.io/gh/Ryan041001/WhatToEat)
 
 ## 团队成员
 | 姓名 | 学号 | 分工 |
