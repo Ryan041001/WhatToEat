@@ -36,8 +36,14 @@
 ### 5. Codecov 配置与文档
 - [x] 在 `codecov.yml` 中补齐 `frontend` flag，保持现有前端覆盖率上传配置可被 Codecov 正确识别
 - [x] 新增 `.github/workflows/ai-service-coverage.yml`，保留原有 AI service 覆盖率上传能力
-- [x] 恢复 `.github/workflows/frontend-coverage.yml`，不影响前端同学已有测试流水线
+- [x] 保留 `.github/workflows/frontend-ci.yml`，不影响前端同学已有测试流水线
 - [x] 更新 `README.md` 的 CI/CD、覆盖率和 Secrets 说明
+
+### 6. 额外加分项
+- [x] 新增 `.github/dependabot.yml`，自动检查 GitHub Actions、Maven、uv、npm 与 Dockerfile 依赖更新
+- [x] 新增 `.coderabbit.yaml`，启用 CodeRabbit 中文 AI Review 配置；仓库侧仍需在 GitHub 安装 CodeRabbit App 才会自动出审查结果
+- [x] 使用 `act` 在本地 dry-run 验证 workflow 解析、job 选择和 matrix 展开，并在本文档记录验证过程
+- [x] 为 AI service 增加 Python 3.11 / 3.12 matrix，为前端增加 Node 18 / 20 matrix；后端保留 Java 17 matrix 以贴合当前 Spring Boot 4 / Java 17 项目约束
 
 ## 需要配置的 GitHub Secrets
 
@@ -67,7 +73,9 @@
 - `.github/workflows/ci.yml`
 - `.github/workflows/backend-deploy.yml`
 - `.github/workflows/ai-service-coverage.yml`
-- `.github/workflows/frontend-coverage.yml`
+- `.github/workflows/frontend-ci.yml`
+- `.github/dependabot.yml`
+- `.coderabbit.yaml`
 - `codecov.yml`
 - `README.md`
 - `docs/contributions/09-cicd/ShenZhewei.md`
@@ -85,6 +93,21 @@ cd ..
 docker compose config
 docker build -t whattoeat-backend:ci backend
 ```
+
+本地 `act` 验证命令：
+
+```bash
+act pull_request -W .github/workflows/ci.yml -j backend-lint -n -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest --container-architecture linux/amd64
+act pull_request -W .github/workflows/ai-service-coverage.yml -j test -n -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest --container-architecture linux/amd64
+act pull_request -W .github/workflows/frontend-ci.yml -j test -n -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest --container-architecture linux/amd64
+```
+
+验证记录：
+
+- `ci.yml`：`backend-lint` dry-run 成功解析，展开 Java 17 matrix，并识别 checkout / setup-java / Maven validation / compile 步骤
+- `ai-service-coverage.yml`：`test` dry-run 成功解析，展开 Python 3.11 与 3.12 matrix
+- `frontend-ci.yml`：`test` dry-run 成功解析，展开 Node 18 与 20 matrix
+- artifact / Codecov 上传步骤通过 `if: ${{ !env.ACT }}` 在 act 环境下跳过，避免本地 dry-run 依赖外部 token
 
 GitHub 端验证：
 

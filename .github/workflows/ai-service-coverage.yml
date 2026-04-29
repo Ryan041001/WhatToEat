@@ -21,7 +21,12 @@ concurrency:
 
 jobs:
   test:
+    name: AI Service Test (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -29,7 +34,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
 
       - name: Install uv
         run: pip install uv
@@ -39,13 +44,15 @@ jobs:
         run: uv run --frozen --with pytest --with pytest-cov pytest --cov=app --cov-report=xml:coverage.xml --cov-report=term-missing -q
 
       - name: Upload ai-service coverage artifact
+        if: ${{ !env.ACT && matrix.python-version == '3.12' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ai-service-coverage
+          name: ai-service-coverage-python-${{ matrix.python-version }}
           path: ai-service/coverage.xml
           if-no-files-found: error
 
       - name: Upload ai-service coverage to Codecov
+        if: ${{ !env.ACT && matrix.python-version == '3.12' }}
         uses: codecov/codecov-action@v5
         with:
           files: ai-service/coverage.xml
