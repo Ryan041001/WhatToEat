@@ -53,7 +53,7 @@ jobs:
 
       - name: Upload ai-service coverage to Codecov
         if: ${{ !env.ACT && matrix.python-version == '3.12' }}
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           files: ai-service/coverage.xml
           flags: ai-service

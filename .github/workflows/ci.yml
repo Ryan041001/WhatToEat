@@ -59,7 +59,7 @@ jobs:
 
       - name: Upload backend coverage to Codecov
         if: ${{ !env.ACT }}
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           files: backend/target/site/jacoco/jacoco.xml
           flags: backend
