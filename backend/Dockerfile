@@ -8,7 +8,7 @@ RUN chmod +x mvnw
 COPY src/ src/
 RUN ./mvnw -q -DskipTests package
 
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:25-jre
 WORKDIR /app
 
 COPY --from=build /app/target/WhatToEat-0.0.1-SNAPSHOT.jar app.jar
