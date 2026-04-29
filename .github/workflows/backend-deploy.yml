@@ -1,0 +1,116 @@
+name: Backend CD
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      deploy_to_server:
+        description: "Deploy the pushed backend image to the SSH server"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: backend-cd-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE_NAME: ghcr.io/ryan041001/whattoeat-backend
+
+jobs:
+  publish-image:
+    name: Build And Publish Backend Image
+    runs-on: ubuntu-latest
+    outputs:
+      image-ref: ${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Resolve image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,format=long
+            type=ref,event=tag
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+
+  deploy:
+    name: Deploy Backend To Server
+    runs-on: ubuntu-latest
+    needs: publish-image
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy_to_server }}
+    environment: backend-production
+    steps:
+      - name: Deploy backend container over SSH
+        uses: appleboy/ssh-action@v1.2.2
+        env:
+          BACKEND_IMAGE: ${{ needs.publish-image.outputs.image-ref }}
+          GHCR_USER: ${{ secrets.GHCR_USER }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          AMAP_KEY: ${{ secrets.AMAP_KEY }}
+          AI_SERVICE_BASE_URL: ${{ secrets.AI_SERVICE_BASE_URL }}
+        with:
+          host: ${{ secrets.BACKEND_DEPLOY_HOST }}
+          username: ${{ secrets.BACKEND_DEPLOY_USER }}
+          key: ${{ secrets.BACKEND_DEPLOY_KEY }}
+          port: ${{ secrets.BACKEND_DEPLOY_PORT || 22 }}
+          envs: BACKEND_IMAGE,GHCR_USER,GHCR_TOKEN,BACKEND_PORT,DB_HOST,DB_PORT,DB_NAME,DB_USER,DB_PASSWORD,AMAP_KEY,AI_SERVICE_BASE_URL
+          script: |
+            set -eu
+
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            docker pull "$BACKEND_IMAGE"
+
+            docker rm -f whattoeat-backend 2>/dev/null || true
+            docker run -d \
+              --name whattoeat-backend \
+              --restart unless-stopped \
+              -p "${BACKEND_PORT:-8080}:8080" \
+              -e SPRING_PROFILES_ACTIVE=docker \
+              -e DB_HOST="$DB_HOST" \
+              -e DB_PORT="${DB_PORT:-3306}" \
+              -e DB_NAME="$DB_NAME" \
+              -e DB_USER="$DB_USER" \
+              -e DB_PASSWORD="$DB_PASSWORD" \
+              -e AMAP_KEY="$AMAP_KEY" \
+              -e AI_SERVICE_BASE_URL="$AI_SERVICE_BASE_URL" \
+              "$BACKEND_IMAGE"
+
+            docker image prune -f
