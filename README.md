@@ -1,10 +1,11 @@
 # 今天吃什么 (WhatToEat)
 
-[![Codecov](https://codecov.io/gh/Ryan041001/WhatToEat/graph/badge.svg?branch=main)](https://codecov.io/gh/Ryan041001/WhatToEat)
-[![Backend Coverage](https://codecov.io/gh/Ryan041001/WhatToEat/branch/main/graph/badge.svg?flag=backend)](https://codecov.io/gh/Ryan041001/WhatToEat)
-[![Frontend Coverage](https://codecov.io/gh/Ryan041001/WhatToEat/branch/main/graph/badge.svg?flag=frontend)](https://codecov.io/gh/Ryan041001/WhatToEat)
-![Backend Coverage](.github/badges/backend-coverage.svg)
-![AI Coverage](.github/badges/ai-coverage.svg)
+[![Backend CI](https://github.com/Ryan041001/WhatToEat/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/Ryan041001/WhatToEat/actions/workflows/ci.yml)
+[![AI Service CI](https://github.com/Ryan041001/WhatToEat/actions/workflows/ai-service-coverage.yml/badge.svg?branch=develop)](https://github.com/Ryan041001/WhatToEat/actions/workflows/ai-service-coverage.yml)
+[![Frontend CI](https://github.com/Ryan041001/WhatToEat/actions/workflows/frontend-ci.yml/badge.svg?branch=develop)](https://github.com/Ryan041001/WhatToEat/actions/workflows/frontend-ci.yml)
+[![Backend Coverage](https://codecov.io/gh/Ryan041001/WhatToEat/branch/develop/graph/badge.svg?flag=backend)](https://codecov.io/gh/Ryan041001/WhatToEat)
+[![AI Service Coverage](https://codecov.io/gh/Ryan041001/WhatToEat/branch/develop/graph/badge.svg?flag=ai-service)](https://codecov.io/gh/Ryan041001/WhatToEat)
+[![Frontend Coverage](https://codecov.io/gh/Ryan041001/WhatToEat/branch/develop/graph/badge.svg?flag=frontend)](https://codecov.io/gh/Ryan041001/WhatToEat)
 
 ## 团队成员
 | 姓名 | 学号 | 分工 |
