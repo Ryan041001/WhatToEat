@@ -131,12 +131,15 @@ cd ai-service
 uv run --with pytest pytest -q
 ```
 
-### 覆盖率与徽章
+### CI/CD 与覆盖率
 本仓库现在同时支持：
 
-- GitHub Actions 将 `backend` 的 JaCoCo 和 `ai-service` 的 `coverage.xml` 上传到 Codecov
+- `.github/workflows/ci.yml`：后端 CI，执行 Maven validation / compile、测试、JaCoCo 覆盖率上传、JAR 打包和 backend Docker 镜像构建校验
+- `.github/workflows/backend-deploy.yml`：后端 CD，在 `main` / `v*` tag / 手动触发时构建并推送 backend 镜像到 GHCR；手动勾选 `deploy_to_server` 后可通过 SSH 部署到服务器
+- `.github/workflows/ai-service-coverage.yml`：AI service 测试与覆盖率上传
+- `.github/workflows/frontend-coverage.yml`：前端测试与覆盖率上传
 - `README.md` 同时展示 Codecov 总徽章，以及仓库内生成的 `backend` / `ai-service` 本地覆盖率徽章
-- 后端 CI 已拆分为独立的“测试覆盖率”和“打包”任务，覆盖率上传不再依赖 `package/verify`
+- 后端 CI 已拆分为独立的“lint/compile”、“测试覆盖率”、“打包”和“Docker build check”任务，覆盖率上传不再依赖 `package/verify`
 
 本地刷新覆盖率报告与徽章：
 
@@ -152,8 +155,9 @@ python3 scripts/update_coverage_badges.py
 ```
 
 说明：
-- Codecov 已通过 `.github/workflows/test-and-coverage.yml` 接入
+- Codecov 已通过 `ci.yml`、`ai-service-coverage.yml`、`frontend-coverage.yml` 分别按 flag 接入
 - 若仓库为私有仓库，请在 GitHub 仓库 Secrets 中配置 `CODECOV_TOKEN`
+- 后端 CD 远程部署需要配置仓库 Secrets：`GHCR_USER`、`GHCR_TOKEN`、`BACKEND_DEPLOY_HOST`、`BACKEND_DEPLOY_USER`、`BACKEND_DEPLOY_KEY`、`BACKEND_DEPLOY_PORT`、`BACKEND_PORT`、`DB_HOST`、`DB_PORT`、`DB_NAME`、`DB_USER`、`DB_PASSWORD`、`AMAP_KEY`、`AI_SERVICE_BASE_URL`
 
 ### Docker Compose 联调
 ```bash
