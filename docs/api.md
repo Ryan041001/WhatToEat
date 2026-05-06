@@ -78,6 +78,7 @@
 说明：
 
 - `nickname` 建议由小程序登录页在提交前确认，不再使用固定默认值作为唯一来源
+- `nickname` 按纯文本保存，后端会移除 HTML / script 等标签
 - `avatarUrl` 可选；如果小程序端未显式选择头像，可传默认占位头像地址
 
 登录成功后返回 `token` 和当前用户信息（含 `nickname`、`avatarUrl`），后续受保护接口通过请求头传递：
@@ -117,6 +118,7 @@ Authorization: Bearer <token>
 - `201 Created`：创建成功，例如登录建会话、加入黑名单
 - `400 Bad Request`：参数错误、校验失败
 - `401 Unauthorized`：未登录或 token 无效
+- `403 Forbidden`：无 Bearer Token 的状态变更请求缺少 CSRF 头
 - `404 Not Found`：用户或目标资源不存在
 - `409 Conflict`：重复创建或资源冲突
 - `502 Bad Gateway`：高德或 AI 上游失败
@@ -133,6 +135,7 @@ Authorization: Bearer <token>
 - `1002`：用户不存在
 - `1003`：未登录或 token 无效
 - `1004`：登录 code 非法
+- `1005`：缺少 CSRF 令牌
 
 ### 5.2 黑名单
 
@@ -405,12 +408,12 @@ curl 'http://127.0.0.1:8080/api/v1/recommendations/cards?longitude=120.35&latitu
 
 请求体字段：
 
-- `question`：必填，用户自然语言问题
+- `question`：必填，用户自然语言问题，长度不超过 `500`；后端会在传给内部 AI Service 前移除 HTML / script 标签
 - `longitude` / `latitude`：必填，GCJ-02 坐标
 - `radius`：可选，默认 `1000`
 - `size`：可选，默认 `3`，最大 `10`
 - `userId`：可选；传入后会先校验用户存在，并应用该用户黑名单过滤
-- `context`：可选；用于 refine/连续追问。可传 `previousQuestion`、`rejectedPoiIds`、`selectedPoiIds`、`userSignals`（例如 `健身`）
+- `context`：可选；用于 refine/连续追问。可传 `previousQuestion`、`rejectedPoiIds`、`selectedPoiIds`、`userSignals`（例如 `健身`）。`previousQuestion` 长度不超过 `500`，三个数组最多各 `20` 项；POI ID 单项不超过 `128`，`userSignals` 单项不超过 `64`。文本项同样会在进入 AI 前按纯文本净化。
 
 结果语义说明：
 
@@ -845,7 +848,7 @@ docs/api.yaml
 - `PUT` 当前无论新建还是更新都返回 `200 OK`
 - `ratingScore` 仅允许 `0.5 ~ 5.0` 且按 `0.5` 步进；非法时返回 `400 / 2102`
 - `perCapitaPrice` 必须为正整数；非法时返回 `400 / 2103`
-- `content` 去除首尾空白后不能为空，且长度不能超过 `1000`；非法时返回 `400 / 2101`
+- `content` 会按纯文本保存，后端移除 HTML / script 标签后再去除首尾空白；净化后不能为空，且长度不能超过 `1000`；非法时返回 `400 / 2101`
 
 ### 13.2 公开评论与聚合摘要接口
 
