@@ -2,6 +2,7 @@ package com.zjgsu.whattoeat.service.application;
 
 import com.zjgsu.whattoeat.common.error.BusinessException;
 import com.zjgsu.whattoeat.common.error.ErrorCode;
+import com.zjgsu.whattoeat.common.security.XssSanitizer;
 import com.zjgsu.whattoeat.config.WechatAuthProperties;
 import com.zjgsu.whattoeat.integration.wechat.WechatAuthGateway;
 import com.zjgsu.whattoeat.model.entity.UserEntity;
@@ -37,19 +38,22 @@ public class AuthApplicationService {
             throw new BusinessException(ErrorCode.LOGIN_CODE_INVALID);
         }
 
+        String sanitizedNickname = XssSanitizer.sanitize(nickname);
+        String sanitizedAvatarUrl = XssSanitizer.sanitize(normalizeAvatarUrl(avatarUrl));
+
         String openid = resolveOpenid(code);
         UserEntity user = userRepository.findByOpenid(openid).orElseGet(() -> {
             UserEntity created = new UserEntity();
             created.setOpenid(openid);
-            created.setNickname(nickname);
-            created.setAvatarUrl(normalizeAvatarUrl(avatarUrl));
+            created.setNickname(sanitizedNickname);
+            created.setAvatarUrl(sanitizedAvatarUrl);
             return userRepository.save(created);
         });
 
-        if (nickname != null && !nickname.isBlank()) {
-            user.setNickname(nickname);
+        if (sanitizedNickname != null && !sanitizedNickname.isBlank()) {
+            user.setNickname(sanitizedNickname);
         }
-        user.setAvatarUrl(normalizeAvatarUrl(avatarUrl));
+        user.setAvatarUrl(sanitizedAvatarUrl);
         user = userRepository.save(user);
 
         String token = sessionStore.generateToken();
@@ -86,6 +90,10 @@ public class AuthApplicationService {
 
     private String normalizeAvatarUrl(String avatarUrl) {
         if (avatarUrl == null || avatarUrl.isBlank()) {
+            return null;
+        }
+        String trimmed = avatarUrl.trim().toLowerCase();
+        if (trimmed.startsWith("javascript:") || trimmed.startsWith("data:") || trimmed.startsWith("vbscript:")) {
             return null;
         }
         return avatarUrl.trim();

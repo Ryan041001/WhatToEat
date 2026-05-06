@@ -77,6 +77,7 @@ public class GlobalExceptionHandler {
         return switch (errorCode) {
             case VALIDATION_FAILED, LOGIN_CODE_INVALID, NOTE_CONTENT_INVALID,
                     REVIEW_CONTENT_INVALID, REVIEW_RATING_INVALID, REVIEW_PRICE_INVALID -> HttpStatus.BAD_REQUEST;
+            case CSRF_TOKEN_MISSING -> HttpStatus.FORBIDDEN;
             case UNAUTHORIZED -> HttpStatus.UNAUTHORIZED;
             case USER_NOT_FOUND, BLACKLIST_NOT_FOUND, NOTE_NOT_FOUND, REVIEW_NOT_FOUND, AMAP_NO_RESULT -> HttpStatus.NOT_FOUND;
             case BLACKLIST_ALREADY_EXISTS, NOTE_ALREADY_EXISTS -> HttpStatus.CONFLICT;
