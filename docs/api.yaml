@@ -1133,6 +1133,7 @@ components:
           example: mock-code-001
         nickname:
           type: string
+          description: 昵称按纯文本保存；后端会移除 HTML / script 等标签。
           example: Alice
         avatarUrl:
           type: string
@@ -1310,6 +1311,8 @@ components:
         question:
           type: string
           minLength: 1
+          maxLength: 500
+          description: 用户自然语言问题；后端会在传给内部 AI Service 前移除 HTML / script 标签。
           example: 预算30以内，想吃点带汤的
         context:
           $ref: '#/components/schemas/AskRecommendationContext'
@@ -1319,21 +1322,28 @@ components:
       properties:
         previousQuestion:
           type: string
+          maxLength: 500
           nullable: true
           example: 预算 35 以内，想吃轻一点
         rejectedPoiIds:
           type: array
+          maxItems: 20
           items:
             type: string
+            maxLength: 128
           example: [poi-rejected]
         selectedPoiIds:
           type: array
+          maxItems: 20
           items:
             type: string
+            maxLength: 128
         userSignals:
           type: array
+          maxItems: 20
           items:
             type: string
+            maxLength: 64
           example: [健身]
     CreateChoiceHistoryRequest:
       type: object
@@ -1739,7 +1749,8 @@ components:
           example: 29
         content:
           type: string
-          description: 必填；评论内容去除首尾空白后不能为空，长度不能超过 1000。
+          description: 必填；评论内容会按纯文本保存，移除 HTML / script 标签后去除首尾空白，净化后不能为空，长度不能超过 1000。
+          maxLength: 1000
           example: 汤底稳，性价比不错
       required: [ratingScore, perCapitaPrice, content]
     ReviewDetail:

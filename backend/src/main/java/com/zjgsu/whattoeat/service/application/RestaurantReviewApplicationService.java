@@ -2,6 +2,7 @@ package com.zjgsu.whattoeat.service.application;
 
 import com.zjgsu.whattoeat.common.error.BusinessException;
 import com.zjgsu.whattoeat.common.error.ErrorCode;
+import com.zjgsu.whattoeat.common.security.XssSanitizer;
 import com.zjgsu.whattoeat.model.entity.RestaurantReviewEntity;
 import com.zjgsu.whattoeat.repository.RestaurantReviewRepository;
 import com.zjgsu.whattoeat.repository.UserRepository;
@@ -54,7 +55,8 @@ public class RestaurantReviewApplicationService {
         validateUserExists(userId);
         validateRating(ratingScore);
         validatePerCapitaPrice(perCapitaPrice);
-        validateContent(content);
+        String sanitizedContent = normalizePlainText(content);
+        validateContent(sanitizedContent);
 
         RestaurantReviewEntity entity = restaurantReviewRepository.findByUserIdAndPoiId(userId, poiId)
                 .orElseGet(RestaurantReviewEntity::new);
@@ -63,7 +65,7 @@ public class RestaurantReviewApplicationService {
         entity.setPoiNameSnapshot(normalizePoiNameSnapshot(poiNameSnapshot));
         entity.setRatingScore(ratingScore.stripTrailingZeros().scale() < 1 ? ratingScore.setScale(1) : ratingScore);
         entity.setPerCapitaPrice(perCapitaPrice);
-        entity.setContent(content.trim());
+        entity.setContent(sanitizedContent);
 
         RestaurantReviewEntity saved = restaurantReviewRepository.saveAndFlush(entity);
         restaurantMetricAggregationService.refreshSnapshot(poiId);
@@ -113,8 +115,15 @@ public class RestaurantReviewApplicationService {
         if (poiNameSnapshot == null) {
             return null;
         }
-        String trimmed = poiNameSnapshot.trim();
+        String trimmed = normalizePlainText(poiNameSnapshot);
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String normalizePlainText(String value) {
+        if (value == null) {
+            return null;
+        }
+        return XssSanitizer.stripAll(value).trim();
     }
 
     private ReviewDetail toReviewDetail(RestaurantReviewEntity entity) {

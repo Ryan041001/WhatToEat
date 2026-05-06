@@ -2,11 +2,15 @@ package com.zjgsu.whattoeat.controller;
 
 import com.zjgsu.whattoeat.common.error.BusinessException;
 import com.zjgsu.whattoeat.common.api.ApiResponse;
+import com.zjgsu.whattoeat.common.error.ErrorCode;
+import com.zjgsu.whattoeat.common.security.XssSanitizer;
 import com.zjgsu.whattoeat.application.recommendation.RecommendationApplicationService;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,6 +34,11 @@ import java.util.concurrent.CompletableFuture;
 public class RecommendationController {
 
     private static final long STREAM_TIMEOUT_MILLIS = Duration.ofMinutes(5).toMillis();
+    private static final int MAX_QUESTION_LENGTH = 500;
+    private static final int MAX_CONTEXT_TEXT_LENGTH = 500;
+    private static final int MAX_CONTEXT_ITEMS = 20;
+    private static final int MAX_POI_ID_LENGTH = 128;
+    private static final int MAX_USER_SIGNAL_LENGTH = 64;
 
     private final RecommendationApplicationService service;
 
@@ -61,23 +70,26 @@ public class RecommendationController {
 
     @PostMapping("/ask")
     public ApiResponse<RecommendationApplicationService.AskRecommendationResult> ask(
-            @Validated @RequestBody AskRecommendationRequest request) {
+            @Valid @RequestBody AskRecommendationRequest request) {
         int radius = request.radius() == null ? 1000 : request.radius();
         int size = request.size() == null ? 3 : request.size();
+        String sanitizedQuestion = sanitizeRequiredText(request.question());
         return ApiResponse.ok(service.ask(
                 request.userId(),
                 request.longitude(),
                 request.latitude(),
                 radius,
                 size,
-                request.question(),
+                sanitizedQuestion,
                 toAskContext(request.context())));
     }
 
     @PostMapping(path = "/ask/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter askStream(@Validated @RequestBody AskRecommendationRequest request) {
+    public SseEmitter askStream(@Valid @RequestBody AskRecommendationRequest request) {
         int radius = request.radius() == null ? 1000 : request.radius();
         int size = request.size() == null ? 3 : request.size();
+        String sanitizedQuestion = sanitizeRequiredText(request.question());
+        RecommendationApplicationService.AskContext sanitizedContext = toAskContext(request.context());
         SseEmitter emitter = new SseEmitter(STREAM_TIMEOUT_MILLIS);
         String requestId = UUID.randomUUID().toString();
         String messageId = UUID.randomUUID().toString();
@@ -87,6 +99,8 @@ public class RecommendationController {
                 request,
                 radius,
                 size,
+                sanitizedQuestion,
+                sanitizedContext,
                 requestId,
                 messageId));
         return emitter;
@@ -97,6 +111,8 @@ public class RecommendationController {
             AskRecommendationRequest request,
             int radius,
             int size,
+            String sanitizedQuestion,
+            RecommendationApplicationService.AskContext sanitizedContext,
             String requestId,
             String messageId) {
         try {
@@ -112,8 +128,8 @@ public class RecommendationController {
                     request.latitude(),
                     radius,
                     size,
-                    request.question(),
-                    toAskContext(request.context()),
+                    sanitizedQuestion,
+                    sanitizedContext,
                     streamEvent -> {
                         try {
                             sendEvent(emitter, streamEvent.name(), streamEvent.data());
@@ -152,10 +168,40 @@ public class RecommendationController {
             return RecommendationApplicationService.AskContext.empty();
         }
         return new RecommendationApplicationService.AskContext(
-                context.previousQuestion(),
-                context.rejectedPoiIds() == null ? List.of() : List.copyOf(context.rejectedPoiIds()),
-                context.selectedPoiIds() == null ? List.of() : List.copyOf(context.selectedPoiIds()),
-                context.userSignals() == null ? List.of() : List.copyOf(context.userSignals()));
+                sanitizeOptionalText(context.previousQuestion()),
+                sanitizeList(context.rejectedPoiIds()),
+                sanitizeList(context.selectedPoiIds()),
+                sanitizeList(context.userSignals()));
+    }
+
+    private String sanitizeRequiredText(String value) {
+        String sanitized = sanitizeOptionalText(value);
+        if (sanitized == null || sanitized.isBlank()) {
+            throw new BusinessException(ErrorCode.VALIDATION_FAILED);
+        }
+        return sanitized;
+    }
+
+    private String sanitizeOptionalText(String value) {
+        if (value == null) {
+            return null;
+        }
+        return XssSanitizer.stripAll(value).trim();
+    }
+
+    private List<String> sanitizeList(List<String> values) {
+        if (values == null) {
+            return List.of();
+        }
+        return values.stream()
+                .map(this::sanitizeOptionalText)
+                .map(value -> {
+                    if (value == null || value.isBlank()) {
+                        throw new BusinessException(ErrorCode.VALIDATION_FAILED);
+                    }
+                    return value;
+                })
+                .toList();
     }
 
     public record AskRecommendationRequest(
@@ -164,14 +210,14 @@ public class RecommendationController {
             @NotNull Double latitude,
             @Min(100) @Max(50000) Integer radius,
             @Min(1) @Max(10) Integer size,
-            @NotBlank String question,
-            AskRecommendationContextRequest context) {
+            @NotBlank @Size(max = MAX_QUESTION_LENGTH) String question,
+            @Valid AskRecommendationContextRequest context) {
     }
 
     public record AskRecommendationContextRequest(
-            String previousQuestion,
-            List<@NotBlank String> rejectedPoiIds,
-            List<@NotBlank String> selectedPoiIds,
-            List<@NotBlank String> userSignals) {
+            @Size(max = MAX_CONTEXT_TEXT_LENGTH) String previousQuestion,
+            @Size(max = MAX_CONTEXT_ITEMS) List<@NotBlank @Size(max = MAX_POI_ID_LENGTH) String> rejectedPoiIds,
+            @Size(max = MAX_CONTEXT_ITEMS) List<@NotBlank @Size(max = MAX_POI_ID_LENGTH) String> selectedPoiIds,
+            @Size(max = MAX_CONTEXT_ITEMS) List<@NotBlank @Size(max = MAX_USER_SIGNAL_LENGTH) String> userSignals) {
     }
 }
