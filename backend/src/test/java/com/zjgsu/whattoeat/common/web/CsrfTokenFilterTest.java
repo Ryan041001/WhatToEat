@@ -29,8 +29,22 @@ class CsrfTokenFilterTest {
     }
 
     @Test
-    void postRequestsWithoutBearerOrCsrfShouldBeBlocked() throws ServletException, IOException {
+    void loginPostWithoutBearerOrCsrfShouldPassThrough() throws ServletException, IOException {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/auth/wechat-login");
+        request.setContentType("application/json");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        boolean[] chainCalled = {false};
+        FilterChain chain = (req, res) -> chainCalled[0] = true;
+
+        filter.doFilterInternal(request, response, chain);
+
+        assertTrue(chainCalled[0], "Login must remain reachable before the client has a bearer token");
+        assertEquals(200, response.getStatus());
+    }
+
+    @Test
+    void protectedPostWithoutBearerOrCsrfShouldBeBlocked() throws ServletException, IOException {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/users/1/notes");
         request.setContentType("application/json");
         MockHttpServletResponse response = new MockHttpServletResponse();
         boolean[] chainCalled = {false};

@@ -16,13 +16,14 @@ public class CsrfTokenFilter extends OncePerRequestFilter {
 
     private static final String CSRF_HEADER = "X-CSRF-Token";
     private static final Set<String> SAFE_METHODS = Set.of("GET", "HEAD", "OPTIONS");
+    private static final Set<String> PUBLIC_STATE_CHANGING_PATHS = Set.of("/api/v1/auth/wechat-login");
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         String method = request.getMethod().toUpperCase();
 
-        if (!SAFE_METHODS.contains(method)) {
+        if (!SAFE_METHODS.contains(method) && !PUBLIC_STATE_CHANGING_PATHS.contains(request.getRequestURI())) {
             String authorization = request.getHeader("Authorization");
             boolean hasBearerToken = authorization != null && authorization.startsWith("Bearer ");
 
