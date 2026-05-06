@@ -209,8 +209,13 @@ backend/src/main/java/com/zjgsu/whattoeat/
 
 ```bash
 cd backend
+DB_USER=whattoeat \
+DB_PASSWORD=whattoeat \
+AMAP_KEY=test-key \
 JAVA_HOME=$(/usr/libexec/java_home -v 17) ./mvnw spring-boot:run
 ```
+
+如本地 MySQL 使用其他账号，请替换 `DB_USER` / `DB_PASSWORD`；真实餐厅查询和推荐链路需要配置有效 `AMAP_KEY`。
 
 ### 8.2 Test Profile
 
