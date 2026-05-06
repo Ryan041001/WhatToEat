@@ -41,7 +41,7 @@
 - CodeQL 静态分析已添加。
 
 ## PR 链接
-- PR #X: https://github.com/xxx/xxx/pull/X
+- PR #55: https://github.com/Ryan041001/WhatToEat/pull/55
 
 ## 遇到的问题和解决
 1. 问题：需要在新分支重现安全修复内容。
