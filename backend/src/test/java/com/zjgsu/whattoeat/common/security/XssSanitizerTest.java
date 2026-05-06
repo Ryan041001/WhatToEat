@@ -69,6 +69,13 @@ class XssSanitizerTest {
     }
 
     @Test
+    void stripAllShouldIgnoreNumericEntitiesOutsideIntegerRange() {
+        String input = "hello &#999999999999999999999999999999999999; world";
+        String result = XssSanitizer.stripAll(input);
+        assertEquals("hello &amp;#999999999999999999999999999999999999; world", result);
+    }
+
+    @Test
     void stripAllShouldHandleNullInput() {
         assertNull(XssSanitizer.stripAll(null));
     }

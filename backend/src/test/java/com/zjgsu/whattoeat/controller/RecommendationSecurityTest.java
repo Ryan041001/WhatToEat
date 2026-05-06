@@ -47,4 +47,23 @@ class RecommendationSecurityTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(1001));
     }
+
+    @Test
+    void askShouldRejectContextItemsThatBecomeBlankAfterSanitization() throws Exception {
+        mockMvc.perform(post("/api/v1/recommendations/ask")
+                        .header("X-CSRF-Token", "test-csrf")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "longitude": 120.35,
+                                  "latitude": 30.31,
+                                  "question": "想吃面",
+                                  "context": {
+                                    "rejectedPoiIds": ["<script></script>"]
+                                  }
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(1001));
+    }
 }

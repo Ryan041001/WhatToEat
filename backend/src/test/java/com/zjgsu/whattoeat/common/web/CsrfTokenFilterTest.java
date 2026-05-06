@@ -1,5 +1,6 @@
 package com.zjgsu.whattoeat.common.web;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.Test;
@@ -13,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CsrfTokenFilterTest {
 
-    private final CsrfTokenFilter filter = new CsrfTokenFilter();
+    private final CsrfTokenFilter filter = new CsrfTokenFilter(new ObjectMapper());
 
     @Test
     void getRequestsShouldPassThrough() throws ServletException, IOException {
@@ -54,6 +55,7 @@ class CsrfTokenFilterTest {
 
         assertEquals(403, response.getStatus());
         assertTrue(response.getContentAsString().contains("1005"));
+        assertTrue(response.getContentAsString().contains("缺少状态变更请求令牌"));
     }
 
     @Test

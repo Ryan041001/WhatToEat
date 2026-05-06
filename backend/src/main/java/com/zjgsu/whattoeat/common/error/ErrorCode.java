@@ -6,7 +6,7 @@ public enum ErrorCode {
     USER_NOT_FOUND(1002, "用户不存在"),
     UNAUTHORIZED(1003, "未登录或token无效"),
     LOGIN_CODE_INVALID(1004, "登录code非法"),
-    CSRF_TOKEN_MISSING(1005, "缺少CSRF令牌"),
+    CSRF_TOKEN_MISSING(1005, "缺少状态变更请求令牌"),
 
     // 黑名单与备注相关
     BLACKLIST_ALREADY_EXISTS(2001, "重复拉黑"),

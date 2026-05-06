@@ -118,7 +118,7 @@ Authorization: Bearer <token>
 - `201 Created`：创建成功，例如登录建会话、加入黑名单
 - `400 Bad Request`：参数错误、校验失败
 - `401 Unauthorized`：未登录或 token 无效
-- `403 Forbidden`：无 Bearer Token 的状态变更请求缺少 CSRF 头
+- `403 Forbidden`：无 Bearer Token 的状态变更请求缺少 `X-CSRF-Token` 防护头
 - `404 Not Found`：用户或目标资源不存在
 - `409 Conflict`：重复创建或资源冲突
 - `502 Bad Gateway`：高德或 AI 上游失败
@@ -135,7 +135,7 @@ Authorization: Bearer <token>
 - `1002`：用户不存在
 - `1003`：未登录或 token 无效
 - `1004`：登录 code 非法
-- `1005`：缺少 CSRF 令牌
+- `1005`：缺少状态变更请求令牌
 
 ### 5.2 黑名单
 

@@ -195,7 +195,12 @@ public class RecommendationController {
         }
         return values.stream()
                 .map(this::sanitizeOptionalText)
-                .filter(value -> value != null && !value.isBlank())
+                .map(value -> {
+                    if (value == null || value.isBlank()) {
+                        throw new BusinessException(ErrorCode.VALIDATION_FAILED);
+                    }
+                    return value;
+                })
                 .toList();
     }
 

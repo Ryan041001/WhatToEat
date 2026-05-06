@@ -29,14 +29,29 @@ public final class XssSanitizer {
         if (input == null) {
             return null;
         }
-        return decodeSafeNumericEntities(PLAIN_TEXT_POLICY.sanitize(input));
+        String protectedInput = protectUnsupportedNumericEntities(input);
+        return decodeSafeNumericEntities(PLAIN_TEXT_POLICY.sanitize(protectedInput));
+    }
+
+    private static String protectUnsupportedNumericEntities(String value) {
+        Matcher matcher = NUMERIC_ENTITY.matcher(value);
+        StringBuilder protectedValue = new StringBuilder();
+        while (matcher.find()) {
+            Integer codePoint = parseEntityCodePoint(matcher.group(1));
+            if (codePoint == null || !Character.isValidCodePoint(codePoint)) {
+                matcher.appendReplacement(protectedValue, Matcher.quoteReplacement(
+                        "&amp;#" + matcher.group(1) + ";"));
+            }
+        }
+        matcher.appendTail(protectedValue);
+        return protectedValue.toString();
     }
 
     private static String decodeSafeNumericEntities(String value) {
         Matcher matcher = NUMERIC_ENTITY.matcher(value);
         StringBuilder decoded = new StringBuilder();
         while (matcher.find()) {
-            int codePoint = parseEntityCodePoint(matcher.group(1));
+            Integer codePoint = parseEntityCodePoint(matcher.group(1));
             if (isSafeToDecode(codePoint)) {
                 matcher.appendReplacement(decoded, Matcher.quoteReplacement(Character.toString(codePoint)));
             }
@@ -45,15 +60,20 @@ public final class XssSanitizer {
         return decoded.toString();
     }
 
-    private static int parseEntityCodePoint(String value) {
-        if (value.startsWith("x") || value.startsWith("X")) {
-            return Integer.parseInt(value.substring(1), 16);
+    private static Integer parseEntityCodePoint(String value) {
+        try {
+            if (value.startsWith("x") || value.startsWith("X")) {
+                return Integer.parseInt(value.substring(1), 16);
+            }
+            return Integer.parseInt(value);
+        } catch (NumberFormatException ex) {
+            return null;
         }
-        return Integer.parseInt(value);
     }
 
-    private static boolean isSafeToDecode(int codePoint) {
-        return codePoint != '<'
+    private static boolean isSafeToDecode(Integer codePoint) {
+        return codePoint != null
+                && codePoint != '<'
                 && codePoint != '>'
                 && codePoint != '&'
                 && codePoint != '"'

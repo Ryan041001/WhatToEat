@@ -29,7 +29,7 @@
 - 敏感信息：后端 dev / docker 配置改为读取环境变量；`.env.example` 只提供空值占位模板。
 - 依赖安全：Dependabot 已配置依赖更新提醒。
 - 安全 HTTP 头：后端统一注入基础安全响应头。
-- CSRF：无 Bearer 的状态变更请求要求 `X-CSRF-Token`。
+- 状态变更防护：无 Bearer 的状态变更请求要求 `X-CSRF-Token` 防护头。
 - 错误信息暴露：业务异常通过统一 `ApiResponse` 返回业务码和固定消息，安全测试未发现堆栈直接暴露到响应体。
 
 ### CI 安全扫描
@@ -47,7 +47,7 @@
 
 ### 剩余风险
 
-- CSRF filter 当前只检查 `X-CSRF-Token` 是否存在，未绑定 token 来源；如果未来改成 cookie session，应实现正式的 token 生成与校验。
+- `X-CSRF-Token` 防护头当前只检查是否存在，未绑定 token 来源；如果未来改成 cookie session，应实现正式的 CSRF token 生成与校验。
 - Prompt injection 不能只靠 HTML sanitizer 彻底解决；后续应在 AI service 的 system prompt、工具调用和输出校验层继续加固。
 - `AiHttpClient` 调用内部 AI service 当前未加服务间 API key；部署到共享网络时建议增加内部鉴权。
 
