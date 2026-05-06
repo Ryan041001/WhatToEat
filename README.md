@@ -102,8 +102,13 @@ WhatToEat/
 ### 后端（dev 环境，需要本地 MySQL）
 ```bash
 cd backend
+DB_USER=whattoeat \
+DB_PASSWORD=whattoeat \
+AMAP_KEY=test-key \
 JAVA_HOME=$(/usr/libexec/java_home -v 17) ./mvnw spring-boot:run
 ```
+
+如果使用自己的本地 MySQL 账号，请替换 `DB_USER` / `DB_PASSWORD`；餐厅查询和推荐接口需要把 `AMAP_KEY` 换成真实高德 Key。
 
 ### 后端（test 环境，使用 H2）
 ```bash
