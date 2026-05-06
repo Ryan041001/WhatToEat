@@ -55,6 +55,20 @@ class XssSanitizerTest {
     }
 
     @Test
+    void stripAllShouldPreserveSafeChinesePunctuation() {
+        String input = "预算 35 以内，想吃轻一点";
+        String result = XssSanitizer.stripAll(input);
+        assertEquals("预算 35 以内，想吃轻一点", result);
+    }
+
+    @Test
+    void stripAllShouldNotDecodeDangerousNumericEntities() {
+        String input = "&#60;script&#62;alert(1)&#60;/script&#62;";
+        String result = XssSanitizer.stripAll(input);
+        assertEquals("&lt;script&gt;alert(1)&lt;/script&gt;", result);
+    }
+
+    @Test
     void stripAllShouldHandleNullInput() {
         assertNull(XssSanitizer.stripAll(null));
     }

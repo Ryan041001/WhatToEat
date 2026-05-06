@@ -76,14 +76,14 @@ class AuthSecurityTest {
     }
 
     @Test
-    void loginShouldPreserveSafeContent() throws Exception {
+    void loginShouldStoreNicknameAsPlainText() throws Exception {
         mockMvc.perform(post("/api/v1/auth/wechat-login")
                         .header("X-CSRF-Token", "test-csrf")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"code\":\"mock-code-safe-001\",\"nickname\":\"Alice<b>bold</b>\",\"avatarUrl\":\"https://example.com/avatar.png\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.user.nickname").value("Alice<b>bold</b>"));
+                .andExpect(jsonPath("$.data.user.nickname").value("Alicebold"));
     }
 
     @Test

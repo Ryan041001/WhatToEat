@@ -38,7 +38,7 @@ public class AuthApplicationService {
             throw new BusinessException(ErrorCode.LOGIN_CODE_INVALID);
         }
 
-        String sanitizedNickname = XssSanitizer.sanitize(nickname);
+        String sanitizedNickname = XssSanitizer.stripAll(nickname);
         String sanitizedAvatarUrl = XssSanitizer.sanitize(normalizeAvatarUrl(avatarUrl));
 
         String openid = resolveOpenid(code);
