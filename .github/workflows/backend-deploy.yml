@@ -73,7 +73,7 @@ jobs:
     environment: backend-production
     steps:
       - name: Deploy backend container over SSH
-        uses: appleboy/ssh-action@v1.2.2
+        uses: appleboy/ssh-action@v1.2.5
         env:
           BACKEND_IMAGE: ${{ needs.publish-image.outputs.image-ref }}
           GHCR_USER: ${{ secrets.GHCR_USER }}
