@@ -1,38 +1,32 @@
 version: 2
-updates:
-  # GitHub Actions — 全部合并为一个 PR
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    open-pull-requests-limit: 1
+
+# Keep routine version updates in one monthly PR across ecosystems.
+# Security update PRs are controlled separately by GitHub and may still open on their own.
+multi-ecosystem-groups:
+  all-dependencies:
     schedule:
       interval: "monthly"
       day: "monday"
       time: "09:00"
       timezone: "Asia/Shanghai"
-    groups:
-      github-actions:
-        patterns:
-          - "*"
+    labels:
+      - "dependencies"
+
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "all-dependencies"
     labels:
       - "dependencies"
       - "ci"
 
-  # 后端 Maven 依赖 — minor/patch 合并，忽略 major
   - package-ecosystem: "maven"
     directory: "/backend"
-    open-pull-requests-limit: 1
-    schedule:
-      interval: "monthly"
-      day: "monday"
-      time: "09:10"
-      timezone: "Asia/Shanghai"
-    groups:
-      backend-maven:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "all-dependencies"
     ignore:
       - dependency-name: "*"
         update-types:
@@ -41,22 +35,11 @@ updates:
       - "dependencies"
       - "backend"
 
-  # AI Service Python 依赖 — minor/patch 合并，忽略 major
   - package-ecosystem: "uv"
     directory: "/ai-service"
-    open-pull-requests-limit: 1
-    schedule:
-      interval: "monthly"
-      day: "monday"
-      time: "09:20"
-      timezone: "Asia/Shanghai"
-    groups:
-      ai-service-python:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "all-dependencies"
     ignore:
       - dependency-name: "*"
         update-types:
@@ -65,22 +48,11 @@ updates:
       - "dependencies"
       - "ai-service"
 
-  # 前端 npm 依赖 — minor/patch 合并，忽略 major
   - package-ecosystem: "npm"
     directory: "/frontend"
-    open-pull-requests-limit: 1
-    schedule:
-      interval: "monthly"
-      day: "monday"
-      time: "09:30"
-      timezone: "Asia/Shanghai"
-    groups:
-      frontend-npm:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "all-dependencies"
     ignore:
       - dependency-name: "*"
         update-types:
@@ -89,7 +61,7 @@ updates:
       - "dependencies"
       - "frontend"
 
-  # 设计文档 npm 依赖 — 暂时完全禁用，不生成 PR
+  # Design docs dependencies are intentionally disabled for now.
   - package-ecosystem: "npm"
     directory: "/docs/design"
     open-pull-requests-limit: 0
@@ -98,37 +70,14 @@ updates:
       day: "monday"
       time: "09:40"
       timezone: "Asia/Shanghai"
-    groups:
-      design-npm:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
     ignore:
       - dependency-name: "*"
-        update-types:
-          - "version-update:semver-major"
-    labels:
-      - "dependencies"
-      - "design"
 
-  # 后端 Docker 基础镜像 — 合并为一个 PR
   - package-ecosystem: "docker"
     directory: "/backend"
-    open-pull-requests-limit: 1
-    schedule:
-      interval: "monthly"
-      day: "monday"
-      time: "09:50"
-      timezone: "Asia/Shanghai"
-    groups:
-      backend-docker:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "all-dependencies"
     ignore:
       - dependency-name: "eclipse-temurin"
         versions:
@@ -144,22 +93,11 @@ updates:
       - "backend"
       - "docker"
 
-  # AI Service Docker 基础镜像
   - package-ecosystem: "docker"
     directory: "/ai-service"
-    open-pull-requests-limit: 1
-    schedule:
-      interval: "monthly"
-      day: "monday"
-      time: "10:00"
-      timezone: "Asia/Shanghai"
-    groups:
-      ai-service-docker:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "all-dependencies"
     ignore:
       - dependency-name: "*"
         update-types:
