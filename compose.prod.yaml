@@ -3,40 +3,46 @@ services:
     image: mysql:8.4
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: ${DB_NAME:-whattoeat_dev}
-      MYSQL_USER: ${DB_USER:-whattoeat}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-whattoeat}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${DB_NAME:?set DB_NAME}
+      MYSQL_USER: ${DB_USER:?set DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?set DB_ROOT_PASSWORD}
     volumes:
       - mysql-data:/var/lib/mysql
-    ports:
-      - "${MYSQL_PORT:-3306}:3306"
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 20s
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 768M
 
   ai-service:
+    image: ${AI_SERVICE_IMAGE:-whattoeat-ai-service:prod}
     build:
       context: ./ai-service
     restart: unless-stopped
     environment:
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:?set OPENAI_API_KEY}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
       OPENAI_TIMEOUT_SECONDS: ${OPENAI_TIMEOUT_SECONDS:-30}
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).read()\""]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
-    ports:
-      - "${AI_SERVICE_PORT:-8000}:8000"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 384M
 
   backend:
+    image: ${BACKEND_IMAGE:-whattoeat-backend:prod}
     build:
       context: ./backend
     restart: unless-stopped
@@ -45,28 +51,30 @@ services:
         condition: service_healthy
       ai-service:
         condition: service_healthy
-    volumes:
-      - ./backend/src/main/resources/application-docker.yml:/app/config/application-docker.yml:ro
     environment:
       SPRING_PROFILES_ACTIVE: docker
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_NAME: ${DB_NAME:-whattoeat_dev}
-      DB_USER: ${DB_USER:-whattoeat}
-      DB_PASSWORD: ${DB_PASSWORD:-whattoeat}
-      AMAP_KEY: ${AMAP_KEY:-test-key}
+      DB_NAME: ${DB_NAME:?set DB_NAME}
+      DB_USER: ${DB_USER:?set DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
+      AMAP_KEY: ${AMAP_KEY:?set AMAP_KEY}
       AMAP_BASE_URL: ${AMAP_BASE_URL:-https://restapi.amap.com}
       AMAP_TIMEOUT_SECONDS: ${AMAP_TIMEOUT_SECONDS:-5}
       AI_SERVICE_BASE_URL: http://ai-service:8000
       AI_SERVICE_TIMEOUT_SECONDS: ${AI_SERVICE_TIMEOUT_SECONDS:-5}
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 40s
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     ports:
       - "${BACKEND_PORT:-8080}:8080"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
 volumes:
   mysql-data:
