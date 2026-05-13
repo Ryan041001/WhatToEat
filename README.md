@@ -176,7 +176,16 @@ python3 scripts/update_coverage_badges.py
 ```bash
 cp .env.example .env
 # 配置 AMAP_KEY / OPENAI_API_KEY / OPENAI_BASE_URL / OPENAI_MODEL
-docker compose --env-file .env up --build
+docker compose --env-file .env -f compose.yaml up -d --build
+docker compose --env-file .env -f compose.yaml ps
+```
+
+生产环境可使用独立编排文件启动后端、AI Service 与 MySQL：
+
+```bash
+cp .env.example .env
+# 填写 DB_USER / DB_PASSWORD / DB_ROOT_PASSWORD / AMAP_KEY / OPENAI_API_KEY 等生产值
+./deploy.sh
 ```
 
 ### 前端开发
