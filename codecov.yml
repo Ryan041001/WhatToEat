@@ -1,0 +1,35 @@
+codecov:
+  require_ci_to_pass: true
+
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+    patch:
+      default:
+        target: auto
+        threshold: 5%
+
+flag_management:
+  default_rules:
+    carryforward: true
+    statuses:
+      - type: project
+        target: auto
+  individual_flags:
+    - name: backend
+      paths:
+        - backend/src/main/java
+    - name: ai-service
+      paths:
+        - ai-service/app
+    - name: frontend
+      paths:
+        - frontend
+
+comment:
+  layout: "diff, flags, files"
+  behavior: default
+  require_changes: false

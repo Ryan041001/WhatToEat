@@ -1,0 +1,154 @@
+<!--pages/home/home.wxml-->
+<view class="container">
+  <loading-spinner show="{{loading}}" message="正在加载餐厅..." />
+  <view class="error-banner" wx:if="{{error}}">
+    <text>{{error}}</text>
+  </view>
+
+  <view class="header">
+    <view class="blob blob-1"></view>
+    <view class="blob blob-2"></view>
+
+    <view class="header-content">
+      <view class="header-top">
+        <view class="header-left">
+          <text class="header-subtitle">干饭防纠结</text>
+          <text class="header-title">今天吃什么？</text>
+        </view>
+        <view class="header-right">
+          <view class="header-badge">
+            <text class="badge-text">{{activeCount}} 家可选</text>
+          </view>
+          <view class="mine-entry" bindtap="goToMine">
+            <text class="mine-entry-text">我的</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="today-pick" bindtap="goToAiChat">
+        <view class="pick-left">
+          <view class="pick-icon-shell"><view class="svg-icon icon-stars"></view></view>
+          <view class="pick-text">
+            <text class="pick-title">AI 推荐问答</text>
+            <text class="pick-subtitle">说下预算和口味，直接给你推荐理由</text>
+          </view>
+        </view>
+        <view class="pick-btn">
+          <text class="pick-btn-text">去问问</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="quick-actions px-4 mb-6">
+    <view class="actions-card">
+      <view class="action-btn action-spin" bindtap="goToSpin">
+        <view class="action-icon-shell"><view class="svg-icon icon-wheel"></view></view>
+        <text class="action-text">大转盘</text>
+      </view>
+      <view class="action-btn action-shake" bindtap="handleShake">
+        <view class="action-icon-shell {{shaking ? 'shaking' : ''}}">
+          <view class="svg-icon icon-shake"></view>
+        </view>
+        <text class="action-text">摇一摇</text>
+      </view>
+      <view class="action-btn action-swipe" bindtap="goToSwipe">
+        <view class="action-icon-shell">
+          <view class="svg-icon icon-swipe"></view>
+        </view>
+        <text class="action-text">卡片滑</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="shake-result {{shakeResult ? 'show' : ''}}" bindtap="closeShakeResult">
+    <view class="shake-content" catchtap="noop">
+      <view class="shake-icon-shell"><view class="svg-icon icon-tada"></view></view>
+      <text class="shake-label">摇到了！就吃</text>
+
+      <view class="shake-card" bindtap="goToShakeDetail">
+        <image class="shake-card-image" src="{{shakeResult.image}}" mode="aspectFill"></image>
+        <view class="shake-card-body">
+          <text class="shake-name">{{shakeResult.name}}</text>
+          <view class="shake-card-meta">
+            <view class="meta-item">
+              <view class="meta-icon"><view class="svg-icon icon-star"></view></view>
+              <text>{{shakeResult.rating}}</text>
+            </view>
+            <view class="meta-item">
+              <view class="meta-icon"><view class="svg-icon icon-pin"></view></view>
+              <text>{{shakeResult.distance}}</text>
+            </view>
+          </view>
+          <text class="shake-card-tip">点击卡片查看详情</text>
+        </view>
+      </view>
+
+      <text class="shake-tip">点击空白处关闭</text>
+    </view>
+  </view>
+
+  <view class="stats-row px-4 mb-6">
+    <view class="stat-item">
+      <view class="stat-icon-shell stat-icon-total"><view class="svg-icon icon-plate"></view></view>
+      <text class="stat-value">{{totalCount}}</text>
+      <text class="stat-label">总餐厅</text>
+    </view>
+    <view class="stat-item">
+      <view class="stat-icon-shell stat-icon-available"><view class="svg-icon icon-check"></view></view>
+      <text class="stat-value">{{activeCount}}</text>
+      <text class="stat-label">可选择</text>
+    </view>
+    <view class="stat-item">
+      <view class="stat-icon-shell stat-icon-blocked"><view class="svg-icon icon-ban"></view></view>
+      <text class="stat-value">{{blacklistedCount}}</text>
+      <text class="stat-label">已拉黑</text>
+    </view>
+  </view>
+
+  <view class="hot-picks px-4 mb-6">
+    <view class="picks-header">
+      <view class="picks-title">
+        <view class="title-icon-shell"><view class="svg-icon icon-fire"></view></view>
+        <text class="picks-text">热门推荐</text>
+      </view>
+      <view class="picks-more" bindtap="goToRestaurants">
+        <text class="picks-more-text">查看全部</text>
+        <view class="picks-more-icon"><view class="svg-icon icon-arrow-right"></view></view>
+      </view>
+    </view>
+
+    <view class="picks-list">
+      <view class="pick-card" wx:for="{{topRated}}" wx:key="id" bindtap="goToDetail" data-id="{{item.id}}">
+        <view class="pick-image-wrapper">
+          <image class="pick-image" src="{{item.image}}" mode="aspectFill"></image>
+          <view class="pick-rank rank-{{index}}">{{index + 1}}</view>
+        </view>
+        <view class="pick-info">
+          <text class="pick-name">{{item.name}}</text>
+          <view class="pick-meta">
+            <view class="rating">
+              <view class="star-icon-shell"><view class="svg-icon icon-star"></view></view>
+              <text class="rating-value">{{item.rating}}</text>
+            </view>
+            <view class="distance">
+              <view class="distance-icon-shell"><view class="svg-icon icon-pin"></view></view>
+              <text class="distance-text">{{item.distance}}</text>
+            </view>
+            <text class="price">{{item.priceText}}</text>
+          </view>
+          <view class="pick-tags">
+            <text class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this" wx:if="{{index < 3}}">{{tag}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="add-btn-wrapper px-4 mb-6">
+    <view class="add-btn" bindtap="goToMine">
+      <view class="add-icon-shell"><view class="svg-icon icon-user"></view></view>
+      <text class="add-text">进入我的</text>
+    </view>
+  </view>
+</view>

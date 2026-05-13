@@ -1,0 +1,156 @@
+<!--pages/swipe/swipe.wxml-->
+<view class="container">
+  <view class="swipe-hero warm-hero">
+    <view class="warm-hero__blob hero-blob-one"></view>
+    <view class="warm-hero__blob hero-blob-two"></view>
+
+    <view class="hero-content">
+      <view class="hero-top">
+        <view class="hero-copy">
+          <text class="hero-eyebrow">{{showResult ? '滑选结果' : '卡片滑选'}}</text>
+          <text class="hero-title">{{showResult ? '今晚候选清单' : '探店雷达'}}</text>
+          <text class="hero-subtitle">{{showResult ? '以下是你右滑保留下来的餐厅，按你的偏好全部展示。' : '左滑无感，右滑喜欢，让选择更凭直觉'}}</text>
+        </view>
+        <view class="surface-chip hero-chip">
+          <text class="hero-chip-text" wx:if="{{!showResult}}">{{restaurants.length}} 家待匹配</text>
+          <text class="hero-chip-text" wx:else>{{likedRestaurants.length}} 家入围</text>
+        </view>
+      </view>
+
+      <view class="warm-hero__surface hero-surface" wx:if="{{!showResult}}">
+        <view class="hero-surface-icon"><view class="svg-icon icon-stars"></view></view>
+        <view class="hero-surface-copy">
+          <text class="hero-surface-title">向左跳过，向右收藏</text>
+          <text class="hero-surface-text">按直觉滑一滑，最后会从你喜欢的餐厅里选出今晚候选。</text>
+        </view>
+      </view>
+
+      <view class="warm-hero__surface hero-surface" wx:if="{{showResult}}">
+        <view class="hero-surface-icon"><view class="svg-icon icon-swipe"></view></view>
+        <view class="hero-surface-copy">
+          <text class="hero-surface-title">{{likedRestaurants.length > 0 ? '推荐清单已经生成' : '这一轮暂时没有心动项'}}</text>
+          <text class="hero-surface-text">{{likedRestaurants.length > 0 ? '可逐个查看详情，或重新滑一轮。' : '再试一次，也许下一轮就会遇到想吃的。'}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <block wx:if="{{!showResult && restaurants.length > 0}}">
+    <view class="swipe-shell page-gutter">
+      <view class="hint-card glass-panel-soft">
+        <view class="hint-icon-wrapper"><view class="svg-icon icon-stars"></view></view>
+        <view class="hint-copy">
+          <text class="hint-title">滑完这一轮，会从右滑喜欢的餐厅里随机推荐一家</text>
+          <text class="hint-subtitle">不需要纠结，跟着感觉选就好。</text>
+        </view>
+      </view>
+
+      <view class="card-shell glass-panel-soft">
+        <view class="card-stack">
+          <block wx:for="{{visibleCards}}" wx:key="id">
+            <view class="swipe-card card-{{index}} {{index === 0 && !isSwiping ? 'card-transition' : ''}}" style="{{item.style}} {{index === 0 ? 'transform: translateX(' + translateX + 'px) translateY(' + translateY + 'px) rotate(' + rotation + 'deg);' : ''}}">
+              <image class="card-bg" src="{{item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=500&fit=crop'}}" mode="aspectFill"></image>
+
+              <block wx:if="{{index === 0}}">
+                <view class="label label-pass" wx:if="{{swipeDirection === 'left'}}">
+                  <text class="label-text">跳过</text>
+                </view>
+                <view class="label label-yep" wx:if="{{swipeDirection === 'right'}}">
+                  <text class="label-text">喜欢</text>
+                </view>
+              </block>
+
+              <view class="card-overlay"></view>
+              <view class="card-content">
+                <text class="card-name">{{item.name}}</text>
+                <view class="card-info">
+                  <text class="card-category">{{item.category || '美食'}}</text>
+                  <view class="card-distance">
+                    <view class="distance-icon-inline"><view class="svg-icon icon-location"></view></view>
+                    <text>{{item.distance || '0m'}}</text>
+                  </view>
+                </view>
+                <view class="card-tags" wx:if="{{item.tags && item.tags.length}}">
+                  <text class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this" wx:if="{{tagIndex < 4}}" wx:for-index="tagIndex">{{tag}}</text>
+                </view>
+              </view>
+            </view>
+          </block>
+
+          <view
+            class="touch-area"
+            bindtouchstart="onTouchStart"
+            bindtouchmove="onTouchMove"
+            bindtouchend="onTouchEnd"
+          ></view>
+        </view>
+      </view>
+
+      <view class="control-shell glass-panel">
+        <view class="action-buttons action-buttons-top">
+          <button class="action-btn btn-pass" bindtap="handlePass" hover-class="none">
+            <text class="action-btn-text">跳过</text>
+          </button>
+          <button class="action-btn btn-like" bindtap="handleLike" hover-class="none">
+            <text class="action-btn-text">喜欢</text>
+          </button>
+        </view>
+
+        <view class="progress">
+          <text class="progress-text">{{currentIndex + 1}} / {{restaurants.length}}</text>
+        </view>
+      </view>
+
+      <view class="settle-shell glass-panel-soft">
+        <button class="action-btn btn-settle settle-btn" bindtap="handleSettle" hover-class="none">
+          <text class="action-btn-text">结算</text>
+        </button>
+      </view>
+    </view>
+  </block>
+
+  <view class="result-shell page-gutter" wx:if="{{showResult}}">
+    <view class="result-view">
+      <view class="result-heading glass-panel-soft">
+        <view class="result-icon-wrapper"><view class="svg-icon icon-stars"></view></view>
+        <text class="result-title">滑选完成</text>
+        <text class="result-heading-text">{{likedRestaurants.length > 0 ? '以下是本轮右滑保留的餐厅。' : '这一轮没有留下任何餐厅。'}}</text>
+      </view>
+
+      <view class="result-list" wx:if="{{likedRestaurants.length > 0}}">
+        <view class="result-card glass-panel" wx:for="{{likedRestaurants}}" wx:key="id" bindtap="openDetail" data-id="{{item.id}}">
+          <image class="result-image" src="{{item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=500&fit=crop'}}" mode="aspectFill"></image>
+          <text class="result-name">{{item.name}}</text>
+          <text class="result-subtitle">{{item.category || '美食'}}</text>
+
+          <view class="result-meta">
+            <view class="meta-pill">
+              <view class="meta-icon-shell"><view class="svg-icon icon-location"></view></view>
+              <text class="meta-item">{{item.distance || '0m'}}</text>
+            </view>
+            <view class="meta-pill meta-pill-star">
+              <view class="meta-icon-shell meta-star-shell"><view class="svg-icon icon-star"></view></view>
+              <text class="meta-item">{{item.rating || '4.0'}}</text>
+            </view>
+          </view>
+
+          <text class="result-detail-tip">点击查看详情</text>
+        </view>
+      </view>
+
+      <view class="empty-state result-empty glass-panel-soft" wx:else>
+        <view class="empty-icon-wrapper"><view class="svg-icon icon-error"></view></view>
+        <text class="empty-text">这一轮还没有心动选项</text>
+        <text class="empty-tip">再来一轮试试看</text>
+      </view>
+
+      <button class="result-btn" bindtap="reset" hover-class="button-hover">再来一轮</button>
+    </view>
+  </view>
+
+  <view class="empty-state page-gutter glass-panel" wx:if="{{restaurants.length === 0}}">
+    <view class="empty-icon-wrapper"><view class="svg-icon icon-error"></view></view>
+    <text class="empty-text">附近没有更多餐厅了</text>
+    <text class="empty-tip">尝试扩大搜索范围</text>
+  </view>
+</view>

@@ -1,0 +1,38 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:whattoeat_test;DB_CLOSE_DELAY=-1;MODE=MySQL
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  flyway:
+    enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+amap:
+  key: ${AMAP_KEY:test-key}
+  base-url: ${AMAP_BASE_URL:http://localhost:8089}
+  timeout-seconds: ${AMAP_TIMEOUT_SECONDS:2}
+
+wechat:
+  auth:
+    app-id: ${WECHAT_APP_ID:}
+    app-secret: ${WECHAT_APP_SECRET:}
+    base-url: ${WECHAT_AUTH_BASE_URL:https://api.weixin.qq.com}
+    mock-login-enabled: true
+
+ai:
+  service:
+    base-url: ${AI_SERVICE_BASE_URL:http://localhost:8000}
+    timeout-seconds: ${AI_SERVICE_TIMEOUT_SECONDS:1}

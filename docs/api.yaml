@@ -1,0 +1,1965 @@
+openapi: 3.0.3
+info:
+  title: WhatToEat API
+  version: 1.0.0
+  description: |
+    今天吃什么（WhatToEat）后端 API 文档。
+
+    本文档覆盖当前已经实现的资源：认证、餐厅查询、公开评论、AI 推荐、黑名单 CRUD 与备注 CRUD。
+servers:
+  - url: http://127.0.0.1:8080
+    description: WeChat DevTools local development
+  - url: http://{host}:8080
+    description: Real-device LAN development (replace with your host machine IP)
+    variables:
+      host:
+        default: 192.168.0.10
+        description: Host machine LAN IP for WeChat real-device debugging
+tags:
+  - name: Auth
+    description: 认证与会话
+  - name: Restaurants
+    description: 餐厅查询
+  - name: Recommendations
+    description: 餐厅推荐与 AI 建议
+  - name: Blacklist
+    description: 用户黑名单管理
+  - name: Notes
+    description: 用户备注管理
+  - name: Reviews
+    description: 公开评论与餐厅评论摘要
+paths:
+  /api/v1/auth/wechat-login:
+    post:
+      tags: [Auth]
+      summary: 微信登录
+      operationId: wechatLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WechatLoginRequest'
+      responses:
+        '201':
+          description: 登录成功并创建会话
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginSuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /api/v1/auth/logout:
+    post:
+      tags: [Auth]
+      summary: 登出
+      operationId: logout
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 登出成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/auth/me:
+    get:
+      tags: [Auth]
+      summary: 获取当前登录用户
+      operationId: me
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfoSuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/restaurants/search:
+    get:
+      tags: [Restaurants]
+      summary: 按关键词搜索餐厅
+      operationId: searchRestaurants
+      parameters:
+        - name: keyword
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            pattern: .*(\S|[^\s]).*
+          description: 搜索关键词（必填，且不能是空白字符串）
+        - $ref: '#/components/parameters/Longitude'
+        - $ref: '#/components/parameters/Latitude'
+        - $ref: '#/components/parameters/Radius'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+        - $ref: '#/components/parameters/RestaurantSort'
+        - $ref: '#/components/parameters/RestaurantCategory'
+        - $ref: '#/components/parameters/RestaurantMinAvgPerCapitaPrice'
+        - $ref: '#/components/parameters/RestaurantMaxAvgPerCapitaPrice'
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestaurantPageSuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/AmapNoResultNotFound'
+        '502':
+          $ref: '#/components/responses/AmapUpstreamError'
+        '504':
+          $ref: '#/components/responses/AmapUpstreamTimeout'
+  /api/v1/restaurants/nearby:
+    get:
+      tags: [Restaurants]
+      summary: 按当前位置查询附近餐厅
+      operationId: nearbyRestaurants
+      parameters:
+        - $ref: '#/components/parameters/Longitude'
+        - $ref: '#/components/parameters/Latitude'
+        - $ref: '#/components/parameters/Radius'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+        - $ref: '#/components/parameters/RestaurantSort'
+        - $ref: '#/components/parameters/RestaurantCategory'
+        - $ref: '#/components/parameters/RestaurantMinAvgPerCapitaPrice'
+        - $ref: '#/components/parameters/RestaurantMaxAvgPerCapitaPrice'
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestaurantPageSuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/AmapNoResultNotFound'
+        '502':
+          $ref: '#/components/responses/AmapUpstreamError'
+        '504':
+          $ref: '#/components/responses/AmapUpstreamTimeout'
+  /api/v1/restaurants/{poiId}/reviews:
+    get:
+      tags: [Reviews]
+      summary: 查询餐厅公开评论列表
+      operationId: listRestaurantReviews
+      parameters:
+        - $ref: '#/components/parameters/RestaurantPoiId'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewPageSuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /api/v1/restaurants/{poiId}/review-summary:
+    get:
+      tags: [Reviews]
+      summary: 查询餐厅评论聚合与 AI 摘要
+      description: 仅当后端内部 AI 摘要状态为 ready 时，对外返回 aiTags / aiSummary；其他状态统一返回 aiTags=[]、aiSummary=null。当前还会附带 recommendedScenarios，供前端详情页展示“适合什么场景”。
+      operationId: getRestaurantReviewSummary
+      parameters:
+        - $ref: '#/components/parameters/RestaurantPoiId'
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewSummarySuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /api/v1/recommendations/random:
+    get:
+      tags: [Recommendations]
+      summary: 获取随机推荐餐厅
+      operationId: getRandomRecommendation
+      description: 先按页拉取并过滤候选餐厅，补足最多 20 条可用候选后再随机返回一条结果。传入 userId 时会始终应用黑名单过滤，并优先避开近 3 天内吃过与近 7 天内带 poiId 的负向反馈；若软过滤后无候选，会自动回退到仅应用黑名单过滤。
+      parameters:
+        - $ref: '#/components/parameters/OptionalUserId'
+        - $ref: '#/components/parameters/Longitude'
+        - $ref: '#/components/parameters/Latitude'
+        - $ref: '#/components/parameters/Radius'
+      responses:
+        '200':
+          description: 推荐成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationResultSuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/UserOrAmapNoResultNotFound'
+        '502':
+          $ref: '#/components/responses/AmapUpstreamError'
+        '504':
+          $ref: '#/components/responses/AmapUpstreamTimeout'
+  /api/v1/recommendations/ask:
+    post:
+      tags: [Recommendations]
+      summary: 基于当前餐厅候选做 AI 推荐
+      description: 支持可选 context，用于“换一家，但保持条件”的 refine 流程；当传入 userId 时，后端还会自动结合近期吃过、近期反馈与轻量口味画像来辅助推荐。
+      operationId: askRecommendation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AskRecommendationRequest'
+      responses:
+        '200':
+          description: 推荐成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationAskSuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/UserOrAmapNoResultNotFound'
+        '502':
+          $ref: '#/components/responses/AiOrAmapUpstreamError'
+        '504':
+          $ref: '#/components/responses/AiOrAmapUpstreamTimeout'
+  /api/v1/recommendations/ask/stream:
+    post:
+      tags: [Recommendations]
+      summary: 基于当前餐厅候选做 AI 流式推荐
+      description: 请求体与 /ask 一致，也支持 context 连续追问。后端会自动注入服务端当前日期、星期和时间段语境；小程序正式接入应优先使用该接口。返回的 `recommendation.card` 与 `answer.*` 来自同一批已选餐厅，卡片事件可能先于回答增量到达。
+      operationId: askRecommendationStream
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AskRecommendationRequest'
+      responses:
+        '200':
+          description: 以 `text/event-stream` 返回推荐进度、推荐卡片事件、回答增量，以及失败时的 `error` 事件
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                example: |
+                  event:session.created
+                  data:{"messageId":"msg_123","requestId":"req_123"}
+
+                  event:retrieval.started
+                  data:{"candidateCount":12}
+
+                  event:retrieval.completed
+                  data:{"candidateCount":12}
+
+                  event:recommendation.card
+                  data:{"rank":1,"poiId":"poi-noodle","name":"兰州拉面","address":"文一路 88 号","category":"面馆","distance":180,"avgRating":4.7,"reviewCount":16,"avgPerCapitaPrice":22,"aiTags":["热汤","出餐快"],"matchReason":"暖胃、离得近，适合当前时段尽快吃上一顿"}
+
+                  event:recommendation.card
+                  data:{"rank":2,"poiId":"poi-rice","name":"黄焖鸡米饭","address":"学院路 66 号","category":"快餐","distance":260,"avgRating":4.5,"reviewCount":11,"avgPerCapitaPrice":26,"aiTags":["下饭","快餐"],"matchReason":"价格稳定，适合工作日快速解决正餐"}
+
+                  event:answer.delta
+                  data:{"delta":"如果你现在想吃得热乎一点，兰州拉面和黄焖鸡米饭都比较稳妥。"}
+
+                  event:answer.done
+                  data:{"answer":"如果你现在想吃得热乎一点，兰州拉面和黄焖鸡米饭都比较稳妥：一个暖胃，一个下饭。"}
+
+                  event:done
+                  data:{"finishReason":"stop"}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /api/v1/recommendations/cards:
+    get:
+      tags: [Recommendations]
+      summary: 获取推荐卡片候选列表
+      operationId: getRecommendationCards
+      description: 按页继续拉取并过滤候选餐厅，直到收集满请求 size 或上游结果耗尽。传入 userId 时会始终应用黑名单过滤，并优先避开近 3 天内吃过与近 7 天内带 poiId 的负向反馈；若软过滤后无候选，会自动回退到仅应用黑名单过滤。
+      parameters:
+        - $ref: '#/components/parameters/OptionalUserId'
+        - $ref: '#/components/parameters/Longitude'
+        - $ref: '#/components/parameters/Latitude'
+        - $ref: '#/components/parameters/Radius'
+        - $ref: '#/components/parameters/RecommendationSize'
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationCardListSuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/UserOrAmapNoResultNotFound'
+        '502':
+          $ref: '#/components/responses/AmapUpstreamError'
+        '504':
+          $ref: '#/components/responses/AmapUpstreamTimeout'
+  /api/v1/users/{userId}/blacklist:
+    post:
+      tags: [Blacklist]
+      summary: 加入黑名单
+      operationId: createBlacklist
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBlacklistRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    get:
+      tags: [Blacklist]
+      summary: 分页查询黑名单
+      operationId: listBlacklist
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlacklistPageSuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/users/{userId}/blacklist/{poiId}:
+    get:
+      tags: [Blacklist]
+      summary: 查询黑名单详情
+      operationId: getBlacklist
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/BlacklistPoiId'
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlacklistItemSuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/BlacklistNotFound'
+    put:
+      tags: [Blacklist]
+      summary: 更新黑名单
+      operationId: updateBlacklist
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/BlacklistPoiId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBlacklistRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/BlacklistNotFound'
+    delete:
+      tags: [Blacklist]
+      summary: 移除黑名单
+      operationId: deleteBlacklist
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/BlacklistPoiId'
+      responses:
+        '200':
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/BlacklistNotFound'
+  /api/v1/users/{userId}/notes:
+    post:
+      tags: [Notes]
+      summary: 创建备注
+      operationId: createNote
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNoteRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    get:
+      tags: [Notes]
+      summary: 分页查询备注
+      operationId: listNotes
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/NoteKeyword'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotePageSuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/users/{userId}/notes/{noteId}:
+    get:
+      tags: [Notes]
+      summary: 查询备注详情
+      operationId: getNoteDetail
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/NoteId'
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteDetailSuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NoteNotFound'
+    put:
+      tags: [Notes]
+      summary: 更新备注
+      operationId: updateNote
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/NoteId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNoteRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteDetailSuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NoteNotFound'
+    delete:
+      tags: [Notes]
+      summary: 删除备注
+      operationId: deleteNote
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/NoteId'
+      responses:
+        '200':
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NoteNotFound'
+  /api/v1/users/{userId}/choice-history:
+    post:
+      tags: [UserSignals]
+      summary: 记录用户最近吃过的餐厅
+      operationId: createChoiceHistory
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChoiceHistoryRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    get:
+      tags: [UserSignals]
+      summary: 分页查询最近选择历史
+      operationId: listChoiceHistory
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChoiceHistoryPageSuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/users/{userId}/preference-profile:
+    get:
+      tags: [UserSignals]
+      summary: 获取轻量口味画像
+      operationId: getPreferenceProfile
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreferenceProfileSuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/users/{userId}/recommendation-feedback:
+    post:
+      tags: [UserSignals]
+      summary: 记录推荐反馈闭环
+      operationId: createRecommendationFeedback
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRecommendationFeedbackRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    get:
+      tags: [UserSignals]
+      summary: 分页查询推荐反馈
+      operationId: listRecommendationFeedback
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationFeedbackPageSuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/users/{userId}/restaurant-reviews/{poiId}:
+    get:
+      tags: [Reviews]
+      summary: 查询当前用户对某餐厅的评论
+      operationId: getRestaurantReview
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/RestaurantPoiId'
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewDetailSuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ReviewNotFound'
+    put:
+      tags: [Reviews]
+      summary: 创建或更新当前用户对某餐厅的评论
+      operationId: upsertRestaurantReview
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/RestaurantPoiId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertRestaurantReviewRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewDetailSuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '502':
+          $ref: '#/components/responses/AiOrAmapUpstreamError'
+        '504':
+          $ref: '#/components/responses/AiOrAmapUpstreamTimeout'
+    delete:
+      tags: [Reviews]
+      summary: 删除当前用户对某餐厅的评论
+      operationId: deleteRestaurantReview
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/RestaurantPoiId'
+      responses:
+        '200':
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ReviewNotFound'
+        '502':
+          $ref: '#/components/responses/AiOrAmapUpstreamError'
+        '504':
+          $ref: '#/components/responses/AiOrAmapUpstreamTimeout'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Token
+      description: "自定义 session token，通过 Authorization: Bearer <token> 传递，不是 JWT。"
+  parameters:
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+      description: 必填；用户主键 ID。请先调用 /api/v1/auth/me 获取当前登录用户的 id，再将该值填入路径中；不能留空。若使用 Apifox，可将环境变量 {{userId}} 绑定到该路径参数。
+      example: 1
+    OptionalUserId:
+      name: userId
+      in: query
+      required: false
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+      description: 可选；传入后会按该用户黑名单过滤结果，并在推荐候选接口中优先避开近 3 天内吃过与近 7 天内带 poiId 的负向反馈。必须为正整数且对应用户必须存在；不需要过滤时请省略该参数，不要传空值。
+      example: 1
+    BlacklistPoiId:
+      name: poiId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 64
+        pattern: .*(\S|[^\s]).*
+      description: 黑名单中的餐厅 POI ID。
+    RestaurantPoiId:
+      name: poiId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 64
+        pattern: .*(\S|[^\s]).*
+      description: 餐厅的高德 POI ID。
+    NoteId:
+      name: noteId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+      description: 备注主键 ID。
+    NoteKeyword:
+      name: keyword
+      in: query
+      required: false
+      schema:
+        type: string
+      description: 可选；按备注内容做包含筛选。
+    Longitude:
+      name: longitude
+      in: query
+      required: true
+      schema:
+        type: number
+        format: double
+      description: 必填；必须传具体经度数值，不能只传参数名或传空值。
+      example: 120.35
+    Latitude:
+      name: latitude
+      in: query
+      required: true
+      schema:
+        type: number
+        format: double
+      description: 必填；必须传具体纬度数值，不能只传参数名或传空值。
+      example: 30.31
+    Radius:
+      name: radius
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 1000
+        minimum: 100
+        maximum: 50000
+      description: 可选；搜索半径（米），默认 1000。
+      example: 1000
+    Page:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 1
+        minimum: 1
+      description: 可选；页码，从 1 开始，默认 1。
+      example: 1
+    Size:
+      name: size
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 10
+        minimum: 1
+        maximum: 100
+      description: 可选；每页条数，默认 10，最大 100。
+      example: 10
+    RecommendationSize:
+      name: size
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+      description: 可选；候选卡片数量，默认 20，最大 100。
+      example: 20
+    RestaurantSort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [distance, avgRating, reviewCount, avgPriceAsc, avgPriceDesc, smart]
+        default: distance
+      description: 可选；排序方式，默认按距离。支持距离、评分、评论数、人均升序、人均降序和综合推荐。
+      example: avgRating
+    RestaurantCategory:
+      name: category
+      in: query
+      required: false
+      schema:
+        type: string
+      description: 可选；按真实分类筛选，支持传完整分类路径或前端展示用的末级分类名。
+      example: 快餐厅
+    RestaurantMinAvgPerCapitaPrice:
+      name: minAvgPerCapitaPrice
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+      description: 可选；最低人均价格（元）。
+      example: 20
+    RestaurantMaxAvgPerCapitaPrice:
+      name: maxAvgPerCapitaPrice
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+      description: 可选；最高人均价格（元）。
+      example: 40
+  responses:
+    BadRequest:
+      description: 参数错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            validationFailed:
+              value:
+                code: 1001
+                message: 参数校验失败
+                data: null
+            noteContentInvalid:
+              value:
+                code: 2003
+                message: 备注内容非法
+                data: null
+    Unauthorized:
+      description: 未登录或 token 无效
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            unauthorized:
+              value:
+                code: 1003
+                message: 未登录或token无效
+                data: null
+    NotFound:
+      description: 资源不存在
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            userNotFound:
+              value:
+                code: 1002
+                message: 用户不存在
+                data: null
+            noteNotFound:
+              value:
+                code: 2004
+                message: 备注不存在
+                data: null
+    NoteNotFound:
+      description: 备注不存在
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            noteNotFound:
+              value:
+                code: 2004
+                message: 备注不存在
+                data: null
+    BlacklistNotFound:
+      description: 黑名单记录不存在
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            blacklistNotFound:
+              value:
+                code: 2002
+                message: 黑名单记录不存在
+                data: null
+    AmapNoResultNotFound:
+      description: 高德无结果
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            amapNoResult:
+              value:
+                code: 3003
+                message: 高德无结果
+                data: null
+    UserOrAmapNoResultNotFound:
+      description: 用户不存在或高德无结果
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            userNotFound:
+              value:
+                code: 1002
+                message: 用户不存在
+                data: null
+            amapNoResult:
+              value:
+                code: 3003
+                message: 高德无结果
+                data: null
+    Conflict:
+      description: 资源冲突
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            blacklistAlreadyExists:
+              value:
+                code: 2001
+                message: 重复拉黑
+                data: null
+            noteAlreadyExists:
+              value:
+                code: 2005
+                message: 备注已存在
+                data: null
+    AmapUpstreamError:
+      description: 高德上游失败
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            amapError:
+              value:
+                code: 3001
+                message: 高德上游失败
+                data: null
+    AmapUpstreamTimeout:
+      description: 高德上游超时
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            amapTimeout:
+              value:
+                code: 3002
+                message: 高德上游超时
+                data: null
+    ReviewNotFound:
+      description: 评论不存在
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            reviewNotFound:
+              value:
+                code: 2104
+                message: 评论不存在
+                data: null
+    AiOrAmapUpstreamError:
+      description: AI 或高德上游失败
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            amapError:
+              value:
+                code: 3001
+                message: 高德上游失败
+                data: null
+            aiError:
+              value:
+                code: 3004
+                message: AI 服务失败
+                data: null
+    AiOrAmapUpstreamTimeout:
+      description: AI 或高德上游超时
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            amapTimeout:
+              value:
+                code: 3002
+                message: 高德上游超时
+                data: null
+            aiTimeout:
+              value:
+                code: 3005
+                message: AI 服务超时
+                data: null
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          nullable: true
+      required: [code, message, data]
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        data:
+          type: object
+          nullable: true
+          example: null
+      required: [code, message, data]
+    WechatLoginRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          description: 小程序端 wx.login() 返回的 code；开发环境如启用 mock 登录，也可传 mock-code-*。
+          pattern: .*(\S|[^\s]).*
+          example: mock-code-001
+        nickname:
+          type: string
+          description: 昵称按纯文本保存；后端会移除 HTML / script 等标签。
+          example: Alice
+        avatarUrl:
+          type: string
+          nullable: true
+          example: https://placehold.co/200x200/F97316/FFFFFF?text=%E5%90%83
+      required: [code]
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: 8f2c5f7314d649d3a9124f1930c68dfd
+        user:
+          $ref: '#/components/schemas/UserInfo'
+      required: [token, user]
+    LoginSuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/LoginResponse'
+      required: [code, message, data]
+    UserInfoSuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/UserInfo'
+      required: [code, message, data]
+    UserInfo:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        openid:
+          type: string
+          example: mock-openid-mock-code-001
+        nickname:
+          type: string
+          example: Alice
+        avatarUrl:
+          type: string
+          nullable: true
+          example: https://placehold.co/200x200/F97316/FFFFFF?text=%E5%90%83
+      required: [id, openid]
+    RestaurantItem:
+      type: object
+      properties:
+        poiId:
+          type: string
+          example: B0FF123456
+        name:
+          type: string
+          example: 沙县小吃
+        address:
+          type: string
+          example: 学林街xx号
+        longitude:
+          type: number
+          format: double
+          example: 120.3502
+        latitude:
+          type: number
+          format: double
+          example: 30.3154
+        category:
+          type: string
+          example: 餐饮服务;中餐厅;快餐厅
+        distance:
+          type: number
+          format: double
+          example: 180
+      required: [poiId, name, address, longitude, latitude, category, distance]
+    EnhancedRestaurantItem:
+      allOf:
+        - $ref: '#/components/schemas/RestaurantItem'
+        - type: object
+          properties:
+            avgRating:
+              type: number
+              format: double
+              nullable: true
+              example: 4.6
+            reviewCount:
+              type: integer
+              example: 18
+            avgPerCapitaPrice:
+              type: integer
+              nullable: true
+              example: 29
+            aiTags:
+              type: array
+              items:
+                type: string
+              example: [出餐快, 性价比高]
+          required: [reviewCount, aiTags]
+    RecommendationResult:
+      allOf:
+        - $ref: '#/components/schemas/RestaurantItem'
+        - type: object
+          properties:
+            reason:
+              type: string
+              example: 符合筛选条件的随机结果
+          required: [reason]
+    RecommendationCardList:
+      type: array
+      items:
+        $ref: '#/components/schemas/RestaurantItem'
+    RecommendationResultSuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/RecommendationResult'
+      required: [code, message, data]
+    RecommendationCardListSuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/RecommendationCardList'
+      required: [code, message, data]
+    AskRecommendationRequest:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+          minimum: 1
+          nullable: true
+          example: 1
+        longitude:
+          type: number
+          format: double
+          example: 120.35
+        latitude:
+          type: number
+          format: double
+          example: 30.31
+        radius:
+          type: integer
+          minimum: 100
+          maximum: 50000
+          nullable: true
+          example: 1000
+        size:
+          type: integer
+          minimum: 1
+          maximum: 10
+          nullable: true
+          example: 3
+        question:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: 用户自然语言问题；后端会在传给内部 AI Service 前移除 HTML / script 标签。
+          example: 预算30以内，想吃点带汤的
+        context:
+          $ref: '#/components/schemas/AskRecommendationContext'
+      required: [longitude, latitude, question]
+    AskRecommendationContext:
+      type: object
+      properties:
+        previousQuestion:
+          type: string
+          maxLength: 500
+          nullable: true
+          example: 预算 35 以内，想吃轻一点
+        rejectedPoiIds:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            maxLength: 128
+          example: [poi-rejected]
+        selectedPoiIds:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            maxLength: 128
+        userSignals:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            maxLength: 64
+          example: [健身]
+    CreateChoiceHistoryRequest:
+      type: object
+      properties:
+        poiId:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: .*(\S|[^\s]).*
+          example: B0FFCH001
+        poiName:
+          type: string
+          maxLength: 128
+          nullable: true
+          example: 兰州拉面
+      required: [poiId]
+    ChoiceHistoryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        poiId:
+          type: string
+          example: B0FFCH001
+        poiName:
+          type: string
+          nullable: true
+          example: 兰州拉面
+        chosenAt:
+          type: string
+          format: date-time
+          example: '2026-04-18T12:00:00'
+      required: [id, poiId, chosenAt]
+    ChoiceHistoryPageResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChoiceHistoryItem'
+        page:
+          type: integer
+          example: 1
+        size:
+          type: integer
+          example: 10
+        total:
+          type: integer
+          format: int64
+          example: 3
+      required: [items, page, size, total]
+    ChoiceHistoryPageSuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/ChoiceHistoryPageResponse'
+      required: [code, message, data]
+    RecommendationFeedbackType:
+      type: string
+      enum: [TOO_EXPENSIVE, TOO_FAR, DONT_WANT_THIS_TODAY, LOOKS_UNHYGIENIC, ALREADY_ATE]
+    CreateRecommendationFeedbackRequest:
+      type: object
+      properties:
+        poiId:
+          type: string
+          maxLength: 64
+          nullable: true
+          example: B0FFFDBK001
+        poiNameSnapshot:
+          type: string
+          maxLength: 128
+          nullable: true
+          example: 轻食工坊
+        feedbackType:
+          $ref: '#/components/schemas/RecommendationFeedbackType'
+        detail:
+          type: string
+          maxLength: 255
+          nullable: true
+          example: 最近更想控制预算，健身期想吃轻一点
+        requestQuestion:
+          type: string
+          maxLength: 255
+          nullable: true
+          example: 在健身，想吃高蛋白
+      required: [feedbackType]
+    RecommendationFeedbackItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        poiId:
+          type: string
+          nullable: true
+          example: B0FFFDBK001
+        poiNameSnapshot:
+          type: string
+          nullable: true
+          example: 轻食工坊
+        feedbackType:
+          $ref: '#/components/schemas/RecommendationFeedbackType'
+        detail:
+          type: string
+          nullable: true
+        requestQuestion:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-04-18T12:00:00'
+      required: [id, feedbackType, createdAt]
+    RecommendationFeedbackPageResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecommendationFeedbackItem'
+        page:
+          type: integer
+          example: 1
+        size:
+          type: integer
+          example: 10
+        total:
+          type: integer
+          format: int64
+          example: 2
+      required: [items, page, size, total]
+    RecommendationFeedbackPageSuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/RecommendationFeedbackPageResponse'
+      required: [code, message, data]
+    PreferenceBudgetRange:
+      type: object
+      properties:
+        min:
+          type: integer
+          nullable: true
+          example: 25
+        max:
+          type: integer
+          nullable: true
+          example: 35
+    PreferenceProfile:
+      type: object
+      properties:
+        summary:
+          type: string
+          example: 你最近更偏向清淡、高蛋白的选择，也会主动避开太油，最近还表现出更在意预算。
+        preferredTags:
+          type: array
+          items:
+            type: string
+        avoidedTags:
+          type: array
+          items:
+            type: string
+        avgPerCapitaBudget:
+          type: integer
+          nullable: true
+          example: 32
+        budgetRange:
+          $ref: '#/components/schemas/PreferenceBudgetRange'
+        recentChoiceCount:
+          type: integer
+          description: 近 3 天内的选择次数。
+          example: 5
+        reviewCount:
+          type: integer
+          example: 3
+        blacklistCount:
+          type: integer
+          example: 2
+        lifestyleSignals:
+          type: array
+          items:
+            type: string
+        recentFeedbackSignals:
+          type: array
+          items:
+            type: string
+      required: [summary, preferredTags, avoidedTags, budgetRange, recentChoiceCount, reviewCount, blacklistCount, lifestyleSignals, recentFeedbackSignals]
+    PreferenceProfileSuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/PreferenceProfile'
+      required: [code, message, data]
+    RecommendationAskItem:
+      allOf:
+        - $ref: '#/components/schemas/EnhancedRestaurantItem'
+        - type: object
+          properties:
+            matchReason:
+              type: string
+              nullable: true
+              example: 评分更高，人均 29 元还在预算内
+    RecommendationAskResult:
+      type: object
+      properties:
+        answer:
+          type: string
+          example: 按“预算30以内，想吃点带汤的”来看，优先可以考虑兰州拉面，其次是桂香卤味拌饭。
+        recommendations:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecommendationAskItem'
+      required: [answer, recommendations]
+    RecommendationAskSuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/RecommendationAskResult'
+      required: [code, message, data]
+    CreateBlacklistRequest:
+      type: object
+      properties:
+        poiId:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: .*(\S|[^\s]).*
+          example: B0FF123456
+        reason:
+          type: string
+          maxLength: 255
+          example: 太辣了
+      required: [poiId]
+    UpdateBlacklistRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 255
+          example: 环境太吵
+    CreateNoteRequest:
+      type: object
+      properties:
+        poiId:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: .*(\S|[^\s]).*
+          example: B0FF123456
+        content:
+          type: string
+          maxLength: 1000
+          description: 必填；字段缺失时返回 1001，提供后若去除首尾空白仍为空或长度超过 1000 则返回 2003。
+          example: 中午排队久，但味道不错
+      required: [poiId, content]
+    UpdateNoteRequest:
+      type: object
+      properties:
+        content:
+          type: string
+          maxLength: 1000
+          description: 必填；字段缺失时返回 1001，提供后若去除首尾空白仍为空或长度超过 1000 则返回 2003。
+          example: 已改成错峰去，人少很多
+      required: [content]
+    BlacklistItem:
+      type: object
+      properties:
+        poiId:
+          type: string
+          example: B0FF123456
+        reason:
+          type: string
+          nullable: true
+          example: 太辣了
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-03-26T10:00:00'
+      required: [poiId, createdAt]
+    NoteItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        poiId:
+          type: string
+          example: B0FF123456
+        content:
+          type: string
+          example: 晚高峰排队久，建议错峰
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-03-26T18:00:00'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-03-26T18:10:00'
+      required: [id, poiId, content, createdAt, updatedAt]
+    NoteDetail:
+      allOf:
+        - $ref: '#/components/schemas/NoteItem'
+        - type: object
+          properties:
+            userId:
+              type: integer
+              format: int64
+              example: 1
+          required: [userId]
+    BlacklistPageSuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/BlacklistPageResponse'
+      required: [code, message, data]
+    BlacklistItemSuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/BlacklistItem'
+      required: [code, message, data]
+    NotePageSuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/NotePageResponse'
+      required: [code, message, data]
+    NoteDetailSuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/NoteDetail'
+      required: [code, message, data]
+    UpsertRestaurantReviewRequest:
+      type: object
+      properties:
+        poiNameSnapshot:
+          type: string
+          maxLength: 128
+          nullable: true
+          example: 兰州拉面
+        ratingScore:
+          type: number
+          format: double
+          description: 必填；支持 0.5 步进，取值范围 0.5 到 5.0。
+          example: 4.5
+        perCapitaPrice:
+          type: integer
+          description: 必填；人均价格，单位元，必须大于 0。
+          example: 29
+        content:
+          type: string
+          description: 必填；评论内容会按纯文本保存，移除 HTML / script 标签后去除首尾空白，净化后不能为空，长度不能超过 1000。
+          maxLength: 1000
+          example: 汤底稳，性价比不错
+      required: [ratingScore, perCapitaPrice, content]
+    ReviewDetail:
+      type: object
+      properties:
+        poiId:
+          type: string
+          example: B0FFREVIEW001
+        poiNameSnapshot:
+          type: string
+          nullable: true
+          example: 沙县小吃
+        ratingScore:
+          type: number
+          format: double
+          example: 4.5
+        perCapitaPrice:
+          type: integer
+          example: 28
+        content:
+          type: string
+          example: 出餐快
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-04-17T12:00:00'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-04-17T12:30:00'
+      required: [poiId, ratingScore, perCapitaPrice, content, createdAt, updatedAt]
+    PublicReviewItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        userId:
+          type: integer
+          format: int64
+          example: 1
+        nickname:
+          type: string
+          example: Alice
+        ratingScore:
+          type: number
+          format: double
+          example: 4.5
+        perCapitaPrice:
+          type: integer
+          example: 29
+        content:
+          type: string
+          example: 汤底稳，性价比不错
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-04-17T12:30:00'
+      required: [id, userId, nickname, ratingScore, perCapitaPrice, content, updatedAt]
+    ReviewPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicReviewItem'
+        page:
+          type: integer
+          example: 1
+        size:
+          type: integer
+          example: 10
+        total:
+          type: integer
+          format: int64
+          example: 18
+      required: [items, page, size, total]
+    ReviewSummary:
+      type: object
+      properties:
+        reviewCount:
+          type: integer
+          example: 18
+        avgRating:
+          type: number
+          format: double
+          nullable: true
+          example: 4.6
+        avgPerCapitaPrice:
+          type: integer
+          nullable: true
+          example: 29
+        aiTags:
+          type: array
+          description: 仅当 AI 摘要状态为 ready 时返回标签；其他状态统一返回空数组。
+          items:
+            type: string
+          example: [出餐快, 性价比高]
+        aiSummary:
+          type: string
+          nullable: true
+          description: 仅当 AI 摘要状态为 ready 时返回；其他状态统一返回 null。
+          example: 评论里经常提到出餐快、性价比高。
+        recommendedScenarios:
+          type: array
+          description: 面向详情页的场景型解释，用于提示“这家店适合什么场景”。
+          items:
+            type: string
+          example: [工作日午餐, 一个人快吃, 想吃热汤时, 预算 30 左右]
+      required: [reviewCount, aiTags, recommendedScenarios]
+    ReviewDetailSuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/ReviewDetail'
+      required: [code, message, data]
+    ReviewPageSuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/ReviewPage'
+      required: [code, message, data]
+    ReviewSummarySuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/ReviewSummary'
+      required: [code, message, data]
+    NotePageResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/NoteItem'
+        page:
+          type: integer
+          example: 1
+        size:
+          type: integer
+          example: 10
+        total:
+          type: integer
+          format: int64
+          example: 35
+      required: [items, page, size, total]
+    BlacklistPageResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BlacklistItem'
+        page:
+          type: integer
+          example: 1
+        size:
+          type: integer
+          example: 10
+        total:
+          type: integer
+          format: int64
+          example: 35
+      required: [items, page, size, total]
+    RestaurantPageResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EnhancedRestaurantItem'
+        page:
+          type: integer
+          example: 1
+        size:
+          type: integer
+          example: 10
+        total:
+          type: integer
+          example: 35
+      required: [items, page, size, total]
+    RestaurantPageSuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/RestaurantPageResponse'
+      required: [code, message, data]

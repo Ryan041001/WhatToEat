@@ -1,0 +1,5 @@
+<!-- 加载动画组件 -->
+<view class="loading-wrapper" wx:if="{{show}}">
+  <view class="spinner"></view>
+  <text class="message" wx:if="{{message}}">{{message}}</text>
+</view>

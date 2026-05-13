@@ -1,0 +1,224 @@
+<view class="page">
+  <loading-spinner show="{{loading}}" message="正在准备餐厅详情..." />
+
+  <view class="error page-gutter glass-panel-soft" wx:if="{{error}}">
+    <text>{{error}}</text>
+  </view>
+
+  <view class="content" wx:if="{{restaurant}}">
+    <view class="detail-hero warm-hero">
+      <view class="warm-hero__blob hero-blob-one"></view>
+      <view class="warm-hero__blob hero-blob-two"></view>
+
+      <view class="hero-content">
+        <view class="hero-top">
+          <text class="hero-eyebrow">餐厅详情</text>
+          <view class="surface-chip hero-chip">
+            <text class="hero-chip-text">{{restaurant.category}}</text>
+          </view>
+        </view>
+        <text class="hero-title">{{restaurant.name}}</text>
+
+        <view class="hero-meta-row">
+          <view class="hero-meta">
+            <view class="meta-icon-shell"><view class="app-icon icon-pin icon-fill"></view></view>
+            <text class="hero-meta-text">{{restaurant.distance}}</text>
+          </view>
+          <view class="hero-meta hero-meta-star">
+            <view class="meta-icon-shell meta-icon-star"><view class="app-icon icon-star icon-fill"></view></view>
+            <text class="hero-meta-text">{{restaurant.avgRating !== null && restaurant.avgRating !== undefined ? restaurant.avgRating : '--'}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="detail-body page-gutter">
+      <view class="cover-card glass-panel">
+        <image class="cover" src="{{restaurant.image}}" mode="aspectFill"></image>
+      </view>
+
+      <view class="info-card glass-panel-soft">
+        <text class="section-label">到店信息</text>
+
+        <view class="info-block">
+          <text class="info-title">地址</text>
+          <text class="info-text">{{restaurant.address || '地址信息待补充'}}</text>
+        </view>
+
+        <view class="info-block">
+          <text class="info-title">简介</text>
+          <text class="info-text">{{restaurant.description || '这家餐厅还没有简介'}}</text>
+        </view>
+
+        <view class="tags" wx:if="{{restaurant.tags && restaurant.tags.length > 0}}">
+          <text class="tag" wx:for="{{restaurant.tags}}" wx:key="*this">{{item}}</text>
+        </view>
+      </view>
+
+      <view class="summary-card glass-panel-soft">
+        <view class="summary-head">
+          <text class="section-label">评论聚合摘要</text>
+          <text class="summary-tip" wx:if="{{summaryLoading}}">更新中...</text>
+        </view>
+
+        <view class="summary-metrics">
+          <view class="summary-metric-item">
+            <text class="summary-metric-label">平均评分</text>
+            <text class="summary-metric-value">{{summary.avgRating !== null && summary.avgRating !== undefined ? summary.avgRating : '暂无评分'}}</text>
+            <view class="mini-stars" wx:if="{{summary.avgRating !== null && summary.avgRating !== undefined}}">
+              <view class="mini-star-shell" wx:for="{{summary.ratingStars}}" wx:key="id">
+                <view class="mini-star-track"><view class="app-icon icon-star-solid icon-fill"></view></view>
+                <view class="mini-star-fill">
+                  <view class="app-icon icon-star-solid mini-star-face mini-star-face-{{item.fill}}"></view>
+                </view>
+              </view>
+            </view>
+          </view>
+          <view class="summary-metric-item">
+            <text class="summary-metric-label">评论数</text>
+            <text class="summary-metric-value">{{summary.reviewCount}}</text>
+          </view>
+          <view class="summary-metric-item">
+            <text class="summary-metric-label">平均人均</text>
+            <text class="summary-metric-value">{{summary.avgPerCapitaPrice !== null && summary.avgPerCapitaPrice !== undefined ? '¥' + summary.avgPerCapitaPrice : '人均待补充'}}</text>
+          </view>
+        </view>
+
+        <view class="tags" wx:if="{{summary.aiTags && summary.aiTags.length > 0}}">
+          <text class="tag" wx:for="{{summary.aiTags}}" wx:key="*this">{{item}}</text>
+        </view>
+
+        <view class="summary-text-wrap" wx:if="{{summary.aiSummary}}">
+          <text class="summary-text">{{summary.aiSummary}}</text>
+        </view>
+
+        <view class="summary-empty" wx:if="{{!summary.aiSummary}}">
+          <text>{{summary.reviewCount > 0 ? 'AI 摘要暂不可用' : '暂无评论'}}</text>
+        </view>
+
+        <view class="scenario-wrap" wx:if="{{summary.recommendedScenarios && summary.recommendedScenarios.length > 0}}">
+          <text class="scenario-title">适合场景</text>
+          <view class="scenario-tags">
+            <text class="scenario-tag" wx:for="{{summary.recommendedScenarios}}" wx:for-item="scene" wx:key="*this">{{scene}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="comment-card glass-panel-soft">
+        <view class="comment-head">
+          <text class="section-label">我的评论</text>
+          <text class="comment-count" wx:if="{{myReviewLoading}}">加载中...</text>
+          <text class="comment-count" wx:elif="{{hasReviewed}}">已发布</text>
+          <text class="comment-count" wx:else>未发布</text>
+        </view>
+
+        <view class="comment-editor">
+          <view class="rating-field">
+            <view class="field-head">
+              <text class="field-label">评分</text>
+              <text class="field-value {{reviewForm.ratingScore !== null && reviewForm.ratingScore !== undefined ? 'active' : ''}}">{{ratingText}}</text>
+            </view>
+            <view class="rating-stars">
+              <view class="rating-star-shell" wx:for="{{ratingStars}}" wx:key="id">
+                <view class="rating-star-track"><view class="app-icon icon-star-solid icon-fill"></view></view>
+                <view class="rating-star-fill">
+                  <view class="app-icon icon-star-solid rating-star-face rating-star-face-{{item.fill}}"></view>
+                </view>
+              </view>
+            </view>
+            <slider
+              class="rating-slider"
+              min="0"
+              max="10"
+              step="1"
+              value="{{reviewForm.ratingSliderValue}}"
+              activeColor="#FF9E2A"
+              backgroundColor="#FFDCC8"
+              block-color="#FF6B6B"
+              block-size="20"
+              bindchanging="onRatingSliderChange"
+              bindchange="onRatingSliderChange"
+            />
+            <view class="rating-scale">
+              <text>未评分</text>
+              <text>5 星</text>
+            </view>
+          </view>
+
+          <view class="price-field">
+            <text class="field-label">人均价格（元）</text>
+            <input
+              class="price-input"
+              type="number"
+              placeholder="例如 28"
+              value="{{reviewForm.perCapitaPrice}}"
+              bindinput="onPerCapitaInput"
+            />
+          </view>
+
+          <textarea
+            class="comment-input"
+            placeholder="说说你对这家店的看法..."
+            maxlength="1000"
+            auto-height
+            value="{{reviewForm.content}}"
+            bindinput="onReviewContentInput"
+          ></textarea>
+
+          <view class="comment-actions">
+            <button class="comment-submit" loading="{{submittingReview}}" bindtap="submitReview">
+              {{hasReviewed ? '更新评论' : '发布评论'}}
+            </button>
+            <button class="comment-delete" wx:if="{{hasReviewed}}" loading="{{deletingReview}}" bindtap="deleteMyReview">删除评论</button>
+          </view>
+        </view>
+      </view>
+
+      <view class="comment-card glass-panel-soft">
+        <view class="comment-head">
+          <text class="section-label">公开评论</text>
+          <text class="comment-count">{{publicReviews.length}} 条</text>
+        </view>
+
+        <view class="comment-empty" wx:if="{{reviewListLoading}}">
+          <text>评论加载中...</text>
+        </view>
+
+        <view class="comment-empty" wx:elif="{{publicReviews.length === 0}}">
+          <text>暂无评论</text>
+        </view>
+
+        <view class="comment-list" wx:else>
+          <view class="comment-item" wx:for="{{publicReviews}}" wx:key="id">
+            <view class="comment-meta">
+              <text class="comment-author">{{item.author}}</text>
+              <text class="comment-time">{{item.displayTime}}</text>
+            </view>
+            <view class="comment-extra">
+              <view class="comment-rating-inline">
+                <text class="comment-extra-item">评分 {{item.ratingScore !== null && item.ratingScore !== undefined ? item.ratingScore : '--'}}</text>
+                <view class="mini-stars" wx:if="{{item.ratingScore !== null && item.ratingScore !== undefined}}">
+                  <view class="mini-star-shell" wx:for="{{item.ratingStars}}" wx:key="id">
+                    <view class="mini-star-track"><view class="app-icon icon-star-solid icon-fill"></view></view>
+                    <view class="mini-star-fill">
+                      <view class="app-icon icon-star-solid mini-star-face mini-star-face-{{item.fill}}"></view>
+                    </view>
+                  </view>
+                </view>
+              </view>
+              <text class="comment-extra-item">人均：{{item.perCapitaPrice !== null && item.perCapitaPrice !== undefined ? '¥' + item.perCapitaPrice : '--'}}</text>
+            </view>
+            <text class="comment-content">{{item.content}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="actions glass-panel-soft">
+        <button class="btn ghost" bindtap="goBack">返回</button>
+        <button class="btn primary" bindtap="toggleBlacklist">
+          {{restaurant.isBlacklisted ? '恢复展示' : '设为不感兴趣'}}
+        </button>
+      </view>
+    </view>
+  </view>
+</view>

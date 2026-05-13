@@ -1,0 +1,268 @@
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-size: 16px;
+
+  /* Core palette */
+  --primary: #ff5a3d;
+  --primary-foreground: #fff8f2;
+  --accent: #ffb547;
+  --accent-foreground: #3a2100;
+  --success: #28c76f;
+  --success-foreground: #052512;
+  --warning: #ff8a00;
+  --warning-foreground: #3d2100;
+  --danger: #ef4444;
+  --danger-foreground: #3a0a0a;
+  --black: #111111;
+
+  /* App surfaces */
+  --background: #fff6ec;
+  --foreground: #3b2617;
+  --card: rgba(255, 255, 255, 0.76);
+  --card-foreground: #3b2617;
+  --popover: rgba(255, 255, 255, 0.9);
+  --popover-foreground: #3b2617;
+  --secondary: rgba(255, 255, 255, 0.66);
+  --secondary-foreground: #4a3120;
+  --muted: rgba(255, 255, 255, 0.56);
+  --muted-foreground: #846651;
+  --destructive: var(--danger);
+  --destructive-foreground: #ffffff;
+
+  /* Glass tokens */
+  --glass-surface-extra-transparent: rgba(255, 255, 255, 0.18);
+  --glass-surface-light: rgba(255, 255, 255, 0.28);
+  --glass-surface-medium: rgba(255, 255, 255, 0.38);
+  --glass-surface-strong: rgba(255, 255, 255, 0.52);
+
+  --glass-text-strong: color-mix(in srgb, var(--foreground) 98%, #000);
+  --glass-text-default: color-mix(in srgb, var(--foreground) 90%, #000);
+  --glass-text-muted: color-mix(in srgb, var(--foreground) 70%, #000);
+  --glass-text-muted-transparent: color-mix(in srgb, var(--foreground) 58%, transparent);
+  --glass-text-inverse: color-mix(in srgb, var(--primary-foreground) 96%, #fff);
+
+  --glass-border-soft: rgba(255, 255, 255, 0.26);
+  --glass-border-medium: rgba(255, 255, 255, 0.44);
+  --glass-border-strong: rgba(255, 255, 255, 0.62);
+
+  --glass-interaction-hover: color-mix(in srgb, var(--primary) 20%, transparent);
+  --glass-interaction-active: color-mix(in srgb, var(--primary) 32%, transparent);
+
+  --glass-shadow-ambient: 0 14px 40px rgba(141, 78, 30, 0.2);
+  --glass-shadow-glow: 0 0 0 1px rgba(255, 154, 92, 0.28), 0 22px 52px rgba(255, 128, 54, 0.3);
+
+  --hover-lift-translate: translateY(-3px);
+  --hover-lift-shadow: 0 22px 44px rgba(141, 78, 30, 0.24);
+
+  --neumorph-shadow-soft: 10px 10px 24px rgba(199, 150, 109, 0.26), -10px -10px 24px rgba(255, 255, 255, 0.72);
+  --neumorph-shadow-strong: 14px 14px 30px rgba(188, 133, 89, 0.32), -14px -14px 30px rgba(255, 255, 255, 0.85);
+
+  --topbar-bg: color-mix(in srgb, var(--glass-surface-strong) 88%, transparent);
+  --topbar-border-color: var(--glass-border-strong);
+  --topbar-transition: background-color var(--motion-duration-normal) var(--motion-ease-standard), border-color var(--motion-duration-normal) var(--motion-ease-standard), box-shadow var(--motion-duration-normal) var(--motion-ease-standard);
+
+  --glass-blur-light: 8px;
+  --glass-blur-medium: 14px;
+  --glass-blur-strong: 22px;
+  --glass-blur-sm: var(--glass-blur-light);
+  --glass-blur-md: var(--glass-blur-medium);
+  --glass-blur-lg: var(--glass-blur-strong);
+
+  --border: rgba(132, 102, 81, 0.24);
+  --input: transparent;
+  --input-background: rgba(255, 255, 255, 0.78);
+  --switch-background: #d8c7bb;
+  --ring: rgba(255, 114, 58, 0.55);
+  --focus-ring-color: color-mix(in srgb, var(--ring) 88%, #fff);
+  --focus-ring-shadow: 0 0 0 2px color-mix(in srgb, var(--background) 84%, transparent), 0 0 0 4px var(--focus-ring-color);
+
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 0.875rem;
+
+  --motion-duration-fast: 160ms;
+  --motion-duration-normal: 240ms;
+  --motion-duration-slow: 360ms;
+  --motion-ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --sidebar: rgba(255, 255, 255, 0.7);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: rgba(255, 255, 255, 0.56);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+}
+
+.dark {
+  --background: #090f1a;
+  --foreground: #edf2ff;
+  --card: rgba(15, 23, 42, 0.72);
+  --card-foreground: #edf2ff;
+  --popover: rgba(15, 23, 42, 0.84);
+  --popover-foreground: #edf2ff;
+  --secondary: rgba(30, 41, 59, 0.72);
+  --secondary-foreground: #e2e8f0;
+  --muted: rgba(30, 41, 59, 0.62);
+  --muted-foreground: #9fb1c6;
+  --accent: #67e8f9;
+  --accent-foreground: #04232c;
+  --success: #34d399;
+  --success-foreground: #dbfff0;
+  --warning: #fbbf24;
+  --warning-foreground: #281400;
+  --danger: #f87171;
+  --danger-foreground: #2a0606;
+  --border: rgba(148, 163, 184, 0.3);
+  --input: rgba(15, 23, 42, 0.8);
+  --ring: rgba(145, 170, 255, 0.72);
+
+  --glass-surface-extra-transparent: rgba(15, 23, 42, 0.28);
+  --glass-surface-light: rgba(15, 23, 42, 0.42);
+  --glass-surface-medium: rgba(15, 23, 42, 0.62);
+  --glass-surface-strong: rgba(15, 23, 42, 0.82);
+
+  --glass-text-strong: color-mix(in srgb, var(--foreground) 98%, #fff);
+  --glass-text-default: color-mix(in srgb, var(--foreground) 92%, #fff);
+  --glass-text-muted: color-mix(in srgb, var(--foreground) 74%, #fff);
+  --glass-text-muted-transparent: color-mix(in srgb, var(--foreground) 58%, transparent);
+  --glass-text-inverse: color-mix(in srgb, #fff 94%, var(--foreground));
+
+  --glass-border-soft: rgba(148, 163, 184, 0.22);
+  --glass-border-medium: rgba(148, 163, 184, 0.36);
+  --glass-border-strong: rgba(148, 163, 184, 0.54);
+
+  --glass-interaction-hover: color-mix(in srgb, var(--accent) 20%, transparent);
+  --glass-interaction-active: color-mix(in srgb, var(--accent) 30%, transparent);
+
+  --glass-shadow-ambient: 0 16px 42px rgba(2, 6, 23, 0.54);
+  --glass-shadow-glow: 0 0 0 1px rgba(91, 108, 255, 0.34), 0 20px 56px rgba(1, 10, 29, 0.6);
+
+  --hover-lift-translate: translateY(-3px);
+  --hover-lift-shadow: 0 24px 46px rgba(2, 6, 23, 0.62);
+
+  --neumorph-shadow-soft: 10px 10px 24px rgba(2, 6, 23, 0.54), -10px -10px 24px rgba(45, 66, 102, 0.28);
+  --neumorph-shadow-strong: 14px 14px 30px rgba(2, 6, 23, 0.68), -14px -14px 30px rgba(56, 78, 116, 0.36);
+
+  --topbar-bg: color-mix(in srgb, var(--glass-surface-strong) 88%, transparent);
+  --topbar-border-color: var(--glass-border-strong);
+  --topbar-transition: background-color var(--motion-duration-normal) var(--motion-ease-standard), border-color var(--motion-duration-normal) var(--motion-ease-standard), box-shadow var(--motion-duration-normal) var(--motion-ease-standard);
+  --focus-ring-color: color-mix(in srgb, var(--ring) 90%, #fff);
+
+  --sidebar: rgba(15, 23, 42, 0.72);
+  --sidebar-foreground: #edf2ff;
+  --sidebar-primary: #8aa4ff;
+  --sidebar-primary-foreground: #090f1a;
+  --sidebar-accent: rgba(30, 41, 59, 0.72);
+  --sidebar-accent-foreground: #edf2ff;
+  --sidebar-border: rgba(148, 163, 184, 0.32);
+  --sidebar-ring: rgba(145, 170, 255, 0.65);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  html {
+    font-size: var(--font-size);
+  }
+
+  h1 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h2 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  label {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  button {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  input {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-normal);
+    line-height: 1.5;
+  }
+}

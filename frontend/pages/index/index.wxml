@@ -1,0 +1,48 @@
+<view class="login-page">
+  <view class="hero">
+    <text class="hero-title">今天吃什么</text>
+    <text class="hero-subtitle">一键随机推荐，告别选择困难</text>
+  </view>
+
+  <view class="login-card">
+    <text class="card-title">登录 / 注册</text>
+    <text class="card-desc">先确认头像和昵称，再一键登录继续点餐。</text>
+
+    <view class="profile-setup">
+      <view class="avatar-section">
+        <button class="avatar-picker" open-type="chooseAvatar" bindchooseavatar="handleChooseAvatar">
+          <image class="avatar-image" wx:if="{{hasCustomAvatar && avatarUrl}}" src="{{avatarUrl}}" mode="aspectFill"></image>
+          <view class="avatar-placeholder" wx:else>
+            <view class="avatar-placeholder-icon"><view class="app-icon icon-user icon-fill"></view></view>
+            <text class="avatar-placeholder-text">选择头像</text>
+          </view>
+        </button>
+        <view class="avatar-copy">
+          <text class="field-label">头像</text>
+          <text class="field-tip">{{hasCustomAvatar ? '已选择头像，点一下可重新更换' : '可以直接继续，也可以先补上头像'}}</text>
+        </view>
+      </view>
+
+      <view class="field-group">
+        <text class="field-label">昵称</text>
+        <input
+          class="nickname-input"
+          type="text"
+          maxlength="20"
+          placeholder="请输入你的昵称"
+          value="{{nickname}}"
+          bindinput="handleNicknameInput"
+        />
+      </view>
+    </view>
+
+    <button class="login-btn" loading="{{loading}}" bindtap="handleWechatLogin">
+      {{loading ? '登录中...' : '微信登录并继续'}}
+    </button>
+
+    <text class="hint">登录即表示你同意服务协议与隐私政策</text>
+    <view class="error" wx:if="{{loginError}}">
+      <text class="error-text">{{loginError}}</text>
+    </view>
+  </view>
+</view>

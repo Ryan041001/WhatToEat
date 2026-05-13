@@ -1,0 +1,108 @@
+version: 2
+
+# Keep routine version updates in one monthly PR across ecosystems.
+# Security update PRs are controlled separately by GitHub and may still open on their own.
+multi-ecosystem-groups:
+  all-dependencies:
+    schedule:
+      interval: "monthly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Shanghai"
+    labels:
+      - "dependencies"
+
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "all-dependencies"
+    labels:
+      - "dependencies"
+      - "ci"
+
+  - package-ecosystem: "maven"
+    directory: "/backend"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "all-dependencies"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+    labels:
+      - "dependencies"
+      - "backend"
+
+  - package-ecosystem: "uv"
+    directory: "/ai-service"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "all-dependencies"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+    labels:
+      - "dependencies"
+      - "ai-service"
+
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "all-dependencies"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+    labels:
+      - "dependencies"
+      - "frontend"
+
+  # Design docs dependencies are intentionally disabled for now.
+  - package-ecosystem: "npm"
+    directory: "/docs/design"
+    open-pull-requests-limit: 0
+    schedule:
+      interval: "monthly"
+      day: "monday"
+      time: "09:40"
+      timezone: "Asia/Shanghai"
+    ignore:
+      - dependency-name: "*"
+
+  - package-ecosystem: "docker"
+    directory: "/backend"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "all-dependencies"
+    ignore:
+      - dependency-name: "eclipse-temurin"
+        versions:
+          - "25*"
+      - dependency-name: "maven"
+        versions:
+          - "*-eclipse-temurin-25"
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+    labels:
+      - "dependencies"
+      - "backend"
+      - "docker"
+
+  - package-ecosystem: "docker"
+    directory: "/ai-service"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "all-dependencies"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+    labels:
+      - "dependencies"
+      - "ai-service"
+      - "docker"

@@ -1,0 +1,8 @@
+.venv/
+.uv-cache/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+tests/
+whattoeat_ai_service.egg-info/

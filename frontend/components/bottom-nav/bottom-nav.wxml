@@ -1,0 +1,24 @@
+<view class="bottom-nav-wrap">
+  <view class="bottom-nav glass-panel glass-blur-md">
+    <view class="nav-item {{current === 'home' ? 'active' : ''}}" data-target="home" bindtap="onNavTap">
+      <view class="nav-icon-shell"><view class="app-icon icon-home icon-fill"></view></view>
+      <text class="label">首页</text>
+    </view>
+    <view class="nav-item {{current === 'spin' ? 'active' : ''}}" data-target="spin" bindtap="onNavTap">
+      <view class="nav-icon-shell"><view class="app-icon icon-wheel icon-fill"></view></view>
+      <text class="label">转盘</text>
+    </view>
+    <view class="nav-item {{current === 'swipe' ? 'active' : ''}}" data-target="swipe" bindtap="onNavTap">
+      <view class="nav-icon-shell"><view class="app-icon icon-swipe icon-fill"></view></view>
+      <text class="label">滑选</text>
+    </view>
+    <view class="nav-item {{current === 'restaurants' ? 'active' : ''}}" data-target="restaurants" bindtap="onNavTap">
+      <view class="nav-icon-shell"><view class="app-icon icon-utensils icon-fill"></view></view>
+      <text class="label">食堂</text>
+    </view>
+    <view class="nav-item {{current === 'mine' ? 'active' : ''}}" data-target="mine" bindtap="onNavTap">
+      <view class="nav-icon-shell"><view class="app-icon icon-user icon-fill"></view></view>
+      <text class="label">我的</text>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,18 @@
+<!-- 餐厅卡片组件 -->
+<view class="restaurant-card" bindtap="onTap">
+  <image class="restaurant-image" src="{{restaurant.image || '/assets/restaurant-1.svg'}}" mode="aspectFill"></image>
+  <view class="restaurant-info">
+    <view class="restaurant-name">{{restaurant.name}}</view>
+    <view class="restaurant-meta">
+      <view class="restaurant-rating">
+        <view class="rating-icon"><view class="app-icon icon-star icon-fill"></view></view>
+        <text class="rating-text">{{restaurant.rating || '暂无评分'}}</text>
+      </view>
+      <text class="restaurant-price">￥{{restaurant.avgPrice || '-'}}/人</text>
+    </view>
+    <view class="restaurant-desc">{{restaurant.description || '暂无描述'}}</view>
+    <view class="restaurant-tags">
+      <text class="tag" wx:for="{{restaurant.tags}}" wx:key="*this">{{item}}</text>
+    </view>
+  </view>
+</view>

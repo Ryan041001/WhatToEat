@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "首页",
+  "usingComponents": {
+    "loading-spinner": "/components/loading-spinner/loading-spinner"
+  }
+}

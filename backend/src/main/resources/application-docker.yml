@@ -1,0 +1,40 @@
+server:
+  address: 0.0.0.0
+
+spring:
+  datasource:
+    url: jdbc:mysql://${DB_HOST:mysql}:${DB_PORT:3306}/${DB_NAME:whattoeat_dev}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8
+    username: ${DB_USER:${DB_USERNAME:}}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+management:
+  endpoints:
+    web:
+      base-path: /
+      exposure:
+        include: health
+
+amap:
+  key: ${AMAP_KEY}
+  base-url: ${AMAP_BASE_URL:https://restapi.amap.com}
+  timeout-seconds: ${AMAP_TIMEOUT_SECONDS:5}
+
+wechat:
+  auth:
+    app-id: ${WECHAT_APP_ID:}
+    app-secret: ${WECHAT_APP_SECRET:}
+    base-url: ${WECHAT_AUTH_BASE_URL:https://api.weixin.qq.com}
+    mock-login-enabled: ${WECHAT_MOCK_LOGIN_ENABLED:true}
+
+ai:
+  service:
+    base-url: ${AI_SERVICE_BASE_URL:http://ai-service:8000}
+    timeout-seconds: ${AI_SERVICE_TIMEOUT_SECONDS:5}
