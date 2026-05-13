@@ -6,9 +6,9 @@ if [ ! -f .env ]; then
   exit 1
 fi
 
-docker compose --env-file .env -f compose.prod.yaml up -d --build
+docker compose --env-file .env -f compose.prod.yaml up -d --build \
+  --wait --wait-timeout "${DEPLOY_HEALTH_TIMEOUT_SECONDS:-120}"
 
-echo "Waiting for services to report health..."
-sleep "${DEPLOY_HEALTH_WAIT_SECONDS:-20}"
+echo "Services are healthy."
 
 docker compose --env-file .env -f compose.prod.yaml ps

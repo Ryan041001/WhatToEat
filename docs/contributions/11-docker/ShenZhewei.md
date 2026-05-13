@@ -24,6 +24,7 @@
 - [x] MySQL、AI Service、后端健康检查
 - [x] 后端依赖 MySQL 与 AI Service healthy 后启动
 - [x] 生产环境通过 `.env` 注入密钥，不在配置文件中硬编码生产密码
+- [x] 生产部署脚本等待服务 healthy，异常时返回失败
 
 ### 3. 自动化部署
 
@@ -46,6 +47,12 @@
 
 3. 问题：本人的作业职责是后端和 AI 开发，不应提交前端容器化实现。
    解决：Docker 编排只覆盖 `backend`、`ai-service` 和 MySQL，前端 Dockerfile 不纳入本次个人提交。
+
+4. 问题：Spring Boot 4 下仅引入 `flyway-core` 和 `flyway-mysql` 不会触发 Boot Flyway 自动配置，生产空库启动时 Hibernate validate 会先报缺表。
+   解决：后端改用 `spring-boot-starter-flyway` 加 `flyway-mysql`，确认空库首次启动会执行全部迁移并创建 `recommendation_feedback`。
+
+5. 问题：部署脚本如果只打印 `docker compose ps`，服务 unhealthy 或 crash-loop 时仍可能返回成功。
+   解决：`deploy.sh` 使用 `docker compose up --wait --wait-timeout`，服务未 healthy 会返回非零退出码。
 
 ## AI 使用情况
 
