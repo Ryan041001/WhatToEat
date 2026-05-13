@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.3</version>
+		<version>4.0.6</version>
 		<relativePath/>
 	</parent>
 	<groupId>com.zjgsu</groupId>
@@ -69,7 +69,7 @@
 		<dependency>
 			<groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
 			<artifactId>owasp-java-html-sanitizer</artifactId>
-			<version>20240325.1</version>
+			<version>20260101.1</version>
 		</dependency>
 
 		<!-- H2 (test) -->
