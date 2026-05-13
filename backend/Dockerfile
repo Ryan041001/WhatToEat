@@ -8,10 +8,21 @@ RUN chmod +x mvnw
 COPY src/ src/
 RUN ./mvnw -q -DskipTests package
 
-FROM eclipse-temurin:17-jre
+FROM amazoncorretto:17-alpine
 WORKDIR /app
 
-COPY --from=build /app/target/WhatToEat-0.0.1-SNAPSHOT.jar app.jar
+RUN addgroup -S app && adduser -S app -G app
+
+ENV SPRING_PROFILES_ACTIVE=docker \
+    JAVA_OPTS=""
+
+COPY --from=build --chown=app:app /app/target/WhatToEat-0.0.1-SNAPSHOT.jar app.jar
+
+USER app
 
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:8080/health || exit 1
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/app.jar"]
