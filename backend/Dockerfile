@@ -8,7 +8,7 @@ RUN chmod +x mvnw
 COPY src/ src/
 RUN ./mvnw -q -DskipTests package
 
-FROM amazoncorretto:17-alpine
+FROM amazoncorretto:26-alpine
 WORKDIR /app
 
 RUN addgroup -S app && adduser -S app -G app
