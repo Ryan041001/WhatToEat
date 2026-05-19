@@ -27,6 +27,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - service: frontend
+            context: frontend
+            image: ghcr.io/ryan041001/whattoeat-frontend
           - service: backend
             context: backend
             image: ghcr.io/ryan041001/whattoeat-backend
