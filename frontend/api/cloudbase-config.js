@@ -2,8 +2,7 @@ const API_TRANSPORT_MODE_STORAGE_KEY = 'apiTransportMode';
 const DEFAULT_API_TRANSPORT_MODE = 'cloudbase';
 const VALID_TRANSPORT_MODES = new Set(['cloudbase', 'request']);
 
-// Fill this with the CloudBase environment ID before uploading a release build.
-const CLOUDBASE_ENV_ID = '';
+const CLOUDBASE_ENV_ID = 'cloud1-d0gendp5i219d4f5f';
 const CLOUDBASE_BACKEND_SERVICE = 'whattoeat-backend';
 
 function normalizeTransportMode(value) {

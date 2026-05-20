@@ -48,12 +48,14 @@
 ## 前端配置
 
 1. 在微信开发者工具打开 `frontend/`。
-2. 在 `frontend/api/cloudbase-config.js` 中填写云开发环境 ID：
+2. 确认 `frontend/api/cloudbase-config.js` 中的云开发环境 ID 与控制台环境一致：
 
 ```js
-const CLOUDBASE_ENV_ID = '你的云开发环境 ID';
+const CLOUDBASE_ENV_ID = 'cloud1-d0gendp5i219d4f5f';
 const CLOUDBASE_BACKEND_SERVICE = 'whattoeat-backend';
 ```
+
+如果后续换云开发环境，需要同步修改 `CLOUDBASE_ENV_ID` 并重新上传小程序版本。
 
 3. 生产默认传输模式是 `cloudbase`，普通 API 通过 `wx.cloud.callContainer` 调用 `/api/v1/*`。
 4. 本地调试后端时，可在开发者工具控制台临时切回 `wx.request`：
