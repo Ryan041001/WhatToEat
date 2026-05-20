@@ -5,7 +5,7 @@ WORKDIR /app
 ENV NODE_ENV=production \
     PORT=8080 \
     UPSTREAM_BASE_URL=https://38.65.93.54 \
-    PROXY_TIMEOUT_MS=30000
+    PROXY_TIMEOUT_MS=120000
 
 RUN addgroup -S app && adduser -S app -G app
 

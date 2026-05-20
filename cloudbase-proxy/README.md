@@ -21,7 +21,7 @@ Environment variables:
 ```text
 PORT=8080
 UPSTREAM_BASE_URL=https://38.65.93.54
-PROXY_TIMEOUT_MS=30000
+PROXY_TIMEOUT_MS=120000
 ```
 
 The VPS only exposes the backend through Nginx on HTTPS. Do not point this
