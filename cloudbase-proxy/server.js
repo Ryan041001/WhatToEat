@@ -2,7 +2,7 @@ const http = require('node:http');
 const https = require('node:https');
 
 const DEFAULT_PORT = 8080;
-const DEFAULT_UPSTREAM_BASE_URL = 'http://38.65.93.54:8080';
+const DEFAULT_UPSTREAM_BASE_URL = 'https://38.65.93.54';
 const DEFAULT_PROXY_TIMEOUT_MS = 30000;
 
 const HOP_BY_HOP_HEADERS = new Set([

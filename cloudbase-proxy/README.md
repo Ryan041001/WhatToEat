@@ -20,16 +20,13 @@ Environment variables:
 
 ```text
 PORT=8080
-UPSTREAM_BASE_URL=http://38.65.93.54:8080
+UPSTREAM_BASE_URL=https://38.65.93.54
 PROXY_TIMEOUT_MS=30000
 ```
 
-If the VPS backend is only exposed through HTTPS, set `UPSTREAM_BASE_URL` to the
-HTTPS origin instead, for example:
-
-```text
-UPSTREAM_BASE_URL=https://38.65.93.54
-```
+The VPS only exposes the backend through Nginx on HTTPS. Do not point this
+proxy at `http://38.65.93.54:8080`; that port is bound to `127.0.0.1` on the
+VPS and is not reachable from CloudBase.
 
 ## Local verification
 

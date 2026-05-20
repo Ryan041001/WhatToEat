@@ -12,7 +12,7 @@
 微信小程序
   -> wx.cloud.callContainer
   -> whattoeat-backend (cloudbase-proxy, 云托管)
-      -> http://38.65.93.54:8080/api/v1/* (VPS Spring Boot backend)
+      -> https://38.65.93.54/api/v1/* (VPS Nginx -> Spring Boot backend)
           -> VPS MySQL
           -> VPS ai-service
           -> 高德 Web 服务 API
@@ -89,15 +89,15 @@ whattoeat-backend
 
 ```text
 PORT=8080
-UPSTREAM_BASE_URL=http://38.65.93.54:8080
+UPSTREAM_BASE_URL=https://38.65.93.54
 PROXY_TIMEOUT_MS=30000
 ```
 
 说明：
 
 - `UPSTREAM_BASE_URL` 必须填写 VPS backend 的服务端入口，不要带 `/api/v1` 也可以；代理会保留小程序传来的 `/api/v1/*` 路径。
-- 如果 VPS 只开放了 HTTPS，可改成 `https://38.65.93.54` 或你的 HTTPS 入口；若证书不是公网可信证书，优先开放 `http://38.65.93.54:8080` 给 CloudBase 代理访问。
-- VPS 防火墙需要允许 CloudBase 代理访问 backend 端口。若无法限制来源，至少确保后端接口仍靠 Bearer Token 与 CSRF 规则保护状态变更请求。
+- 当前 VPS 的 Spring Boot backend 只绑定在 `127.0.0.1:8080`，公网入口是 Nginx 的 `https://38.65.93.54/api/*`，所以 CloudBase 代理必须使用 `https://38.65.93.54`。
+- VPS 防火墙需要允许 CloudBase 代理访问 HTTPS 443。若无法限制来源，至少确保后端接口仍靠 Bearer Token 与 CSRF 规则保护状态变更请求。
 - 代理本身提供 `/health`，用于云托管健康检查。
 
 部署后验证：
@@ -195,7 +195,7 @@ OPENAI_TIMEOUT_SECONDS=30
 
 1. 先确认 VPS 上的 backend、MySQL、AI service 正常。
 2. 在 CloudBase 部署 `cloudbase-proxy/`，服务名填 `whattoeat-backend`。
-3. 配置 `UPSTREAM_BASE_URL=http://38.65.93.54:8080`。
+3. 配置 `UPSTREAM_BASE_URL=https://38.65.93.54`。
 4. 确认云托管 `whattoeat-backend` 的 `/health` 正常。
 5. 用小程序 `callContainer` 调 `GET /api/v1/restaurants/nearby`。
 6. 再验证 `POST /api/v1/recommendations/ask`。
