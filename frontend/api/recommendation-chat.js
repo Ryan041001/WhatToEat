@@ -1,4 +1,4 @@
-import { getApiBaseUrl } from './base-url';
+import { startApiStream } from './transport';
 
 function parseEventFrame(frameText) {
   const lines = frameText.split('\n');
@@ -82,13 +82,30 @@ export function startRecommendationStream(payload, handlers = {}) {
 
   const token = wx.getStorageSync('token') || '';
   let rawBuffer = '';
-  const requestUrl = `${getApiBaseUrl()}/recommendations/ask/stream`;
+  const requestUrl = '/recommendations/ask/stream';
 
-  const requestTask = wx.request({
+  function consumeStreamText(text) {
+    rawBuffer += text;
+    let delimiterIndex = rawBuffer.indexOf('\n\n');
+
+    while (delimiterIndex !== -1) {
+      const frameText = rawBuffer.slice(0, delimiterIndex).trim();
+      rawBuffer = rawBuffer.slice(delimiterIndex + 2);
+
+      if (frameText) {
+        const parsed = parseEventFrame(frameText);
+        if (parsed && typeof onEvent === 'function') {
+          onEvent(parsed);
+        }
+      }
+
+      delimiterIndex = rawBuffer.indexOf('\n\n');
+    }
+  }
+
+  const requestTask = startApiStream({
     url: requestUrl,
     method: 'POST',
-    enableChunked: true,
-    responseType: 'arraybuffer',
     header: {
       'Content-Type': 'application/json',
       'Accept': 'text/event-stream',
@@ -108,6 +125,10 @@ export function startRecommendationStream(payload, handlers = {}) {
         return;
       }
 
+      if (typeof res.data === 'string') {
+        consumeStreamText(res.data);
+      }
+
       if (typeof onComplete === 'function') {
         onComplete();
       }
@@ -123,24 +144,13 @@ export function startRecommendationStream(payload, handlers = {}) {
     }
   });
 
+  if (!requestTask || typeof requestTask.onChunkReceived !== 'function') {
+    return requestTask;
+  }
+
   requestTask.onChunkReceived((res) => {
     try {
-      rawBuffer += decodeChunk(res.data);
-      let delimiterIndex = rawBuffer.indexOf('\n\n');
-
-      while (delimiterIndex !== -1) {
-        const frameText = rawBuffer.slice(0, delimiterIndex).trim();
-        rawBuffer = rawBuffer.slice(delimiterIndex + 2);
-
-        if (frameText) {
-          const parsed = parseEventFrame(frameText);
-          if (parsed && typeof onEvent === 'function') {
-            onEvent(parsed);
-          }
-        }
-
-        delimiterIndex = rawBuffer.indexOf('\n\n');
-      }
+      consumeStreamText(decodeChunk(res.data));
     } catch (error) {
       if (typeof onError === 'function') {
         onError({

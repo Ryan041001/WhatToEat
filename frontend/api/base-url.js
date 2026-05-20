@@ -1,8 +1,8 @@
 const API_BASE_URL_STORAGE_KEY = 'apiBaseUrl';
-const PUBLIC_API_BASE_URL = 'https://38.65.93.54/api/v1';
-const DEVTOOLS_API_BASE_URL = PUBLIC_API_BASE_URL;
-const REAL_DEVICE_API_BASE_URL = PUBLIC_API_BASE_URL;
-const LEGACY_LOCAL_API_BASE_URLS = new Set([
+const DEVTOOLS_API_BASE_URL = 'http://127.0.0.1:8080/api/v1';
+const REAL_DEVICE_API_BASE_URL = 'http://127.0.0.1:8080/api/v1';
+const LEGACY_API_BASE_URLS = new Set([
+  'https://38.65.93.54/api/v1',
   'http://127.0.0.1:8080/api/v1',
   'http://localhost:8080/api/v1',
   'http://192.168.1.176:8080/api/v1'
@@ -48,8 +48,8 @@ function getDefaultApiBaseUrl() {
   return isWechatDevtools() ? DEVTOOLS_API_BASE_URL : REAL_DEVICE_API_BASE_URL;
 }
 
-function clearLegacyLocalApiBaseUrl(value) {
-  if (!LEGACY_LOCAL_API_BASE_URLS.has(value)) {
+function clearLegacyApiBaseUrl(value) {
+  if (!LEGACY_API_BASE_URLS.has(value)) {
     return false;
   }
 
@@ -65,7 +65,7 @@ export function getApiBaseUrl() {
 
   const fromStorage = normalizeApiBaseUrl(wx.getStorageSync(API_BASE_URL_STORAGE_KEY));
   if (fromStorage) {
-    if (clearLegacyLocalApiBaseUrl(fromStorage)) {
+    if (clearLegacyApiBaseUrl(fromStorage)) {
       return getDefaultApiBaseUrl();
     }
     return fromStorage;

@@ -1,6 +1,7 @@
 // app.js
 import { GetNearbyRestaurants, mapApiRestaurantToCard } from './api/restaurants';
 import { AddBlacklist, ListBlacklist, RemoveBlacklist } from './api/blacklist';
+import { initCloudbase } from './api/cloudbase-config';
 import {
 	extractBlacklistPoiIds,
 	extractRestaurantList,
@@ -38,6 +39,8 @@ App({
 	},
 
 	onLaunch() {
+		initCloudbase();
+
 		this.globalData.token = wx.getStorageSync(TOKEN_KEY) || '';
 		this.globalData.user = normalizeAuthUser(wx.getStorageSync(USER_KEY) || null);
 

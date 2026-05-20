@@ -17,8 +17,12 @@ describe('api client mock requests', () => {
         if (key === 'apiBaseUrl') {
           return '';
         }
+        if (key === 'apiTransportMode') {
+          return '';
+        }
         return '';
       }),
+      setStorageSync: jest.fn(),
       removeStorageSync: jest.fn(),
       showToast: jest.fn(),
       redirectTo: jest.fn(({ complete }) => {
@@ -26,7 +30,11 @@ describe('api client mock requests', () => {
           complete();
         }
       }),
-      request: jest.fn()
+      request: jest.fn(),
+      cloud: {
+        init: jest.fn(),
+        callContainer: jest.fn()
+      }
     };
   });
 
@@ -39,28 +47,39 @@ describe('api client mock requests', () => {
   test('resolves payload on 200 response', async () => {
     const client = require('../api/client').default;
 
-    wx.request.mockImplementation((options) => {
-      options.success({
+    wx.cloud.callContainer.mockResolvedValue({
         statusCode: 200,
         data: { code: 0, data: { ok: true } },
         header: { 'x-trace-id': 'trace-1' }
-      });
     });
 
     const response = await client.get('/health');
 
     expect(response).toEqual({ code: 0, data: { ok: true } });
-    expect(wx.request).toHaveBeenCalledWith(expect.objectContaining({
+    expect(wx.cloud.callContainer).toHaveBeenCalledWith(expect.objectContaining({
       method: 'GET',
-      url: expect.stringContaining('/health'),
+      path: '/api/v1/health',
       header: expect.objectContaining({
+        'X-WX-SERVICE': 'whattoeat-backend',
         Authorization: 'Bearer mock-token'
       })
     }));
   });
 
-  test('uses public VPS API base by default in devtools', async () => {
+  test('uses local request transport when explicitly selected', async () => {
     wx.getSystemInfoSync = jest.fn(() => ({ platform: 'devtools' }));
+    wx.getStorageSync.mockImplementation((key) => {
+      if (key === 'token') {
+        return 'mock-token';
+      }
+      if (key === 'apiTransportMode') {
+        return 'request';
+      }
+      if (key === 'apiBaseUrl') {
+        return '';
+      }
+      return '';
+    });
     const client = require('../api/client').default;
 
     wx.request.mockImplementation((options) => {
@@ -74,18 +93,22 @@ describe('api client mock requests', () => {
     await client.get('/health');
 
     expect(wx.request).toHaveBeenCalledWith(expect.objectContaining({
-      url: 'https://38.65.93.54/api/v1/health'
+      url: 'http://127.0.0.1:8080/api/v1/health'
     }));
+    expect(wx.cloud.callContainer).not.toHaveBeenCalled();
   });
 
-  test('ignores stale local API base stored from pre-deploy builds', async () => {
+  test('ignores stale VPS API base stored from pre-cloud builds', async () => {
     wx.getSystemInfoSync = jest.fn(() => ({ platform: 'devtools' }));
     wx.getStorageSync.mockImplementation((key) => {
       if (key === 'token') {
         return 'mock-token';
       }
+      if (key === 'apiTransportMode') {
+        return 'request';
+      }
       if (key === 'apiBaseUrl') {
-        return 'http://127.0.0.1:8080/api/v1';
+        return 'https://38.65.93.54/api/v1';
       }
       return '';
     });
@@ -103,19 +126,17 @@ describe('api client mock requests', () => {
 
     expect(wx.removeStorageSync).toHaveBeenCalledWith('apiBaseUrl');
     expect(wx.request).toHaveBeenCalledWith(expect.objectContaining({
-      url: 'https://38.65.93.54/api/v1/health'
+      url: 'http://127.0.0.1:8080/api/v1/health'
     }));
   });
 
   test('returns full response when status is allowed', async () => {
     const client = require('../api/client').default;
 
-    wx.request.mockImplementation((options) => {
-      options.success({
-        statusCode: 404,
-        data: { code: 4040, message: 'not found' },
-        header: { 'x-trace-id': 'trace-2' }
-      });
+    wx.cloud.callContainer.mockResolvedValue({
+      statusCode: 404,
+      data: { code: 4040, message: 'not found' },
+      header: { 'x-trace-id': 'trace-2' }
     });
 
     const response = await client.get('/resource', {}, {
@@ -133,12 +154,10 @@ describe('api client mock requests', () => {
   test('clears auth and redirects on 401', async () => {
     const client = require('../api/client').default;
 
-    wx.request.mockImplementation((options) => {
-      options.success({
-        statusCode: 401,
-        data: { code: 1003, message: 'unauthorized' },
-        header: {}
-      });
+    wx.cloud.callContainer.mockResolvedValue({
+      statusCode: 401,
+      data: { code: 1003, message: 'unauthorized' },
+      header: {}
     });
 
     await expect(client.get('/secure')).rejects.toMatchObject({
@@ -161,9 +180,7 @@ describe('api client mock requests', () => {
   test('rejects on network failure and shows toast', async () => {
     const client = require('../api/client').default;
 
-    wx.request.mockImplementation((options) => {
-      options.fail({ errMsg: 'request:fail timeout' });
-    });
+    wx.cloud.callContainer.mockRejectedValue({ errMsg: 'request:fail timeout' });
 
     await expect(client.post('/broken', { a: 1 })).rejects.toMatchObject({
       statusCode: 0,

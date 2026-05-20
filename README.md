@@ -188,11 +188,22 @@ cp .env.example .env
 ./deploy.sh
 ```
 
+### CloudBase 免自有域名备案部署
+
+`deploy-cloudbase` 分支面向微信云托管 / CloudBase：
+
+- 小程序默认通过 `wx.cloud.callContainer` 调用 `whattoeat-backend`
+- 不再把 `https://38.65.93.54/api/v1` 作为正式后端入口
+- `whattoeat-ai` 作为内部服务由 backend 通过内网域名调用
+- AI 服务仍通过 `OPENAI_BASE_URL` + `OPENAI_API_KEY` 出站调用模型服务
+
+部署细节见 `docs/cloudbase-deployment.md`。
+
 ### 前端开发
 - 使用微信开发者工具打开 `frontend/`
-- 微信开发者工具默认后端地址：`https://38.65.93.54/api/v1`
-- 真机默认后端地址：`https://38.65.93.54/api/v1`
-- 真机不要使用 `127.0.0.1` / `localhost`；如果电脑换了网络，需要同步更新 `frontend/api/base-url.js`
+- 默认传输模式：`cloudbase`，通过 `wx.cloud.callContainer` 访问云托管服务
+- 云开发环境 ID 与服务名配置在 `frontend/api/cloudbase-config.js`
+- 本地后端调试可临时设置 `wx.setStorageSync('apiTransportMode', 'request')`，此时默认请求 `http://127.0.0.1:8080/api/v1`
 
 ---
 
@@ -205,6 +216,7 @@ cp .env.example .env
 - `docs/api.md`：人类可读 API 契约
 - `docs/api.yaml`：OpenAPI 主契约
 - `docs/backend.md`：后端模块说明
+- `docs/cloudbase-deployment.md`：CloudBase 免自有域名备案部署说明
 - `docs/frontend-ai-review-integration.md`：前端对接评论 / 摘要 / AI 推荐的联调说明
 
 > 注意：`docs/frontend.md` 与 `docs/design-spec.md` 中包含部分规划态 / 设计态内容，不应直接当成当前接口契约真相源。

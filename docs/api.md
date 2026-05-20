@@ -811,22 +811,23 @@ docs/api.yaml
 建议流程：
 
 1. 导入 `docs/api.yaml`
-2. 微信开发者工具调试时默认选择 `https://38.65.93.54/api/v1`；如果本地启动后端，也可以手动切换到 `http://127.0.0.1:8080`
-3. 真机同局域网调试时选择 `http://<你的宿主机局域网IP>:8080`
+2. CloudBase 小程序正式链路通过 `wx.cloud.callContainer` 调用云托管服务，不需要在小程序后台配置自有服务器域名
+3. Apifox / Postman / Swagger Editor 调试时仍可使用后端 HTTP 地址，例如本地 `http://127.0.0.1:8080`
 4. 先调用 `POST /api/v1/auth/wechat-login` 获取 token
 5. 在受保护接口中配置 `Authorization: Bearer <token>`
 
 说明：
 
 - Docker Compose 本地联调默认将后端暴露在宿主机 `8080` 端口
-- `localhost` 只适合开发者工具，不适合真机；真机应使用宿主机局域网 IP
+- `localhost` 只适合开发者工具，不适合真机；真机若临时使用 `wx.request` 调本地后端，应使用宿主机局域网 IP
+- CloudBase 部署细节见 `docs/cloudbase-deployment.md`
 - 若使用 Compose，请先把 `.env` 里的 `AMAP_KEY` 换成真实高德 Key，再测试餐厅与推荐接口
 
 ---
 
 ## 12. 实现说明
 
-- 当前认证实现为 mock 微信登录，接口形状贴近真实小程序登录流程
+- 当前认证实现为微信登录 code 换取 openid，并在缺少微信凭据且允许 mock 时回退为 mock openid；CloudBase 生产 profile 默认关闭 mock 登录
 - 餐厅主数据来源于高德，不在本地维护完整餐厅主表
 - 当前已实现的用户侧写接口包括黑名单 CRUD、备注 CRUD、餐厅评论 CRUD、推荐查询、公开评论与聚合摘要查询
 

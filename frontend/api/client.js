@@ -1,6 +1,6 @@
 // frontend/api/client.js
 
-import { getApiBaseUrl } from './base-url';
+import { sendApiRequest } from './transport';
 
 let isHandlingUnauthorized = false;
 const TOKEN_KEY = 'token';
@@ -49,12 +49,13 @@ const request = (url, method = 'GET', data = {}, options = {}) => {
       header['Authorization'] = `Bearer ${token}`;
     }
 
-    wx.request({
-      url: `${getApiBaseUrl()}${url}`,
+    sendApiRequest({
+      url,
       method,
       data,
-      header,
-      success: (res) => {
+      header
+    })
+      .then((res) => {
         const { statusCode, data } = res;
         const is2xx = statusCode >= 200 && statusCode < 300;
         const isAllowedStatus = Array.isArray(allowHttpStatus) && allowHttpStatus.includes(statusCode);
@@ -109,17 +110,16 @@ const request = (url, method = 'GET', data = {}, options = {}) => {
             message: (data && data.message) || '请求失败'
           });
         }
-      },
-      fail: (err) => {
+      })
+      .catch((err) => {
         const message = (err && err.errMsg) ? err.errMsg : '网络请求异常';
-        const requestUrl = `${getApiBaseUrl()}${url}`;
         if (!silent) {
           wx.showToast({
             title: '网络开小差了，请稍后重试',
             icon: 'none'
           });
         }
-        console.error('请求失败详情:', requestUrl, message, err);
+        console.error('请求失败详情:', url, message, err);
         reject({
           statusCode: 0,
           data: null,
@@ -127,8 +127,7 @@ const request = (url, method = 'GET', data = {}, options = {}) => {
           message,
           raw: err
         });
-      }
-    });
+      });
   });
 };
 

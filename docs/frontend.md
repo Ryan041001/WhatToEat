@@ -222,6 +222,7 @@ frontend/
 2. 调 `api/auth.js -> WechatLogin(code, nickname, avatarUrl)`
 3. `app.js -> setAuth()` 保存 token / user
 4. 后续请求通过 `api/client.js` 自动带 `Authorization`
+5. 云托管默认链路下，`api/transport.js` 使用 `wx.cloud.callContainer` 把 `/api/v1/*` 路由到 `whattoeat-backend`
 
 ### 5.2 餐厅列表流
 
@@ -236,8 +237,9 @@ frontend/
 
 1. `bootstrapRestaurants()` 之前存在 `pageSize` / `size` 的契约差异风险
 2. 列表提取逻辑需要兼容后端分页结构 `data.items`
-3. 如果小程序运行环境请求的地址不是宿主机实际可达地址，会直接出现 `ERR_CONNECTION_REFUSED`
-4. AI 流式接口在小程序环境里不能依赖浏览器专属能力，事件流解析必须按小程序能力做兼容
+3. CloudBase 正式链路不再依赖小程序服务器域名配置，但必须先在 `app.js` 初始化 `wx.cloud`
+4. 如果临时切到 `apiTransportMode=request`，请求地址仍必须是当前运行环境可达地址，否则会出现 `ERR_CONNECTION_REFUSED`
+5. AI 流式接口在小程序环境里不能依赖浏览器专属能力，事件流解析必须按小程序能力做兼容；云托管分块能力需要真机验证
 
 因此做真实联调时，不能只看“页面上有没有数据显示”，而要确认数据是不是来自真实接口、是不是和后端候选一致。
 
@@ -269,9 +271,10 @@ frontend/
 
 ### 7.1 启动方式
 - 用微信开发者工具打开 `frontend/`
-- 微信开发者工具默认后端地址：`https://38.65.93.54/api/v1`
-- 真机默认后端地址：`https://38.65.93.54/api/v1`
-- 如果电脑切换了 Wi‑Fi，需要同步更新 `frontend/api/base-url.js` 里的真机默认地址
+- 默认传输模式为 `cloudbase`，通过 `wx.cloud.callContainer` 访问 `whattoeat-backend`
+- 云开发环境 ID 与服务名配置在 `frontend/api/cloudbase-config.js`
+- 本地调试后端时，可临时设置 `wx.setStorageSync('apiTransportMode', 'request')`
+- `request` 模式默认后端地址为 `http://127.0.0.1:8080/api/v1`，真机联调需手动写入可达的局域网地址
 
 ### 7.2 调试重点
 做前后端联调时，优先检查：
@@ -281,10 +284,12 @@ frontend/
 3. 当前页面数据是否来自真实后端，而不是本地 fallback
 4. 页面所用字段是否还是旧字段兼容层
 5. 空态 / 404 / 401 是否按文档契约处理
+6. 云托管模式下 `X-WX-SERVICE` 是否为 `whattoeat-backend`
 
 ### 7.3 当前最重要的联调文档
 - `docs/api.md`
 - `docs/api.yaml`
+- `docs/cloudbase-deployment.md`
 - `docs/frontend-ai-review-integration.md`
 
 ---
