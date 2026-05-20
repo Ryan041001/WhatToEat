@@ -1,0 +1,13 @@
+{
+  "name": "whattoeat-cloudbase-proxy",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CloudBase callContainer proxy for WhatToEat VPS backend",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

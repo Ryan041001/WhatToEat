@@ -67,6 +67,7 @@
 ```text
 WhatToEat/
 ├── frontend/                     # 微信小程序前端
+├── cloudbase-proxy/              # 低成本 CloudBase callContainer -> VPS backend 代理
 ├── backend/                      # Spring Boot 后端
 │   └── src/main/java/com/zjgsu/whattoeat/
 │       ├── controller/
@@ -194,8 +195,8 @@ cp .env.example .env
 
 - 小程序默认通过 `wx.cloud.callContainer` 调用 `whattoeat-backend`
 - 不再把 `https://38.65.93.54/api/v1` 作为正式后端入口
-- `whattoeat-ai` 作为内部服务由 backend 通过内网域名调用
-- AI 服务仍通过 `OPENAI_BASE_URL` + `OPENAI_API_KEY` 出站调用模型服务
+- 当前低成本推荐部署为 `cloudbase-proxy/`：CloudBase 只作为小程序合法入口，代理到已经部署在 VPS 的 backend
+- 后续如升级 CloudBase 标准版，可把 Spring Boot backend、AI service 与 MySQL 全部迁入云托管私网
 
 部署细节见 `docs/cloudbase-deployment.md`。
 

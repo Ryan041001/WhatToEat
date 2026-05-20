@@ -1,8 +1,31 @@
 # CloudBase 免自有域名备案部署说明
 
-本文档描述当前 `deploy-cloudbase` 分支的推荐部署方式：小程序备案照常做，但小程序不再请求自有公网域名或公网 IP，而是通过 `wx.cloud.callContainer` 访问微信云托管后端。
+本文档描述当前 `deploy-cloudbase` 分支的推荐部署方式：小程序备案照常做，但小程序不再请求自有公网域名或公网 IP，而是通过 `wx.cloud.callContainer` 访问微信云托管服务。
+
+当前最省钱路线是 **CloudBase 代理到 VPS**：VPS 继续运行 Spring Boot backend、MySQL 和 AI Service；CloudBase 只部署一个轻量 `whattoeat-backend` 代理服务，作为小程序正式入口。
 
 ## 目标架构
+
+### 低成本 VPS 代理模式（当前推荐）
+
+```text
+微信小程序
+  -> wx.cloud.callContainer
+  -> whattoeat-backend (cloudbase-proxy, 云托管)
+      -> http://38.65.93.54:8080/api/v1/* (VPS Spring Boot backend)
+          -> VPS MySQL
+          -> VPS ai-service
+          -> 高德 Web 服务 API
+```
+
+关键点：
+
+- 小程序正式链路不使用 `wx.request` 直连 `38.65.93.54`，避免小程序合法域名 / 自有域名备案问题。
+- CloudBase 个人版即可部署代理，不需要购买标准版私有网络。
+- `whattoeat-backend` 这个服务名保留给 CloudBase 代理，所以前端无需改服务名。
+- VPS 仍是实际业务后端和数据库所在位置；CloudBase 代理只做请求转发，不保存业务数据。
+
+### 全 CloudBase 私网模式（付费后可选）
 
 ```text
 微信小程序
@@ -20,6 +43,7 @@
 - 小程序只调用 `whattoeat-backend`。
 - `whattoeat-ai` 不暴露给小程序；建议关闭公网访问，开启内网访问。
 - `OPENAI_BASE_URL` 是 `whattoeat-ai` 的出站目标，不是外部访问 `whattoeat-ai` 的入口；关闭 AI 服务公网入口不会阻止它调用外部模型 API。
+- 该模式需要 CloudBase 私有网络 / 云数据库等付费能力；当前若预算有限，先使用低成本 VPS 代理模式。
 
 ## 前端配置
 
@@ -45,9 +69,48 @@ wx.removeStorageSync('apiBaseUrl')
 wx.setStorageSync('apiTransportMode', 'cloudbase')
 ```
 
-## 后端云托管服务
+## 低成本模式：CloudBase 代理服务
 
 服务名建议固定为：
+
+```text
+whattoeat-backend
+```
+
+配置：
+
+- 源码目录：`cloudbase-proxy/`
+- Dockerfile：`cloudbase-proxy/Dockerfile`
+- 服务端口：`8080`，或使用平台注入的 `PORT`
+- 公网访问：可关闭；小程序通过 `callContainer` 访问
+- 私有网络：不需要购买
+
+环境变量：
+
+```text
+PORT=8080
+UPSTREAM_BASE_URL=http://38.65.93.54:8080
+PROXY_TIMEOUT_MS=30000
+```
+
+说明：
+
+- `UPSTREAM_BASE_URL` 必须填写 VPS backend 的服务端入口，不要带 `/api/v1` 也可以；代理会保留小程序传来的 `/api/v1/*` 路径。
+- 如果 VPS 只开放了 HTTPS，可改成 `https://38.65.93.54` 或你的 HTTPS 入口；若证书不是公网可信证书，优先开放 `http://38.65.93.54:8080` 给 CloudBase 代理访问。
+- VPS 防火墙需要允许 CloudBase 代理访问 backend 端口。若无法限制来源，至少确保后端接口仍靠 Bearer Token 与 CSRF 规则保护状态变更请求。
+- 代理本身提供 `/health`，用于云托管健康检查。
+
+部署后验证：
+
+1. 在云托管控制台确认 `whattoeat-backend` 健康检查通过。
+2. 打开小程序体验版，确认 `wx.cloud.callContainer` 能调用 `/api/v1/auth/wechat-login`。
+3. 再测 `/api/v1/restaurants/nearby` 和 `/api/v1/recommendations/ask/stream`。
+
+## 付费模式：Spring Boot 后端云托管服务
+
+如果后续升级 CloudBase 标准版并使用私有网络，可把 Spring Boot backend 直接部署到云托管。
+
+服务名仍建议固定为：
 
 ```text
 whattoeat-backend
@@ -77,7 +140,7 @@ AI_SERVICE_BASE_URL=http://<whattoeat-ai 内网域名>
 AI_SERVICE_TIMEOUT_SECONDS=5
 ```
 
-## AI 云托管服务
+## 付费模式：AI 云托管服务
 
 服务名建议固定为：
 
@@ -106,7 +169,9 @@ OPENAI_TIMEOUT_SECONDS=30
 
 ## 数据库
 
-当前后端通过 Flyway 自动建表，CloudBase MySQL 初始化后首次启动 `whattoeat-backend` 会执行 `backend/src/main/resources/db/migration/` 下的迁移。
+低成本 VPS 代理模式下，数据库继续使用 VPS 上已经部署好的 MySQL，不需要 CloudBase MySQL。
+
+全 CloudBase 私网模式下，后端通过 Flyway 自动建表，CloudBase MySQL 初始化后首次启动 `whattoeat-backend` 会执行 `backend/src/main/resources/db/migration/` 下的迁移。
 
 注意：
 
@@ -126,10 +191,20 @@ OPENAI_TIMEOUT_SECONDS=30
 
 ## 验证顺序
 
-1. 先部署 `whattoeat-ai`，确认 `/health` 正常。
-2. 给 `whattoeat-ai` 配好 `OPENAI_BASE_URL` 和 `OPENAI_API_KEY`，确认它可以出站调用模型服务。
-3. 部署 `whattoeat-backend`，确认 `/health` 正常。
-4. 在 backend 环境变量中把 `AI_SERVICE_BASE_URL` 配成 AI 服务内网域名。
+低成本 VPS 代理模式：
+
+1. 先确认 VPS 上的 backend、MySQL、AI service 正常。
+2. 在 CloudBase 部署 `cloudbase-proxy/`，服务名填 `whattoeat-backend`。
+3. 配置 `UPSTREAM_BASE_URL=http://38.65.93.54:8080`。
+4. 确认云托管 `whattoeat-backend` 的 `/health` 正常。
 5. 用小程序 `callContainer` 调 `GET /api/v1/restaurants/nearby`。
 6. 再验证 `POST /api/v1/recommendations/ask`。
 7. 最后验证流式 `POST /api/v1/recommendations/ask/stream`；若目标环境不稳定支持分块，前端应临时降级到同步问答。
+
+全 CloudBase 私网模式：
+
+1. 先部署 `whattoeat-ai`，确认 `/health` 正常。
+2. 给 `whattoeat-ai` 配好 `OPENAI_BASE_URL` 和 `OPENAI_API_KEY`，确认它可以出站调用模型服务。
+3. 部署 Spring Boot `whattoeat-backend`，确认 `/health` 正常。
+4. 在 backend 环境变量中把 `AI_SERVICE_BASE_URL` 配成 AI 服务内网域名。
+5. 按上面的业务接口顺序验证。
