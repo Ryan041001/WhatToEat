@@ -48,7 +48,22 @@
 ## 前端配置
 
 1. 在微信开发者工具打开 `frontend/`。
-2. 确认 `frontend/api/cloudbase-config.js` 中的云开发环境 ID 与控制台环境一致：
+2. 确认小程序 AppID 是当前云开发环境关联的小程序：
+
+```text
+wx395056b9fe3de58e
+```
+
+如果开发者工具打开的是 `frontend/`，它会读取 `frontend/project.config.json`；如果打开的是仓库根目录，它会读取根目录 `project.config.json` 并使用 `miniprogramRoot=frontend/`。两个配置里的 AppID 必须一致，否则 `wx.cloud.callContainer` 可能在 CloudBase 网关层直接返回 `Invalid host`。
+
+官方说明：
+
+- `wx.cloud.callContainer` 默认只能访问本小程序已关联云开发环境里的云托管服务。
+- 跨环境访问默认不支持；只有目标环境开启“云开发环境共享”后，才能通过 `resourceAppid/resourceEnv` 访问。
+
+参考：https://docs.cloudbase.net/run/develop/access/mini
+
+3. 确认 `frontend/api/cloudbase-config.js` 中的云开发环境 ID 与控制台环境一致：
 
 ```js
 const CLOUDBASE_ENV_ID = 'cloud1-d0gendp5i219d4f5f';
@@ -57,8 +72,8 @@ const CLOUDBASE_BACKEND_SERVICE = 'whattoeat-backend';
 
 如果后续换云开发环境，需要同步修改 `CLOUDBASE_ENV_ID` 并重新上传小程序版本。
 
-3. 生产默认传输模式是 `cloudbase`，普通 API 通过 `wx.cloud.callContainer` 调用 `/api/v1/*`。
-4. 本地调试后端时，可在开发者工具控制台临时切回 `wx.request`：
+4. 生产默认传输模式是 `cloudbase`，普通 API 通过 `wx.cloud.callContainer` 调用 `/api/v1/*`。
+5. 本地调试后端时，可在开发者工具控制台临时切回 `wx.request`：
 
 ```js
 wx.setStorageSync('apiTransportMode', 'request')
@@ -202,6 +217,41 @@ OPENAI_TIMEOUT_SECONDS=30
 5. 用小程序 `callContainer` 调 `GET /api/v1/restaurants/nearby`。
 6. 再验证 `POST /api/v1/recommendations/ask`。
 7. 最后验证流式 `POST /api/v1/recommendations/ask/stream`；若目标环境不稳定支持分块，前端应临时降级到同步问答。
+
+## `Invalid host` 排查
+
+如果小程序端报：
+
+```text
+cloud.callContainer:fail Error: errCode: -501000 | errMsg: Invalid host
+```
+
+优先按下面顺序排查：
+
+1. 微信开发者工具右上角的 AppID 必须是 `wx395056b9fe3de58e`。
+2. 云开发环境 `cloud1-d0gendp5i219d4f5f` 必须归属或关联到同一个小程序 AppID。
+3. 云托管服务名必须是 `whattoeat-backend`。
+4. 前端请求头必须包含 `X-WX-SERVICE=whattoeat-backend`。
+5. 如果云环境属于另一个小程序，先在控制台开启“云开发环境共享”，再改成 `new wx.cloud.Cloud({ resourceAppid, resourceEnv })` 的跨环境调用方式。
+
+开发者工具 Console 可先跑最小验证：
+
+```js
+wx.cloud.init({
+  env: 'cloud1-d0gendp5i219d4f5f',
+  traceUser: true
+})
+
+wx.cloud.callContainer({
+  config: { env: 'cloud1-d0gendp5i219d4f5f' },
+  path: '/health',
+  method: 'GET',
+  header: { 'X-WX-SERVICE': 'whattoeat-backend' },
+  dataType: 'text'
+}).then(console.log).catch(console.error)
+```
+
+如果这个最小验证仍然是 `Invalid host`，请求没有到达代理服务，继续处理 AppID / 云环境关联或环境共享；如果最小验证成功但业务接口失败，再排查代理、VPS 或后端接口。
 
 全 CloudBase 私网模式：
 
