@@ -811,7 +811,7 @@ docs/api.yaml
 建议流程：
 
 1. 导入 `docs/api.yaml`
-2. 微信开发者工具调试时选择 `http://127.0.0.1:8080`
+2. 微信开发者工具调试时默认选择 `https://38.65.93.54/api/v1`；如果本地启动后端，也可以手动切换到 `http://127.0.0.1:8080`
 3. 真机同局域网调试时选择 `http://<你的宿主机局域网IP>:8080`
 4. 先调用 `POST /api/v1/auth/wechat-login` 获取 token
 5. 在受保护接口中配置 `Authorization: Bearer <token>`

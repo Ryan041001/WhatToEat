@@ -59,6 +59,54 @@ describe('api client mock requests', () => {
     }));
   });
 
+  test('uses public VPS API base by default in devtools', async () => {
+    wx.getSystemInfoSync = jest.fn(() => ({ platform: 'devtools' }));
+    const client = require('../api/client').default;
+
+    wx.request.mockImplementation((options) => {
+      options.success({
+        statusCode: 200,
+        data: { code: 0, data: { ok: true } },
+        header: {}
+      });
+    });
+
+    await client.get('/health');
+
+    expect(wx.request).toHaveBeenCalledWith(expect.objectContaining({
+      url: 'https://38.65.93.54/api/v1/health'
+    }));
+  });
+
+  test('ignores stale local API base stored from pre-deploy builds', async () => {
+    wx.getSystemInfoSync = jest.fn(() => ({ platform: 'devtools' }));
+    wx.getStorageSync.mockImplementation((key) => {
+      if (key === 'token') {
+        return 'mock-token';
+      }
+      if (key === 'apiBaseUrl') {
+        return 'http://127.0.0.1:8080/api/v1';
+      }
+      return '';
+    });
+    const client = require('../api/client').default;
+
+    wx.request.mockImplementation((options) => {
+      options.success({
+        statusCode: 200,
+        data: { code: 0, data: { ok: true } },
+        header: {}
+      });
+    });
+
+    await client.get('/health');
+
+    expect(wx.removeStorageSync).toHaveBeenCalledWith('apiBaseUrl');
+    expect(wx.request).toHaveBeenCalledWith(expect.objectContaining({
+      url: 'https://38.65.93.54/api/v1/health'
+    }));
+  });
+
   test('returns full response when status is allowed', async () => {
     const client = require('../api/client').default;
 

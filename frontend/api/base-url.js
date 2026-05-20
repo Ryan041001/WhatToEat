@@ -1,7 +1,12 @@
 const API_BASE_URL_STORAGE_KEY = 'apiBaseUrl';
-const DEVTOOLS_API_BASE_URL = 'http://127.0.0.1:8080/api/v1';
-// Update this when your laptop joins a different LAN.
-const REAL_DEVICE_API_BASE_URL = 'http://192.168.1.176:8080/api/v1';
+const PUBLIC_API_BASE_URL = 'https://38.65.93.54/api/v1';
+const DEVTOOLS_API_BASE_URL = PUBLIC_API_BASE_URL;
+const REAL_DEVICE_API_BASE_URL = PUBLIC_API_BASE_URL;
+const LEGACY_LOCAL_API_BASE_URLS = new Set([
+  'http://127.0.0.1:8080/api/v1',
+  'http://localhost:8080/api/v1',
+  'http://192.168.1.176:8080/api/v1'
+]);
 
 function normalizeApiBaseUrl(input) {
   if (typeof input !== 'string') {
@@ -43,6 +48,15 @@ function getDefaultApiBaseUrl() {
   return isWechatDevtools() ? DEVTOOLS_API_BASE_URL : REAL_DEVICE_API_BASE_URL;
 }
 
+function clearLegacyLocalApiBaseUrl(value) {
+  if (!LEGACY_LOCAL_API_BASE_URLS.has(value)) {
+    return false;
+  }
+
+  wx.removeStorageSync(API_BASE_URL_STORAGE_KEY);
+  return true;
+}
+
 export function getApiBaseUrl() {
   const appLevel = normalizeApiBaseUrl(readAppLevelApiBaseUrl());
   if (appLevel) {
@@ -51,6 +65,9 @@ export function getApiBaseUrl() {
 
   const fromStorage = normalizeApiBaseUrl(wx.getStorageSync(API_BASE_URL_STORAGE_KEY));
   if (fromStorage) {
+    if (clearLegacyLocalApiBaseUrl(fromStorage)) {
+      return getDefaultApiBaseUrl();
+    }
     return fromStorage;
   }
 

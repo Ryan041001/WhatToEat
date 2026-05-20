@@ -292,7 +292,7 @@ App({
 			latitude: location.latitude,
 			radius: 3000,
 			page: 1,
-			size: 30,
+			size: 100,
 			sort
 		};
 
