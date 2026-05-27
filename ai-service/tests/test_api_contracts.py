@@ -80,7 +80,26 @@ def test_health_endpoint_should_return_ok_status():
     response = client.get("/health")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    payload = response.json()
+    assert payload["status"] == "healthy"
+    assert payload["version"] == "0.1.0"
+    assert "timestamp" in payload
+
+
+def test_metrics_endpoint_should_report_request_count_latency_and_error_rate():
+    client = create_test_client(recommendation_service=StubRecommendationService(error=ModelServiceError("upstream failed")))
+
+    client.get("/health")
+    client.post("/internal/recommend", json=recommendation_payload())
+
+    response = client.get("/metrics")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["requestCount"] >= 2
+    assert payload["averageResponseTimeMs"] >= 0
+    assert payload["errorCount"] >= 1
+    assert payload["errorRate"] > 0
 
 
 def test_review_tags_should_map_model_timeout_to_504():

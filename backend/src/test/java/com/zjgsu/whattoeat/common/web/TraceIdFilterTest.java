@@ -83,6 +83,13 @@ class TraceIdFilterTest {
     }
 
     @Test
+    void shouldSkipRootHealthRequests() {
+        MockHttpServletRequest healthRequest = new MockHttpServletRequest("GET", "/health");
+
+        assertTrue(filter.shouldNotFilter(healthRequest));
+    }
+
+    @Test
     void shouldClearMdcAfterFilterChain() throws Exception {
         filter.doFilter(request, response, (req, res) -> assertNotNull(MDC.get(TraceIdFilter.TRACE_ID_KEY)));
 

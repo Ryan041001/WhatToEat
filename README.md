@@ -148,6 +148,7 @@ uv run --with pytest pytest -q
 - `README.md` 同时展示 Codecov 总徽章，以及仓库内生成的 `backend` / `ai-service` 本地覆盖率徽章
 - 后端 CI 已拆分为独立的“lint/compile”、“测试覆盖率”、“打包”和“Docker build check”任务，覆盖率上传不再依赖 `package/verify`
 - 构建矩阵：AI service 覆盖 Python 3.11 / 3.12，前端覆盖 Node 18 / 20；后端按项目约束固定 Java 17，并保留 matrix 写法便于后续扩展
+- 监控配置见 `docs/monitoring.md`：后端与 AI Service 均提供 `/health`，后端通过 Actuator / Prometheus 暴露指标，AI Service 通过 `/metrics` 暴露轻量请求指标，服务日志统一按 JSON 行格式输出
 
 本地刷新覆盖率报告与徽章：
 
