@@ -18,9 +18,9 @@ spring:
 management:
   endpoints:
     web:
-      base-path: /
+      base-path: /actuator
       exposure:
-        include: health
+        include: health,info,metrics,prometheus
 
 amap:
   key: ${AMAP_KEY}
