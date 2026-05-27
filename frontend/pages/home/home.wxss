@@ -335,6 +335,28 @@
   font-size: 22rpx;
 }
 
+.shake-actions {
+  margin-top: 24rpx;
+  width: 100%;
+}
+
+.shake-btn {
+  width: 100%;
+  padding: 20rpx 0;
+  background: #fff;
+  color: #F97316;
+  font-size: 30rpx;
+  font-weight: 700;
+  border-radius: 48rpx;
+  text-align: center;
+  border: none;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.15);
+}
+
+.shake-btn::after {
+  border: none;
+}
+
 .shake-tip {
   color: rgba(255, 255, 255, 0.7);
   font-size: 24rpx;

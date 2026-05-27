@@ -1,5 +1,9 @@
 // pages/home/home.js
 import { AI_CHAT_SESSION_KEY, shouldRestoreAiChatState } from '../../utils/ai-chat-session';
+import { GetRandomRecommendation } from '../../api/recommendations';
+import { mapApiRestaurantToCard } from '../../api/restaurants';
+import { CreateChoiceHistory } from '../../api/user-signals';
+import { extractRestaurantList } from '../../utils/restaurant-state';
 
 const app = getApp();
 
@@ -199,32 +203,75 @@ Page({
   },
 
   // 摇一摇
-  handleShake() {
+  async handleShake() {
     if (this.data.shaking) return;
 
-    const actives = app.getActiveRestaurants();
-    if (actives.length === 0) {
-      wx.showToast({
-        title: '暂时没有可选餐厅',
-        icon: 'none'
-      });
-      return;
+    this.setData({ shaking: true });
+    wx.vibrateShort({ type: 'medium' });
+
+    try {
+      const userId = app.getCurrentUserId();
+      let pick = null;
+
+      if (userId) {
+        try {
+          const location = await app.resolveCurrentLocation({ forceRefresh: true });
+          const response = await GetRandomRecommendation({
+            userId,
+            longitude: location.longitude,
+            latitude: location.latitude,
+            radius: 3000
+          });
+          const list = extractRestaurantList(response).map(mapApiRestaurantToCard);
+          if (list.length > 0) {
+            pick = list[0];
+          }
+        } catch (e) {
+          console.warn('随机推荐接口失败，回退到本地随机', e);
+        }
+      }
+
+      if (!pick) {
+        const actives = app.getActiveRestaurants();
+        if (actives.length === 0) {
+          this.setData({ shaking: false });
+          wx.showToast({ title: '暂时没有可选餐厅', icon: 'none' });
+          return;
+        }
+        pick = actives[Math.floor(Math.random() * actives.length)];
+      }
+
+      setTimeout(() => {
+        this.setData({
+          shaking: false,
+          shakeResult: pick
+        });
+      }, 800);
+    } catch (err) {
+      this.setData({ shaking: false });
+      wx.showToast({ title: '摇一摇失败，请重试', icon: 'none' });
+    }
+  },
+
+  // 就吃这家
+  async chooseShakeResult() {
+    const pick = this.data.shakeResult;
+    if (!pick) return;
+
+    const userId = app.getCurrentUserId();
+    if (userId && pick.poiId) {
+      try {
+        await CreateChoiceHistory(userId, {
+          poiId: pick.poiId,
+          poiName: pick.name || ''
+        });
+      } catch (e) {}
     }
 
-    this.setData({ shaking: true });
-
-    // 触发震动反馈
-    wx.vibrateShort({
-      type: 'medium'
+    this.closeShakeResult();
+    wx.navigateTo({
+      url: `/pages/detail/detail?id=${pick.id}`
     });
-
-    setTimeout(() => {
-      const pick = actives[Math.floor(Math.random() * actives.length)];
-      this.setData({
-        shaking: false,
-        shakeResult: pick
-      });
-    }, 800);
   },
 
   goToShakeDetail() {

@@ -84,6 +84,10 @@
         </view>
       </view>
 
+      <view class="shake-actions">
+        <button class="shake-btn" catchtap="chooseShakeResult">就吃这家</button>
+      </view>
+
       <text class="shake-tip">点击空白处关闭</text>
     </view>
   </view>
