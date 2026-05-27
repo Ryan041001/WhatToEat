@@ -1,4 +1,9 @@
 // pages/spin/spin.js
+import { GetRecommendationCards } from '../../api/recommendations';
+import { mapApiRestaurantToCard } from '../../api/restaurants';
+import { CreateChoiceHistory } from '../../api/user-signals';
+import { extractRestaurantList } from '../../utils/restaurant-state';
+
 const app = getApp();
 const {
   attachDisplayNames,
@@ -82,11 +87,35 @@ Page({
     this.cancelSpinAnimation();
     this.clearRevealTimer();
 
-    await app.bootstrapRestaurants({
-      force: true,
-      forceLocationRefresh: true
-    });
-    const allRestaurants = app.getActiveRestaurants();
+    let allRestaurants = [];
+
+    const userId = app.getCurrentUserId();
+    if (userId) {
+      try {
+        const location = await app.resolveCurrentLocation({ forceRefresh: true });
+        const response = await GetRecommendationCards({
+          userId,
+          longitude: location.longitude,
+          latitude: location.latitude,
+          radius: 3000,
+          size: WHEEL_POOL_SIZE
+        });
+        allRestaurants = app.applyBlacklistState(
+          extractRestaurantList(response).map(mapApiRestaurantToCard)
+        ).filter((r) => !r.isBlacklisted);
+      } catch (e) {
+        console.warn('推荐卡片接口失败，回退到本地缓存', e);
+      }
+    }
+
+    if (allRestaurants.length === 0) {
+      await app.bootstrapRestaurants({
+        force: true,
+        forceLocationRefresh: true
+      });
+      allRestaurants = app.getActiveRestaurants();
+    }
+
     const restaurants = attachDisplayNames(this.pickRandomRestaurants(allRestaurants, WHEEL_POOL_SIZE));
 
     this.setData({
@@ -380,6 +409,25 @@ Page({
     const { result } = this.data;
     if (!result || !result.id) {
       return;
+    }
+
+    wx.navigateTo({
+      url: `/pages/detail/detail?id=${result.id}`
+    });
+  },
+
+  async chooseThisRestaurant() {
+    const { result } = this.data;
+    if (!result) return;
+
+    const userId = app.getCurrentUserId();
+    if (userId && result.poiId) {
+      try {
+        await CreateChoiceHistory(userId, {
+          poiId: result.poiId,
+          poiName: result.fullName || result.displayName || ''
+        });
+      } catch (e) {}
     }
 
     wx.navigateTo({

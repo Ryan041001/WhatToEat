@@ -84,7 +84,10 @@
           <view class="result-tags">
             <text class="tag" wx:for="{{result.tags}}" wx:key="*this">{{item}}</text>
           </view>
-          <button class="result-detail-btn" bindtap="goToResultDetail">查看详情</button>
+          <view class="result-btns">
+            <button class="result-detail-btn" bindtap="goToResultDetail">查看详情</button>
+            <button class="result-choose-btn" bindtap="chooseThisRestaurant">就吃这家</button>
+          </view>
         </view>
       </view>
     </view>
