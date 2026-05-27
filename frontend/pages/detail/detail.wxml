@@ -213,6 +213,48 @@
         </view>
       </view>
 
+      <view class="comment-card glass-panel-soft">
+        <view class="comment-head">
+          <text class="section-label">我的备注</text>
+          <text class="comment-count" wx:if="{{notesLoading}}">加载中...</text>
+          <text class="comment-count" wx:else>{{notes.length}} 条</text>
+        </view>
+
+        <view class="comment-empty" wx:if="{{!notesLoading && notes.length === 0 && !editingNoteId}}">
+          <text>还没有备注，记录一些私人想法吧</text>
+        </view>
+
+        <view class="note-list" wx:if="{{notes.length > 0}}">
+          <view class="note-item" wx:for="{{notes}}" wx:key="id">
+            <view class="note-item-head">
+              <text class="note-time">{{item.updatedAt}}</text>
+              <view class="note-actions">
+                <text class="note-action" bindtap="startEditNote" data-noteid="{{item.id}}">编辑</text>
+                <text class="note-action note-action-delete" bindtap="deleteNote" data-noteid="{{item.id}}">删除</text>
+              </view>
+            </view>
+            <text class="note-content">{{item.content}}</text>
+          </view>
+        </view>
+
+        <view class="note-editor">
+          <textarea
+            class="note-input"
+            placeholder="记录一些私人备注，比如口味偏好、推荐菜品..."
+            maxlength="2000"
+            auto-height
+            value="{{noteContent}}"
+            bindinput="onNoteContentInput"
+          ></textarea>
+          <view class="note-editor-actions">
+            <button class="note-cancel-btn" wx:if="{{editingNoteId}}" bindtap="cancelEditNote">取消编辑</button>
+            <button class="note-submit-btn" loading="{{submittingNote}}" bindtap="submitNote">
+              {{editingNoteId ? '更新备注' : '保存备注'}}
+            </button>
+          </view>
+        </view>
+      </view>
+
       <view class="actions glass-panel-soft">
         <button class="btn ghost" bindtap="goBack">返回</button>
         <button class="btn primary" bindtap="toggleBlacklist">
