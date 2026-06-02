@@ -87,7 +87,7 @@ GET /health
 
 ### 后端指标
 
-后端使用 Spring Boot Actuator + Micrometer + Prometheus，开发与测试环境暴露：
+后端使用 Spring Boot Actuator + Micrometer + Prometheus，开发、测试与本地 Docker profile 暴露：
 
 ```text
 GET /actuator/metrics
@@ -101,7 +101,7 @@ GET /actuator/prometheus
 - 5xx 错误请求数量与比例
 - JVM、线程、数据库连接池等运行时指标
 
-生产默认只暴露健康检查；如果需要接入 Prometheus，应在受控网络内显式开放 `prometheus` 端点。
+面向生产部署时，如果不希望暴露指标端点，应在生产专用 profile 中收紧 Actuator 暴露范围，只保留 `health`；如果需要接入 Prometheus，应在受控网络内开放 `prometheus` 端点。
 
 ### AI Service 指标
 
