@@ -10,7 +10,7 @@ public class HealthController {
 
     private final String version;
 
-    public HealthController(@Value("${app.version:1.0.0}") String version) {
+    public HealthController(@Value("${app.version:0.0.1-SNAPSHOT}") String version) {
         this.version = version;
     }
 

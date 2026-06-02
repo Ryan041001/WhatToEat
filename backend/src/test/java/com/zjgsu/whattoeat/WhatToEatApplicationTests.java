@@ -41,6 +41,15 @@ class WhatToEatApplicationTests {
 	}
 
 	@Test
+	void rootHealthShouldExposeMonitoringHomeworkShape() throws Exception {
+		mockMvc.perform(get("/health"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value("healthy"))
+				.andExpect(jsonPath("$.version").value("0.0.1-SNAPSHOT"))
+				.andExpect(jsonPath("$.timestamp").isString());
+	}
+
+	@Test
 	void actuatorPrometheusShouldBeAccessible() throws Exception {
 		mockMvc.perform(get("/actuator/prometheus"))
 				.andExpect(status().isOk())

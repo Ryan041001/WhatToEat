@@ -27,7 +27,7 @@ public class TraceIdFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String requestUri = request.getRequestURI();
-        return "/actuator".equals(requestUri) || requestUri.startsWith("/actuator/");
+        return "/health".equals(requestUri) || "/actuator".equals(requestUri) || requestUri.startsWith("/actuator/");
     }
 
     @Override
