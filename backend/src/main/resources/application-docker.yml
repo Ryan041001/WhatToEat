@@ -20,7 +20,7 @@ management:
     web:
       base-path: /actuator
       exposure:
-        include: health,metrics,prometheus
+        include: health,info,metrics,prometheus
 
 amap:
   key: ${AMAP_KEY}

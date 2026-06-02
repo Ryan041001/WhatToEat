@@ -8,20 +8,20 @@
 
 后端通过 `backend/src/main/resources/logback-spring.xml` 将控制台日志输出为 JSON 行格式，字段包括：
 
-- `time`
+- `@timestamp`
 - `level`
 - `application`
-- `thread`
-- `logger`
-- `traceId`
+- `thread_name`
+- `logger_name`
 - `message`
+- `traceId`（业务请求由 MDC 写入）
 
 业务请求会经过 `TraceIdFilter`，自动生成或复用 `X-Trace-Id`，并记录请求路径、方法、状态码和耗时。`/health` 与 `/actuator/**` 会跳过请求追踪日志，避免健康检查轮询污染业务日志。
 
 示例：
 
 ```json
-{"time":"2026-05-27T10:30:28.790+08:00","level":"INFO","application":"WhatToEat","thread":"main","logger":"c.z.w.common.web.TraceIdFilter","traceId":"trace-fixed-001","message":"request path=/api/v1/restaurants/nearby method=GET status=200 latencyMs=0 traceId=trace-fixed-001"}
+{"@timestamp":"2026-05-27T10:30:28.790+08:00","level":"INFO","application":"WhatToEat","thread_name":"main","logger_name":"com.zjgsu.whattoeat.common.web.TraceIdFilter","traceId":"trace-fixed-001","message":"request path=/api/v1/restaurants/nearby method=GET status=200 latencyMs=0 traceId=trace-fixed-001"}
 ```
 
 ### AI Service
@@ -54,7 +54,7 @@ GET /health
 ```json
 {
   "status": "healthy",
-  "timestamp": "2026-05-27T10:30:28.687922+08:00",
+  "timestamp": "2026-05-27T10:30:28.687922Z",
   "version": "0.0.1-SNAPSHOT"
 }
 ```
@@ -91,6 +91,7 @@ GET /health
 
 ```text
 GET /actuator/metrics
+GET /actuator/metrics/http.server.requests
 GET /actuator/prometheus
 ```
 
@@ -101,7 +102,7 @@ GET /actuator/prometheus
 - 5xx 错误请求数量与比例
 - JVM、线程、数据库连接池等运行时指标
 
-面向生产部署时，如果不希望暴露指标端点，应在生产专用 profile 中收紧 Actuator 暴露范围，只保留 `health`；如果需要接入 Prometheus，应在受控网络内开放 `prometheus` 端点。
+Docker profile 中 Actuator 基础路径为 `/actuator`，并暴露 `health`、`info`、`metrics`、`prometheus`。面向生产部署时，如果不希望暴露指标端点，应在生产专用 profile 中收紧 Actuator 暴露范围，只保留 `health`；如果需要接入 Prometheus，应在受控网络内开放 `prometheus` 端点。
 
 ### AI Service 指标
 
