@@ -5,6 +5,12 @@ import {
   UpsertMyRestaurantReview,
   DeleteMyRestaurantReview
 } from '../../api/reviews';
+import {
+  ListNotes,
+  CreateNote,
+  UpdateNote,
+  DeleteNote
+} from '../../api/notes';
 
 const app = getApp();
 
@@ -134,7 +140,12 @@ Page({
     hasReviewed: false,
     reviewForm: createReviewForm(),
     ratingStars: buildRatingStars(null),
-    ratingText: formatRatingText(null)
+    ratingText: formatRatingText(null),
+    notes: [],
+    notesLoading: false,
+    noteContent: '',
+    editingNoteId: null,
+    submittingNote: false
   },
 
   onLoad(options) {
@@ -395,7 +406,8 @@ Page({
     await Promise.all([
       this.loadSummary(),
       this.loadPublicReviews(),
-      this.loadMyReview()
+      this.loadMyReview(),
+      this.loadNotes()
     ]);
   },
 
@@ -452,6 +464,117 @@ Page({
     wx.navigateBack({
       fail: () => {
         wx.redirectTo({ url: '/pages/home/home' });
+      }
+    });
+  },
+
+  // --- 备注模块 ---
+
+  async loadNotes() {
+    const userId = this.getCurrentUserId();
+    if (!userId || !this.data.poiId) {
+      this.setData({ notes: [] });
+      return;
+    }
+
+    this.setData({ notesLoading: true });
+    try {
+      const response = await ListNotes(userId, { poiId: this.data.poiId, page: 1, size: 50 });
+      const data = response && response.data !== undefined ? response.data : response;
+      const items = Array.isArray(data) ? data : (data && data.items ? data.items : (data && data.records ? data.records : []));
+      const notes = items.map((item) => ({
+        id: item.id || item.noteId,
+        content: item.content || '',
+        updatedAt: this.formatDateTime(item.updatedAt || item.createdAt)
+      }));
+      this.setData({ notes });
+    } catch (error) {
+      this.setData({ notes: [] });
+    } finally {
+      this.setData({ notesLoading: false });
+    }
+  },
+
+  onNoteContentInput(event) {
+    const value = (event && event.detail ? event.detail.value : '').slice(0, 2000);
+    this.setData({ noteContent: value });
+  },
+
+  startEditNote(event) {
+    const noteId = event.currentTarget.dataset.noteid;
+    const note = this.data.notes.find((n) => String(n.id) === String(noteId));
+    if (!note) return;
+
+    this.setData({
+      editingNoteId: noteId,
+      noteContent: note.content
+    });
+  },
+
+  cancelEditNote() {
+    this.setData({
+      editingNoteId: null,
+      noteContent: ''
+    });
+  },
+
+  async submitNote() {
+    const userId = this.getCurrentUserId();
+    if (!userId) {
+      wx.showToast({ title: '请先登录', icon: 'none' });
+      return;
+    }
+
+    const content = String(this.data.noteContent || '').trim();
+    if (!content) {
+      wx.showToast({ title: '备注内容不能为空', icon: 'none' });
+      return;
+    }
+
+    this.setData({ submittingNote: true });
+    try {
+      if (this.data.editingNoteId) {
+        await UpdateNote(userId, this.data.editingNoteId, { content });
+        wx.showToast({ title: '备注已更新', icon: 'success' });
+      } else {
+        await CreateNote(userId, {
+          poiId: this.data.poiId,
+          poiNameSnapshot: this.data.restaurant ? this.data.restaurant.name : '',
+          content
+        });
+        wx.showToast({ title: '备注已保存', icon: 'success' });
+      }
+
+      this.setData({ editingNoteId: null, noteContent: '' });
+      await this.loadNotes();
+    } catch (error) {
+      wx.showToast({ title: error.message || '保存失败', icon: 'none' });
+    } finally {
+      this.setData({ submittingNote: false });
+    }
+  },
+
+  deleteNote(event) {
+    const userId = this.getCurrentUserId();
+    const noteId = event.currentTarget.dataset.noteid;
+    if (!userId || !noteId) return;
+
+    wx.showModal({
+      title: '删除备注',
+      content: '确认删除这条备注吗？',
+      success: async (res) => {
+        if (!res.confirm) return;
+
+        try {
+          await DeleteNote(userId, noteId);
+          wx.showToast({ title: '备注已删除', icon: 'success' });
+          if (String(this.data.editingNoteId) === String(noteId)) {
+            this.setData({ editingNoteId: null, noteContent: '' });
+          }
+          await this.loadNotes();
+        } catch (error) {
+          wx.showToast({ title: error.message || '删除失败', icon: 'none' });
+        }
       }
     });
   }

@@ -363,9 +363,14 @@
   font-weight: 500;
 }
 
-.result-detail-btn {
+.result-btns {
   margin-top: 16rpx;
-  width: 180rpx;
+  display: flex;
+  gap: 16rpx;
+}
+
+.result-detail-btn {
+  flex: 1;
   height: 58rpx;
   line-height: 58rpx;
   padding: 0;
@@ -378,6 +383,23 @@
 }
 
 .result-detail-btn::after {
+  border: none;
+}
+
+.result-choose-btn {
+  flex: 1;
+  height: 58rpx;
+  line-height: 58rpx;
+  padding: 0;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #F97316;
+  background: #fff;
+  border: 2rpx solid #F97316;
+}
+
+.result-choose-btn::after {
   border: none;
 }
 

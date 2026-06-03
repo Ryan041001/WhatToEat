@@ -33,6 +33,23 @@
     </view>
   </view>
 
+  <view class="search-shell page-gutter">
+    <view class="search-bar">
+      <view class="search-icon"><view class="app-icon icon-search icon-fill"></view></view>
+      <input
+        class="search-input"
+        placeholder="搜索餐厅名称、分类..."
+        value="{{searchKeyword}}"
+        bindinput="onSearchInput"
+        bindconfirm="onSearchConfirm"
+        confirm-type="search"
+      />
+      <view class="search-clear" wx:if="{{searchKeyword}}" bindtap="clearSearch">
+        <text class="search-clear-text">清除</text>
+      </view>
+    </view>
+  </view>
+
   <view class="filters-shell">
     <view class="filters page-gutter glass-panel">
       <view class="filters-heading">
@@ -226,7 +243,7 @@
         bindtap="openDetail"
         data-id="{{item.id}}"
       >
-        <image class="card-image" src="{{item.image}}" mode="aspectFill"></image>
+        <image class="card-image" src="{{item.image}}" mode="aspectFill" lazy-load></image>
         <view class="card-info">
           <view class="card-header">
             <text class="card-name">{{item.name}}</text>

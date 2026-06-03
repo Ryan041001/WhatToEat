@@ -1,4 +1,9 @@
 // pages/swipe/swipe.js
+import { GetRecommendationCards } from '../../api/recommendations';
+import { mapApiRestaurantToCard } from '../../api/restaurants';
+import { CreateRecommendationFeedback } from '../../api/user-signals';
+import { extractRestaurantList } from '../../utils/restaurant-state';
+
 const app = getApp();
 const SWIPE_RESULT_CACHE_KEY = 'swipe_result_snapshot';
 
@@ -42,11 +47,36 @@ Page({
   async loadData() {
     try {
       wx.removeStorageSync(SWIPE_RESULT_CACHE_KEY);
-      await app.bootstrapRestaurants({
-        force: true,
-        forceLocationRefresh: true
-      });
-      const restaurants = app.getActiveRestaurants();
+
+      const userId = app.getCurrentUserId();
+      let restaurants = [];
+
+      if (userId) {
+        try {
+          const location = await app.resolveCurrentLocation({ forceRefresh: true });
+          const response = await GetRecommendationCards({
+            userId,
+            longitude: location.longitude,
+            latitude: location.latitude,
+            radius: 3000,
+            size: 20
+          });
+          restaurants = app.applyBlacklistState(
+            extractRestaurantList(response).map(mapApiRestaurantToCard)
+          ).filter((r) => !r.isBlacklisted);
+        } catch (e) {
+          console.warn('推荐卡片接口失败，回退到本地缓存', e);
+        }
+      }
+
+      if (restaurants.length === 0) {
+        await app.bootstrapRestaurants({
+          force: true,
+          forceLocationRefresh: true
+        });
+        restaurants = app.getActiveRestaurants();
+      }
+
       this.setData({
         restaurants,
         currentIndex: 0,
@@ -184,14 +214,27 @@ Page({
   // 下一张卡片
   nextCard(isLike) {
     const { currentIndex, restaurants, likedRestaurants } = this.data;
-    
+
     if (currentIndex >= restaurants.length) return;
-    
+
+    // 左滑不喜欢时写入推荐反馈
+    if (!isLike) {
+      const passed = restaurants[currentIndex];
+      const userId = app.getCurrentUserId();
+      if (userId && passed && passed.poiId) {
+        CreateRecommendationFeedback(userId, {
+          poiId: passed.poiId,
+          poiNameSnapshot: passed.name || '',
+          feedbackType: 'DONT_WANT_THIS_TODAY'
+        }).catch(() => {});
+      }
+    }
+
     // 记录喜欢的餐厅
     const nextLikedRestaurants = isLike
       ? [...likedRestaurants, restaurants[currentIndex]]
       : likedRestaurants;
-    
+
     const newIndex = currentIndex + 1;
     
     // 检查是否完成

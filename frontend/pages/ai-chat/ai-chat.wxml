@@ -58,7 +58,7 @@
               wx:key="poiId"
               style="{{card.enterStyle}}"
             >
-              <image class="card-image" src="{{card.image}}" mode="aspectFill"></image>
+              <image class="card-image" src="{{card.image}}" mode="aspectFill" lazy-load></image>
               <view class="card-info">
                 <view class="card-header">
                   <view class="card-name-row">

@@ -72,7 +72,7 @@
       </view>
 
       <view class="result-info">
-        <image class="result-image" src="{{result.image}}" mode="aspectFill"></image>
+        <image class="result-image" src="{{result.image}}" mode="aspectFill" lazy-load></image>
         <view class="result-body">
           <view class="result-meta">
             <text class="result-category">{{result.category}}</text>
@@ -84,7 +84,10 @@
           <view class="result-tags">
             <text class="tag" wx:for="{{result.tags}}" wx:key="*this">{{item}}</text>
           </view>
-          <button class="result-detail-btn" bindtap="goToResultDetail">查看详情</button>
+          <view class="result-btns">
+            <button class="result-detail-btn" bindtap="goToResultDetail">查看详情</button>
+            <button class="result-choose-btn" bindtap="chooseThisRestaurant">就吃这家</button>
+          </view>
         </view>
       </view>
     </view>

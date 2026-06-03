@@ -1,6 +1,6 @@
 <!-- 餐厅卡片组件 -->
 <view class="restaurant-card" bindtap="onTap">
-  <image class="restaurant-image" src="{{restaurant.image || '/assets/restaurant-1.svg'}}" mode="aspectFill"></image>
+  <image class="restaurant-image" src="{{restaurant.image || '/assets/restaurant-1.svg'}}" mode="aspectFill" lazy-load></image>
   <view class="restaurant-info">
     <view class="restaurant-name">{{restaurant.name}}</view>
     <view class="restaurant-meta">

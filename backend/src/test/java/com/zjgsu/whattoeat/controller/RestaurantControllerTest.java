@@ -1,5 +1,7 @@
 package com.zjgsu.whattoeat.controller;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.zjgsu.whattoeat.common.error.BusinessException;
 import com.zjgsu.whattoeat.common.error.ErrorCode;
 import com.zjgsu.whattoeat.integration.amap.AmapClient;
@@ -32,16 +34,19 @@ class RestaurantControllerTest {
     private AmapClient amapClient;
     private RestaurantMetricSnapshotRepository restaurantMetricSnapshotRepository;
     private SimpleMeterRegistry meterRegistry;
+    private Cache<String, RestaurantMetricSnapshotEntity> snapshotCache;
 
     @BeforeEach
     void setUp() {
         amapClient = mock(AmapClient.class);
         restaurantMetricSnapshotRepository = mock(RestaurantMetricSnapshotRepository.class);
         meterRegistry = new SimpleMeterRegistry();
+        snapshotCache = Caffeine.newBuilder().maximumSize(100).build();
         RestaurantQueryApplicationService queryService = new RestaurantQueryApplicationService(
                 amapClient,
                 restaurantMetricSnapshotRepository,
-                meterRegistry);
+                meterRegistry,
+                snapshotCache);
         mockMvc = MockMvcBuilders.standaloneSetup(new RestaurantController(queryService))
                 .setControllerAdvice(new com.zjgsu.whattoeat.common.web.GlobalExceptionHandler())
                 .build();

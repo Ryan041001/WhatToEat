@@ -1,5 +1,5 @@
 import { AddBlacklist, RemoveBlacklist } from '../../api/blacklist';
-import { GetNearbyRestaurants, mapApiRestaurantToCard } from '../../api/restaurants';
+import { GetNearbyRestaurants, SearchRestaurants, mapApiRestaurantToCard } from '../../api/restaurants';
 import { buildCategoryOptions } from '../../utils/restaurant-filters';
 import { extractRestaurantList } from '../../utils/restaurant-state';
 
@@ -72,8 +72,11 @@ Page({
     showSortModal: false,
     heroCollapsed: false,
     showAdvancedFilters: false,
-    filteredSummaryText: '按真实分类、人均和排序筛选'
+    filteredSummaryText: '按真实分类、人均和排序筛选',
+    searchKeyword: ''
   },
+
+  searchTimer: null,
 
   onPageScroll(e) {
     const shouldCollapse = (e && e.scrollTop ? e.scrollTop : 0) > 72;
@@ -86,6 +89,45 @@ Page({
     this.loadData();
   },
 
+  onSearchInput(e) {
+    const keyword = (e && e.detail ? e.detail.value : '') || '';
+    this.setData({ searchKeyword: keyword });
+
+    // 300ms 防抖：停止输入后自动搜索
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+    }
+    this.searchTimer = setTimeout(() => {
+      this.searchTimer = null;
+      this.loadData({ scrollToTop: true });
+    }, 300);
+  },
+
+  onSearchConfirm() {
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+      this.searchTimer = null;
+    }
+    this.loadData({ scrollToTop: true });
+  },
+
+  clearSearch() {
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+      this.searchTimer = null;
+    }
+    this.setData({ searchKeyword: '' }, () => {
+      this.loadData({ scrollToTop: true });
+    });
+  },
+
+  onUnload() {
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+      this.searchTimer = null;
+    }
+  },
+
   async loadData(options = {}) {
     const { scrollToTop = false } = options;
     this.setData({ loading: true, error: '', showSortModal: false });
@@ -96,6 +138,8 @@ Page({
       });
       await app.loadBlacklistPoiIds();
 
+      const keyword = String(this.data.searchKeyword || '').trim();
+
       const params = {
         longitude: location.longitude,
         latitude: location.latitude,
@@ -104,6 +148,10 @@ Page({
         size: 30,
         sort: this.data.selectedSort
       };
+
+      if (keyword) {
+        params.keyword = keyword;
+      }
 
       const priceRange = this.getActivePriceRange();
       if (this.data.selectedCategory) {
@@ -116,7 +164,8 @@ Page({
         params.maxAvgPerCapitaPrice = priceRange.maxPrice;
       }
 
-      const response = await GetNearbyRestaurants(params);
+      const fetchFn = keyword ? SearchRestaurants : GetNearbyRestaurants;
+      const response = await fetchFn(params);
       const restaurants = app
         .applyBlacklistState(extractRestaurantList(response).map(mapApiRestaurantToCard))
         .map(enrichRestaurant);

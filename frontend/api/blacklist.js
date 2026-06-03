@@ -17,3 +17,11 @@ export const AddBlacklist = async (userId, payload) => {
 export const RemoveBlacklist = async (userId, poiId) => {
   return await client.delete(`/users/${userId}/blacklist/${encodeURIComponent(poiId)}`);
 };
+
+export const GetBlacklistItem = async (userId, poiId) => {
+  return await client.get(`/users/${userId}/blacklist/${encodeURIComponent(poiId)}`, {}, { silent: true });
+};
+
+export const UpdateBlacklist = async (userId, poiId, payload) => {
+  return await client.put(`/users/${userId}/blacklist/${encodeURIComponent(poiId)}`, payload);
+};
