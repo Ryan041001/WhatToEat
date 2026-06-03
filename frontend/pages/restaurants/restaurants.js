@@ -76,6 +76,8 @@ Page({
     searchKeyword: ''
   },
 
+  searchTimer: null,
+
   onPageScroll(e) {
     const shouldCollapse = (e && e.scrollTop ? e.scrollTop : 0) > 72;
     if (shouldCollapse !== this.data.heroCollapsed) {
@@ -88,19 +90,42 @@ Page({
   },
 
   onSearchInput(e) {
-    this.setData({
-      searchKeyword: (e && e.detail ? e.detail.value : '') || ''
-    });
+    const keyword = (e && e.detail ? e.detail.value : '') || '';
+    this.setData({ searchKeyword: keyword });
+
+    // 300ms 防抖：停止输入后自动搜索
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+    }
+    this.searchTimer = setTimeout(() => {
+      this.searchTimer = null;
+      this.loadData({ scrollToTop: true });
+    }, 300);
   },
 
   onSearchConfirm() {
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+      this.searchTimer = null;
+    }
     this.loadData({ scrollToTop: true });
   },
 
   clearSearch() {
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+      this.searchTimer = null;
+    }
     this.setData({ searchKeyword: '' }, () => {
       this.loadData({ scrollToTop: true });
     });
+  },
+
+  onUnload() {
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+      this.searchTimer = null;
+    }
   },
 
   async loadData(options = {}) {
