@@ -1,5 +1,6 @@
 package com.zjgsu.whattoeat.service.application;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import com.zjgsu.whattoeat.common.error.BusinessException;
 import com.zjgsu.whattoeat.common.error.ErrorCode;
 import com.zjgsu.whattoeat.integration.amap.AmapClient;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,14 +41,17 @@ public class RestaurantQueryApplicationService {
     private final AmapClient amapClient;
     private final RestaurantMetricSnapshotRepository restaurantMetricSnapshotRepository;
     private final MeterRegistry meterRegistry;
+    private final Cache<String, RestaurantMetricSnapshotEntity> snapshotCache;
 
     public RestaurantQueryApplicationService(
             AmapClient amapClient,
             RestaurantMetricSnapshotRepository restaurantMetricSnapshotRepository,
-            MeterRegistry meterRegistry) {
+            MeterRegistry meterRegistry,
+            Cache<String, RestaurantMetricSnapshotEntity> snapshotCache) {
         this.amapClient = amapClient;
         this.restaurantMetricSnapshotRepository = restaurantMetricSnapshotRepository;
         this.meterRegistry = meterRegistry;
+        this.snapshotCache = snapshotCache;
     }
 
     public RestaurantPage nearby(double longitude, double latitude, int radius, int page, int size) {
@@ -124,6 +129,34 @@ public class RestaurantQueryApplicationService {
         }
     }
 
+    /**
+     * 带 Caffeine 缓存的快照批量加载。
+     * 先查缓存，缺失的 key 批量查 DB 并回填缓存。
+     */
+    private Map<String, RestaurantMetricSnapshotEntity> loadSnapshotsWithCache(List<String> poiIds) {
+        Map<String, RestaurantMetricSnapshotEntity> result = new HashMap<>();
+        List<String> missedIds = new ArrayList<>();
+
+        for (String poiId : poiIds) {
+            RestaurantMetricSnapshotEntity cached = snapshotCache.getIfPresent(poiId);
+            if (cached != null) {
+                result.put(poiId, cached);
+            } else {
+                missedIds.add(poiId);
+            }
+        }
+
+        if (!missedIds.isEmpty()) {
+            List<RestaurantMetricSnapshotEntity> fromDb = restaurantMetricSnapshotRepository.findAllById(missedIds);
+            for (RestaurantMetricSnapshotEntity snapshot : fromDb) {
+                snapshotCache.put(snapshot.getPoiId(), snapshot);
+                result.put(snapshot.getPoiId(), snapshot);
+            }
+        }
+
+        return result;
+    }
+
     private void incrementRequestCounter(String scene, String result) {
         Counter.builder("restaurant.query.requests")
                 .tag("scene", scene)
@@ -183,10 +216,8 @@ public class RestaurantQueryApplicationService {
             int size,
             String sort,
             RestaurantFilters filters) {
-        Map<String, RestaurantMetricSnapshotEntity> snapshotByPoiId = restaurantMetricSnapshotRepository.findAllById(
-                        pois.stream().map(AmapPoi::poiId).toList())
-                .stream()
-                .collect(Collectors.toMap(RestaurantMetricSnapshotEntity::getPoiId, snapshot -> snapshot));
+        Map<String, RestaurantMetricSnapshotEntity> snapshotByPoiId = loadSnapshotsWithCache(
+                pois.stream().map(AmapPoi::poiId).toList());
 
         List<RestaurantListItem> items = pois.stream()
                 .map(poi -> {

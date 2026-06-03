@@ -1,5 +1,6 @@
 package com.zjgsu.whattoeat.service.application;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import com.zjgsu.whattoeat.model.entity.RestaurantMetricSnapshotEntity;
 import com.zjgsu.whattoeat.model.entity.RestaurantReviewEntity;
 import com.zjgsu.whattoeat.repository.RestaurantMetricSnapshotRepository;
@@ -16,12 +17,15 @@ public class RestaurantMetricAggregationService {
 
     private final RestaurantReviewRepository restaurantReviewRepository;
     private final RestaurantMetricSnapshotRepository restaurantMetricSnapshotRepository;
+    private final Cache<String, RestaurantMetricSnapshotEntity> snapshotCache;
 
     public RestaurantMetricAggregationService(
             RestaurantReviewRepository restaurantReviewRepository,
-            RestaurantMetricSnapshotRepository restaurantMetricSnapshotRepository) {
+            RestaurantMetricSnapshotRepository restaurantMetricSnapshotRepository,
+            Cache<String, RestaurantMetricSnapshotEntity> snapshotCache) {
         this.restaurantReviewRepository = restaurantReviewRepository;
         this.restaurantMetricSnapshotRepository = restaurantMetricSnapshotRepository;
+        this.snapshotCache = snapshotCache;
     }
 
     @Transactional
@@ -40,7 +44,9 @@ public class RestaurantMetricAggregationService {
             snapshot.setAvgPerCapitaPrice(null);
             snapshot.setAiStatus("idle");
             snapshot.setLastReviewAt(null);
-            return restaurantMetricSnapshotRepository.saveAndFlush(snapshot);
+            RestaurantMetricSnapshotEntity saved = restaurantMetricSnapshotRepository.saveAndFlush(snapshot);
+            snapshotCache.invalidate(poiId);
+            return saved;
         }
 
         BigDecimal totalRating = BigDecimal.ZERO;
@@ -56,6 +62,8 @@ public class RestaurantMetricAggregationService {
         snapshot.setAvgPerCapitaPrice(totalPrice.divide(reviewCount, 0, RoundingMode.HALF_UP).intValue());
         snapshot.setAiStatus("pending");
         snapshot.setLastReviewAt(reviews.get(0).getUpdatedAt());
-        return restaurantMetricSnapshotRepository.saveAndFlush(snapshot);
+        RestaurantMetricSnapshotEntity saved = restaurantMetricSnapshotRepository.saveAndFlush(snapshot);
+        snapshotCache.invalidate(poiId);
+        return saved;
     }
 }
