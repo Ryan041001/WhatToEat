@@ -116,7 +116,10 @@ App({
 			latitude: Number(location.latitude)
 		};
 		this.globalData.location = normalized;
-		wx.setStorageSync(LOCATION_CACHE_KEY, normalized);
+		wx.setStorage({
+			key: LOCATION_CACHE_KEY,
+			data: normalized
+		});
 	},
 
 	async ensureLocationPermission() {
@@ -235,7 +238,10 @@ App({
 
 	cacheRestaurants(restaurants) {
 		this.globalData.restaurants = restaurants || [];
-		wx.setStorageSync(RESTAURANT_CACHE_KEY, this.globalData.restaurants);
+		wx.setStorage({
+			key: RESTAURANT_CACHE_KEY,
+			data: this.globalData.restaurants
+		});
 	},
 
 	setBlacklistPoiIds(poiIds = []) {
