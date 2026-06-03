@@ -1,12 +1,10 @@
 package com.zjgsu.whattoeat.service.application;
 
-import com.github.benmanes.caffeine.cache.Cache;
 import com.zjgsu.whattoeat.common.error.BusinessException;
 import com.zjgsu.whattoeat.common.error.ErrorCode;
 import com.zjgsu.whattoeat.integration.amap.AmapClient;
 import com.zjgsu.whattoeat.integration.amap.AmapPoi;
 import com.zjgsu.whattoeat.model.entity.RestaurantMetricSnapshotEntity;
-import com.zjgsu.whattoeat.repository.RestaurantMetricSnapshotRepository;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.stereotype.Service;
@@ -14,7 +12,6 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,22 +32,20 @@ public class RestaurantQueryApplicationService {
             SORT_AVG_PRICE_ASC,
             SORT_AVG_PRICE_DESC,
             SORT_SMART);
+    private static final int AMAP_PAGE_SIZE_LIMIT = 50;
     private static final int SORTED_CANDIDATE_MIN_SIZE = 20;
 
     private final AmapClient amapClient;
-    private final RestaurantMetricSnapshotRepository restaurantMetricSnapshotRepository;
     private final MeterRegistry meterRegistry;
-    private final Cache<String, RestaurantMetricSnapshotEntity> snapshotCache;
+    private final RestaurantMetricSnapshotLookup snapshotLookup;
 
     public RestaurantQueryApplicationService(
             AmapClient amapClient,
-            RestaurantMetricSnapshotRepository restaurantMetricSnapshotRepository,
             MeterRegistry meterRegistry,
-            Cache<String, RestaurantMetricSnapshotEntity> snapshotCache) {
+            RestaurantMetricSnapshotLookup snapshotLookup) {
         this.amapClient = amapClient;
-        this.restaurantMetricSnapshotRepository = restaurantMetricSnapshotRepository;
         this.meterRegistry = meterRegistry;
-        this.snapshotCache = snapshotCache;
+        this.snapshotLookup = snapshotLookup;
     }
 
     public RestaurantPage nearby(double longitude, double latitude, int radius, int page, int size) {
@@ -128,34 +123,6 @@ public class RestaurantQueryApplicationService {
         }
     }
 
-    /**
-     * 带 Caffeine 缓存的快照批量加载。
-     * 先查缓存，缺失的 key 批量查 DB 并回填缓存。
-     */
-    private Map<String, RestaurantMetricSnapshotEntity> loadSnapshotsWithCache(List<String> poiIds) {
-        Map<String, RestaurantMetricSnapshotEntity> result = new HashMap<>();
-        List<String> missedIds = new ArrayList<>();
-
-        for (String poiId : poiIds) {
-            RestaurantMetricSnapshotEntity cached = snapshotCache.getIfPresent(poiId);
-            if (cached != null) {
-                result.put(poiId, cached);
-            } else {
-                missedIds.add(poiId);
-            }
-        }
-
-        if (!missedIds.isEmpty()) {
-            List<RestaurantMetricSnapshotEntity> fromDb = restaurantMetricSnapshotRepository.findAllById(missedIds);
-            for (RestaurantMetricSnapshotEntity snapshot : fromDb) {
-                snapshotCache.put(snapshot.getPoiId(), snapshot);
-                result.put(snapshot.getPoiId(), snapshot);
-            }
-        }
-
-        return result;
-    }
-
     private void incrementRequestCounter(String scene, String result) {
         Counter.builder("restaurant.query.requests")
                 .tag("scene", scene)
@@ -184,9 +151,11 @@ public class RestaurantQueryApplicationService {
             String sort,
             RestaurantFilters filters) {
         if (!requiresCandidatePool(sort, filters)) {
-            return amapClient.searchNearby(longitude, latitude, radius, page, size);
+            return fetchAmapWindow(page, size, (amapPage, amapPageSize) ->
+                    amapClient.searchNearby(longitude, latitude, radius, amapPage, amapPageSize));
         }
-        return amapClient.searchNearby(longitude, latitude, radius, 1, candidatePoolSize(size));
+        return fetchAmapWindow(1, candidatePoolSize(size), (amapPage, amapPageSize) ->
+                amapClient.searchNearby(longitude, latitude, radius, amapPage, amapPageSize));
     }
 
     private AmapClient.AmapSearchResult fetchSearchCandidates(
@@ -199,9 +168,53 @@ public class RestaurantQueryApplicationService {
             String sort,
             RestaurantFilters filters) {
         if (!requiresCandidatePool(sort, filters)) {
-            return amapClient.searchByKeyword(keyword, longitude, latitude, radius, page, size);
+            return fetchAmapWindow(page, size, (amapPage, amapPageSize) ->
+                    amapClient.searchByKeyword(keyword, longitude, latitude, radius, amapPage, amapPageSize));
         }
-        return amapClient.searchByKeyword(keyword, longitude, latitude, radius, 1, candidatePoolSize(size));
+        return fetchAmapWindow(1, candidatePoolSize(size), (amapPage, amapPageSize) ->
+                amapClient.searchByKeyword(keyword, longitude, latitude, radius, amapPage, amapPageSize));
+    }
+
+    private AmapClient.AmapSearchResult fetchAmapWindow(int page, int size, AmapPageFetcher fetcher) {
+        if (size <= AMAP_PAGE_SIZE_LIMIT) {
+            return fetcher.fetch(page, size);
+        }
+
+        int startIndex = (page - 1) * size;
+        int amapPage = (startIndex / AMAP_PAGE_SIZE_LIMIT) + 1;
+        int skipInFirstPage = startIndex % AMAP_PAGE_SIZE_LIMIT;
+        int remaining = size;
+        long total = 0L;
+        boolean totalSeen = false;
+        List<AmapPoi> collected = new ArrayList<>();
+
+        while (remaining > 0) {
+            AmapClient.AmapSearchResult result = fetcher.fetch(amapPage, AMAP_PAGE_SIZE_LIMIT);
+            if (!totalSeen) {
+                total = result.total();
+                totalSeen = true;
+            }
+
+            List<AmapPoi> items = result.items();
+            if (items.isEmpty()) {
+                break;
+            }
+
+            int fromIndex = Math.min(skipInFirstPage, items.size());
+            for (int index = fromIndex; index < items.size() && remaining > 0; index++) {
+                collected.add(items.get(index));
+                remaining--;
+            }
+
+            if (items.size() < AMAP_PAGE_SIZE_LIMIT) {
+                break;
+            }
+
+            skipInFirstPage = 0;
+            amapPage++;
+        }
+
+        return new AmapClient.AmapSearchResult(List.copyOf(collected), totalSeen ? total : 0L);
     }
 
     private int candidatePoolSize(int size) {
@@ -215,7 +228,7 @@ public class RestaurantQueryApplicationService {
             int size,
             String sort,
             RestaurantFilters filters) {
-        Map<String, RestaurantMetricSnapshotEntity> snapshotByPoiId = loadSnapshotsWithCache(
+        Map<String, RestaurantMetricSnapshotEntity> snapshotByPoiId = snapshotLookup.findByPoiIds(
                 pois.stream().map(AmapPoi::poiId).toList());
 
         List<RestaurantListItem> items = pois.stream()
@@ -347,5 +360,10 @@ public class RestaurantQueryApplicationService {
             int reviewCount,
             Integer avgPerCapitaPrice,
             List<String> aiTags) {
+    }
+
+    @FunctionalInterface
+    private interface AmapPageFetcher {
+        AmapClient.AmapSearchResult fetch(int page, int size);
     }
 }

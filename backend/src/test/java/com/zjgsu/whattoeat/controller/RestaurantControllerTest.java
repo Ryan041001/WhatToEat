@@ -8,6 +8,7 @@ import com.zjgsu.whattoeat.integration.amap.AmapClient;
 import com.zjgsu.whattoeat.integration.amap.AmapPoi;
 import com.zjgsu.whattoeat.model.entity.RestaurantMetricSnapshotEntity;
 import com.zjgsu.whattoeat.repository.RestaurantMetricSnapshotRepository;
+import com.zjgsu.whattoeat.service.application.RestaurantMetricSnapshotLookup;
 import com.zjgsu.whattoeat.service.application.RestaurantQueryApplicationService;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,9 +45,8 @@ class RestaurantControllerTest {
         snapshotCache = Caffeine.newBuilder().maximumSize(100).build();
         RestaurantQueryApplicationService queryService = new RestaurantQueryApplicationService(
                 amapClient,
-                restaurantMetricSnapshotRepository,
                 meterRegistry,
-                snapshotCache);
+                new RestaurantMetricSnapshotLookup(restaurantMetricSnapshotRepository, snapshotCache));
         mockMvc = MockMvcBuilders.standaloneSetup(new RestaurantController(queryService))
                 .setControllerAdvice(new com.zjgsu.whattoeat.common.web.GlobalExceptionHandler())
                 .build();

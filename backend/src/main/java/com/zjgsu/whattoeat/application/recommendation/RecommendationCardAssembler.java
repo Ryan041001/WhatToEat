@@ -4,7 +4,7 @@ import com.zjgsu.whattoeat.domain.recommendation.RecommendationInsightHeuristics
 import com.zjgsu.whattoeat.infrastructure.ai.AiAssistantClient;
 import com.zjgsu.whattoeat.integration.amap.AmapPoi;
 import com.zjgsu.whattoeat.model.entity.RestaurantMetricSnapshotEntity;
-import com.zjgsu.whattoeat.repository.RestaurantMetricSnapshotRepository;
+import com.zjgsu.whattoeat.service.application.RestaurantMetricSnapshotLookup;
 import com.zjgsu.whattoeat.service.application.RestaurantMetricSnapshotViewSupport;
 import org.springframework.stereotype.Component;
 
@@ -20,17 +20,15 @@ import java.util.stream.Collectors;
 @Component
 final class RecommendationCardAssembler {
 
-    private final RestaurantMetricSnapshotRepository restaurantMetricSnapshotRepository;
+    private final RestaurantMetricSnapshotLookup snapshotLookup;
 
-    RecommendationCardAssembler(RestaurantMetricSnapshotRepository restaurantMetricSnapshotRepository) {
-        this.restaurantMetricSnapshotRepository = restaurantMetricSnapshotRepository;
+    RecommendationCardAssembler(RestaurantMetricSnapshotLookup snapshotLookup) {
+        this.snapshotLookup = snapshotLookup;
     }
 
     EnrichedRecommendationCandidates enrichCandidates(List<AmapPoi> candidates) {
-        Map<String, RestaurantMetricSnapshotEntity> snapshotByPoiId = restaurantMetricSnapshotRepository.findAllById(
-                        candidates.stream().map(AmapPoi::poiId).toList())
-                .stream()
-                .collect(Collectors.toMap(RestaurantMetricSnapshotEntity::getPoiId, snapshot -> snapshot));
+        Map<String, RestaurantMetricSnapshotEntity> snapshotByPoiId =
+                snapshotLookup.findByPoiIds(candidates.stream().map(AmapPoi::poiId).toList());
 
         List<RecommendationApplicationService.RecommendationCandidateCard> cards = new ArrayList<>();
         List<AiAssistantClient.RecommendationCandidate> aiCandidates = new ArrayList<>();

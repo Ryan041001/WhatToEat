@@ -861,7 +861,7 @@ components:
         default: 10
         minimum: 1
         maximum: 100
-      description: 可选；每页条数，默认 10，最大 100。
+      description: 可选；每页条数，默认 10，最大 100。餐厅查询在 size 超过高德单页上限时会由后端跨高德页拼接候选。
       example: 10
     RecommendationSize:
       name: size

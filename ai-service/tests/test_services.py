@@ -458,6 +458,76 @@ class RecommendationServiceTest(unittest.TestCase):
         answer_done = next(payload for name, payload in events if name == "answer.done")
         self.assertEqual("兰州拉面更合适。", answer_done["answer"])
 
+    def test_stream_recommend_should_preserve_full_streamed_answer(self) -> None:
+        long_answer = (
+            "现在更适合选清淡近一点的地方。"
+            "第一家三沐茶苑距离近，环境安静，适合下午喝茶休息，也不会像正餐店那样油腻；"
+            "第二家小何木薯羹口味清甜温和，适合想吃轻食甜汤，走路几分钟就能到，预算也比较稳；"
+            "第三家瑞幸咖啡离教学区近，饮品简单不油腻，适合不想走远的时候，搭配轻食也能解决下午犯饿。"
+            "这三家都在三四百米内，优先满足清淡和距离两个条件。"
+            "如果你想更像正餐一点就选木薯羹，想坐下来放松就选茶苑，赶时间就去瑞幸，整体都比重油重辣的店更贴近这轮问题。"
+        )
+        service = RecommendationService(
+            FakeStructuredModelClient(
+                tool_calls=[
+                    ModelToolCall(
+                        id="call-1",
+                        name="show_restaurant_card",
+                        arguments={"poiId": "poi-tea", "reason": "清淡安静", "rank": 1},
+                    ),
+                    ModelToolCall(
+                        id="call-2",
+                        name="show_restaurant_card",
+                        arguments={"poiId": "poi-dessert", "reason": "清甜温和", "rank": 2},
+                    ),
+                    ModelToolCall(
+                        id="call-3",
+                        name="show_restaurant_card",
+                        arguments={"poiId": "poi-coffee", "reason": "距离近", "rank": 3},
+                    ),
+                ],
+                text_response=long_answer,
+            )
+        )
+
+        events = list(service.stream_recommend(
+            RecommendationRequest(
+                question="我想吃清淡一点，不要太远，推荐三家并说明理由",
+                candidates=[
+                    RecommendationCandidate(
+                        poiId="poi-tea",
+                        name="三沐茶苑",
+                        address="学源街",
+                        category="餐饮",
+                        distance=286,
+                        reviewCount=0,
+                    ),
+                    RecommendationCandidate(
+                        poiId="poi-dessert",
+                        name="小何木薯羹",
+                        address="福雷德广场",
+                        category="餐饮",
+                        distance=343,
+                        reviewCount=0,
+                    ),
+                    RecommendationCandidate(
+                        poiId="poi-coffee",
+                        name="瑞幸咖啡",
+                        address="浙江理工大学",
+                        category="餐饮",
+                        distance=314,
+                        reviewCount=0,
+                    ),
+                ],
+            )
+        ))
+
+        streamed_answer = "".join(payload["delta"] for name, payload in events if name == "answer.delta")
+        answer_done = next(payload for name, payload in events if name == "answer.done")
+        self.assertGreater(len(long_answer), 200)
+        self.assertEqual(long_answer, streamed_answer)
+        self.assertEqual(long_answer, answer_done["answer"])
+
     def test_stream_recommend_should_fallback_to_json_choices_when_tool_calls_missing(self) -> None:
         service = RecommendationService(
             FakeStructuredModelClient(

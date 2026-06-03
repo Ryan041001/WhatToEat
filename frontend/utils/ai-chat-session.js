@@ -24,7 +24,8 @@ export function buildPersistedAiChatState(data = {}) {
           ...card,
           animateIn: false
         })) : [],
-        isStreaming: false
+        isStreaming: false,
+        hasStartedAnswer: Boolean(message.hasStartedAnswer)
       }))
     : [];
 
@@ -43,5 +44,26 @@ export function buildPersistedAiChatState(data = {}) {
     preferenceSummary: data.preferenceSummary || '',
     profileLoading: false,
     activeAssistantMessageId: ''
+  };
+}
+
+export function buildClearedAiChatState(data = {}) {
+  return {
+    question: '',
+    messages: [],
+    answerText: '',
+    status: 'idle',
+    statusText: '',
+    cards: [],
+    loading: false,
+    requestId: '',
+    messageId: '',
+    lastQuestion: '',
+    lastRejectedPoiIds: [],
+    preferenceSummary: data.preferenceSummary || '',
+    profileLoading: Boolean(data.profileLoading),
+    activeAssistantMessageId: '',
+    composerFocused: false,
+    scrollAnchorId: 'chat-bottom'
   };
 }
