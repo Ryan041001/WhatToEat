@@ -18,6 +18,9 @@ const DEVTOOLS_FALLBACK_LOCATION = {
 	longitude: 120.1551,
 	latitude: 30.2741
 };
+// 缓存TTL：餐厅数据3分钟，位置5分钟（位置变化慢，TTL更长）
+const BOOTSTRAP_TTL = 3 * 60 * 1000;
+const LOCATION_TTL = 5 * 60 * 1000;
 
 function isWechatDevtools() {
 	try {
@@ -34,7 +37,9 @@ App({
 		user: null,
 		token: '',
 		blacklistPoiIds: [],
-		location: null
+		location: null,
+		_lastBootstrapTs: 0,
+		_lastLocationTs: 0
 	},
 
 	onLaunch() {
@@ -177,6 +182,12 @@ App({
 			allowDevtoolsFallback = true
 		} = options;
 
+		// TTL 缓存：forceRefresh 时若仍在窗口内则降级为使用缓存
+		const now = Date.now();
+		if (forceRefresh && this.globalData.location && (now - this.globalData._lastLocationTs < LOCATION_TTL)) {
+			return this.globalData.location;
+		}
+
 		if (!forceRefresh && this.globalData.location) {
 			return this.globalData.location;
 		}
@@ -196,6 +207,7 @@ App({
 				longitude: Number(location.longitude),
 				latitude: Number(location.latitude)
 			};
+			this.globalData._lastLocationTs = Date.now();
 			this.cacheLocation(normalized);
 			return normalized;
 		} catch (error) {
@@ -279,6 +291,13 @@ App({
 			sort = 'distance',
 			forceLocationRefresh = force
 		} = options;
+
+		// TTL 缓存：force 时若仍在窗口内则降级为使用缓存
+		const now = Date.now();
+		if (force && this.globalData.restaurants.length >= 12 && (now - this.globalData._lastBootstrapTs < BOOTSTRAP_TTL)) {
+			return this.globalData.restaurants;
+		}
+
 		if (!force && sort === 'distance' && this.globalData.restaurants.length >= 12) {
 			return this.globalData.restaurants;
 		}
@@ -306,6 +325,7 @@ App({
 		}
 
 		const merged = mergeBlacklistState(list, blacklistPoiIds);
+		this.globalData._lastBootstrapTs = Date.now();
 		this.cacheRestaurants(merged);
 		return this.globalData.restaurants;
 	},
