@@ -72,7 +72,7 @@
       </view>
 
       <view class="result-info">
-        <image class="result-image" src="{{result.image}}" mode="aspectFill"></image>
+        <image class="result-image" src="{{result.image}}" mode="aspectFill" lazy-load></image>
         <view class="result-body">
           <view class="result-meta">
             <text class="result-category">{{result.category}}</text>

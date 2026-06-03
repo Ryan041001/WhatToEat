@@ -79,7 +79,7 @@
     </view>
     <view class="restaurant-list">
       <view class="restaurant-item glass-panel-soft" wx:for="{{userAdded}}" wx:key="id">
-        <image class="item-image" src="{{item.image}}" mode="aspectFill"></image>
+        <image class="item-image" src="{{item.image}}" mode="aspectFill" lazy-load></image>
         <view class="item-info">
           <text class="item-name">{{item.name}}</text>
           <text class="item-meta">{{item.category}} · {{item.distance}}</text>

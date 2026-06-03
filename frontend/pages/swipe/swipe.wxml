@@ -49,7 +49,7 @@
         <view class="card-stack">
           <block wx:for="{{visibleCards}}" wx:key="id">
             <view class="swipe-card card-{{index}} {{index === 0 && !isSwiping ? 'card-transition' : ''}}" style="{{item.style}} {{index === 0 ? 'transform: translateX(' + translateX + 'px) translateY(' + translateY + 'px) rotate(' + rotation + 'deg);' : ''}}">
-              <image class="card-bg" src="{{item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=500&fit=crop'}}" mode="aspectFill"></image>
+              <image class="card-bg" src="{{item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=500&fit=crop'}}" mode="aspectFill" lazy-load></image>
 
               <block wx:if="{{index === 0}}">
                 <view class="label label-pass" wx:if="{{swipeDirection === 'left'}}">
@@ -119,7 +119,7 @@
 
       <view class="result-list" wx:if="{{likedRestaurants.length > 0}}">
         <view class="result-card glass-panel" wx:for="{{likedRestaurants}}" wx:key="id" bindtap="openDetail" data-id="{{item.id}}">
-          <image class="result-image" src="{{item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=500&fit=crop'}}" mode="aspectFill"></image>
+          <image class="result-image" src="{{item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=500&fit=crop'}}" mode="aspectFill" lazy-load></image>
           <text class="result-name">{{item.name}}</text>
           <text class="result-subtitle">{{item.category || '美食'}}</text>
 

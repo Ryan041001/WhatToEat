@@ -67,7 +67,7 @@
       <text class="shake-label">摇到了！就吃</text>
 
       <view class="shake-card" bindtap="goToShakeDetail">
-        <image class="shake-card-image" src="{{shakeResult.image}}" mode="aspectFill"></image>
+        <image class="shake-card-image" src="{{shakeResult.image}}" mode="aspectFill" lazy-load></image>
         <view class="shake-card-body">
           <text class="shake-name">{{shakeResult.name}}</text>
           <view class="shake-card-meta">
@@ -125,7 +125,7 @@
     <view class="picks-list">
       <view class="pick-card" wx:for="{{topRated}}" wx:key="id" bindtap="goToDetail" data-id="{{item.id}}">
         <view class="pick-image-wrapper">
-          <image class="pick-image" src="{{item.image}}" mode="aspectFill"></image>
+          <image class="pick-image" src="{{item.image}}" mode="aspectFill" lazy-load></image>
           <view class="pick-rank rank-{{index}}">{{index + 1}}</view>
         </view>
         <view class="pick-info">
