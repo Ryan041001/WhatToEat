@@ -182,8 +182,8 @@ const request = (url, method = 'GET', data = {}, options = {}) => {
         });
       }
 
-      // 最终失败时提示（仅非静默模式）
-      if (!silent && attempt > 0) {
+      // 最终失败时提示（仅网络层面错误需要补充提示，业务错误已在 executeRequest 中提示）
+      if (!silent && err && err.retryable) {
         wx.showToast({
           title: '网络开小差了，请稍后重试',
           icon: 'none'
