@@ -1,10 +1,14 @@
 package com.zjgsu.whattoeat.application.recommendation;
 
-import com.zjgsu.whattoeat.repository.RestaurantMetricSnapshotRepository;
+import com.zjgsu.whattoeat.integration.amap.AmapPoi;
+import com.zjgsu.whattoeat.model.entity.RestaurantMetricSnapshotEntity;
+import com.zjgsu.whattoeat.service.application.RestaurantMetricSnapshotLookup;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -12,12 +16,32 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class RecommendationCardAssemblerTest {
 
     @Test
+    void enrichCandidatesShouldUseSharedSnapshotLookup() {
+        RestaurantMetricSnapshotLookup snapshotLookup = mock(RestaurantMetricSnapshotLookup.class);
+        RecommendationCardAssembler assembler = new RecommendationCardAssembler(snapshotLookup);
+        RestaurantMetricSnapshotEntity snapshot = snapshot("poi-1", "4.7", 28, 35, "出餐快", "适合午餐");
+        when(snapshotLookup.findByPoiIds(List.of("poi-1"))).thenReturn(Map.of("poi-1", snapshot));
+
+        RecommendationCardAssembler.EnrichedRecommendationCandidates enriched = assembler.enrichCandidates(List.of(
+                new AmapPoi("poi-1", "兰州拉面", "文泽路", 120.36, 30.32, "餐饮;中餐厅;面馆", 220)));
+
+        assertEquals(1, enriched.cards().size());
+        assertEquals(new BigDecimal("4.7"), enriched.cards().get(0).avgRating());
+        assertEquals(28, enriched.cards().get(0).reviewCount());
+        assertEquals(35, enriched.cards().get(0).avgPerCapitaPrice());
+        assertEquals(List.of("出餐快", "适合午餐"), enriched.cards().get(0).aiTags());
+        verify(snapshotLookup).findByPoiIds(List.of("poi-1"));
+    }
+
+    @Test
     void emitRecommendationCardShouldFallbackToSequentialRankWhenUpstreamRankIsOutOfRange() {
-        RecommendationCardAssembler assembler = new RecommendationCardAssembler(mock(RestaurantMetricSnapshotRepository.class));
+        RecommendationCardAssembler assembler = new RecommendationCardAssembler(mock(RestaurantMetricSnapshotLookup.class));
         RecommendationApplicationService.RecommendationCandidateCard candidate =
                 new RecommendationApplicationService.RecommendationCandidateCard(
                         "poi-noodle",
@@ -57,7 +81,7 @@ class RecommendationCardAssemblerTest {
 
     @Test
     void emitRecommendationCardShouldStopAfterMaxCardsReached() {
-        RecommendationCardAssembler assembler = new RecommendationCardAssembler(mock(RestaurantMetricSnapshotRepository.class));
+        RecommendationCardAssembler assembler = new RecommendationCardAssembler(mock(RestaurantMetricSnapshotLookup.class));
         Map<String, RecommendationApplicationService.RecommendationCandidateCard> candidateByPoiId = new HashMap<>();
         candidateByPoiId.put("poi-1", candidate("poi-1", "兰州拉面"));
         candidateByPoiId.put("poi-2", candidate("poi-2", "桂香卤味拌饭"));
@@ -98,5 +122,23 @@ class RecommendationCardAssemblerTest {
                 null,
                 java.util.List.of(),
                 null);
+    }
+
+    private RestaurantMetricSnapshotEntity snapshot(
+            String poiId,
+            String avgRating,
+            int reviewCount,
+            Integer avgPerCapitaPrice,
+            String aiTag1,
+            String aiTag2) {
+        RestaurantMetricSnapshotEntity entity = new RestaurantMetricSnapshotEntity();
+        entity.setPoiId(poiId);
+        entity.setAvgRating(new BigDecimal(avgRating));
+        entity.setReviewCount(reviewCount);
+        entity.setAvgPerCapitaPrice(avgPerCapitaPrice);
+        entity.setAiTag1(aiTag1);
+        entity.setAiTag2(aiTag2);
+        entity.setAiStatus("ready");
+        return entity;
     }
 }

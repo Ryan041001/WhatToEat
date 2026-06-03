@@ -21,6 +21,7 @@ const DEVTOOLS_FALLBACK_LOCATION = {
 // 缓存TTL：餐厅数据3分钟，位置5分钟（位置变化慢，TTL更长）
 const BOOTSTRAP_TTL = 3 * 60 * 1000;
 const LOCATION_TTL = 5 * 60 * 1000;
+const NEARBY_BOOTSTRAP_SIZE = 100;
 
 function isWechatDevtools() {
 	try {
@@ -317,7 +318,7 @@ App({
 			latitude: location.latitude,
 			radius: 3000,
 			page: 1,
-			size: 30,
+			size: NEARBY_BOOTSTRAP_SIZE,
 			sort
 		};
 

@@ -11,6 +11,18 @@
   padding: 28rpx 28rpx 18rpx;
 }
 
+.chat-header-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+.chat-title-copy {
+  flex: 1;
+  min-width: 0;
+}
+
 .title {
   display: block;
   font-size: 40rpx;
@@ -24,6 +36,38 @@
   font-size: 24rpx;
   line-height: 1.5;
   color: #6b7280;
+}
+
+.clear-chat-btn {
+  width: 64rpx !important;
+  height: 64rpx !important;
+  min-width: 64rpx !important;
+  max-width: 64rpx !important;
+  margin: 2rpx 0 0 !important;
+  padding: 0 !important;
+  border: 1px solid rgba(255, 107, 107, 0.18) !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  color: #ef4444;
+  background: rgba(255, 255, 255, 0.72) !important;
+  box-shadow: 0 10rpx 24rpx rgba(239, 68, 68, 0.08);
+  line-height: 1 !important;
+}
+
+.clear-chat-btn::after {
+  border: 0;
+}
+
+.clear-chat-btn-hover {
+  transform: translateY(1rpx);
+  background: rgba(254, 242, 242, 0.95) !important;
+}
+
+.clear-chat-icon {
+  width: 30rpx;
+  height: 30rpx;
 }
 
 .chat-scroll {

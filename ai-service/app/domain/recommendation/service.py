@@ -35,7 +35,7 @@ class RecommendationService:
         choices, tool_calls = self._resolve_stream_choices(request)
         yield from self._emit_tool_calls(choices, tool_calls)
         final_answer = yield from self._stream_answer_from_choices(request, choices, tool_calls)
-        yield ("answer.done", {"answer": final_answer[:200]})
+        yield ("answer.done", {"answer": final_answer})
         yield ("done", {"finishReason": "stop"})
 
     def _recommend_with_tool_calls(
@@ -166,7 +166,7 @@ class RecommendationService:
 
         final_answer = self._sanitize_answer_text(accumulated_answer)
         if final_answer:
-            return final_answer[:200]
+            return final_answer
 
         fallback_answer = self._build_fallback_answer(request, choices)
         for delta in self._chunk_text(fallback_answer):

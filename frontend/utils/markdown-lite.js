@@ -27,16 +27,17 @@ function flushParagraph(blocks, paragraphLines) {
   paragraphLines.length = 0;
 }
 
-function flushList(blocks, listItems) {
-  if (!listItems.length) {
+function flushList(blocks, listState) {
+  if (!listState.items.length) {
     return;
   }
 
-  const itemsHtml = listItems
+  const tagName = listState.type === 'ol' ? 'ol' : 'ul';
+  const itemsHtml = listState.items
     .map((item) => `<li style="margin:0 0 6px;">${renderInline(item)}</li>`)
     .join('');
-  blocks.push(`<ul style="margin:0 0 12px 18px;padding:0;line-height:1.75;color:#374151;font-size:15px;">${itemsHtml}</ul>`);
-  listItems.length = 0;
+  blocks.push(`<${tagName} style="margin:0 0 12px 18px;padding:0;line-height:1.75;color:#374151;font-size:15px;">${itemsHtml}</${tagName}>`);
+  listState.items.length = 0;
 }
 
 export function markdownToRichText(markdown) {
@@ -51,41 +52,59 @@ export function markdownToRichText(markdown) {
   const lines = normalized.split('\n');
   const blocks = [];
   const paragraphLines = [];
-  const listItems = [];
+  const listState = {
+    type: 'ul',
+    items: []
+  };
 
   lines.forEach((rawLine) => {
     const line = rawLine.trim();
     const listMatch = line.match(/^[-*]\s+(.+)$/);
     const orderedMatch = line.match(/^\d+\.\s+(.+)$/);
     const headingMatch = line.match(/^#{1,3}\s+(.+)$/);
+    const quoteMatch = line.match(/^>\s+(.+)$/);
 
     if (!line) {
       flushParagraph(blocks, paragraphLines);
-      flushList(blocks, listItems);
+      flushList(blocks, listState);
       return;
     }
 
     if (headingMatch) {
       flushParagraph(blocks, paragraphLines);
-      flushList(blocks, listItems);
+      flushList(blocks, listState);
       blocks.push(
         `<p style="margin:0 0 10px;line-height:1.6;color:#111827;font-size:16px;font-weight:700;">${renderInline(headingMatch[1])}</p>`
       );
       return;
     }
 
-    if (listMatch || orderedMatch) {
+    if (quoteMatch) {
       flushParagraph(blocks, paragraphLines);
-      listItems.push((listMatch || orderedMatch)[1]);
+      flushList(blocks, listState);
+      blocks.push(
+        `<p style="margin:0 0 12px;padding-left:10px;border-left:3px solid #fed7aa;line-height:1.7;color:#6b7280;font-size:14px;">${renderInline(quoteMatch[1])}</p>`
+      );
       return;
     }
 
-    flushList(blocks, listItems);
+    if (listMatch || orderedMatch) {
+      flushParagraph(blocks, paragraphLines);
+      const nextType = orderedMatch ? 'ol' : 'ul';
+      if (listState.items.length && listState.type !== nextType) {
+        flushList(blocks, listState);
+      }
+      listState.type = nextType;
+      listState.items.push((listMatch || orderedMatch)[1]);
+      return;
+    }
+
+    flushList(blocks, listState);
     paragraphLines.push(line);
   });
 
   flushParagraph(blocks, paragraphLines);
-  flushList(blocks, listItems);
+  flushList(blocks, listState);
 
   return blocks.join('');
 }

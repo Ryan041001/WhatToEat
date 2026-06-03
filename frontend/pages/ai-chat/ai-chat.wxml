@@ -1,7 +1,21 @@
 <view class="page">
   <view class="chat-header">
-    <text class="title">AI 推荐</text>
-    <text class="subtitle">像聊天一样问我预算、口味和距离，我会边回复边给你候选</text>
+    <view class="chat-header-main">
+      <view class="chat-title-copy">
+        <text class="title">AI 推荐</text>
+        <text class="subtitle">像聊天一样问我预算、口味和距离，我会边回复边给你候选</text>
+      </view>
+      <button
+        class="clear-chat-btn"
+        wx:if="{{messages.length > 0 || loading}}"
+        plain
+        hover-class="clear-chat-btn-hover"
+        catchtap="clearConversation"
+        aria-label="清空本地聊天记录"
+      >
+        <view class="clear-chat-icon app-icon icon-trash icon-fill"></view>
+      </button>
+    </view>
   </view>
 
   <scroll-view

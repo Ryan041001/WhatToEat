@@ -35,11 +35,7 @@ class RestaurantQueryApplicationServiceTest {
     void nearbyShouldReturnEmptyPageWhenTotalPositiveButItemsEmpty() {
         AmapClient amapClient = mock(AmapClient.class);
         RestaurantMetricSnapshotRepository snapshotRepository = mock(RestaurantMetricSnapshotRepository.class);
-        RestaurantQueryApplicationService service = new RestaurantQueryApplicationService(
-                amapClient,
-                snapshotRepository,
-                new SimpleMeterRegistry(),
-                snapshotCache);
+        RestaurantQueryApplicationService service = service(amapClient, snapshotRepository);
         when(snapshotRepository.findAllById(anyIterable())).thenReturn(List.of());
         when(amapClient.searchNearby(120.35, 30.31, 1000, 2, 10))
                 .thenReturn(new AmapClient.AmapSearchResult(List.of(), 35));
@@ -56,11 +52,7 @@ class RestaurantQueryApplicationServiceTest {
     void searchShouldThrowNoResultWhenTotalIsZero() {
         AmapClient amapClient = mock(AmapClient.class);
         RestaurantMetricSnapshotRepository snapshotRepository = mock(RestaurantMetricSnapshotRepository.class);
-        RestaurantQueryApplicationService service = new RestaurantQueryApplicationService(
-                amapClient,
-                snapshotRepository,
-                new SimpleMeterRegistry(),
-                snapshotCache);
+        RestaurantQueryApplicationService service = service(amapClient, snapshotRepository);
         when(amapClient.searchByKeyword("拉面", 120.36, 30.32, 1500, 1, 10))
                 .thenReturn(new AmapClient.AmapSearchResult(List.of(), 0));
 
@@ -75,11 +67,7 @@ class RestaurantQueryApplicationServiceTest {
         AmapClient amapClient = mock(AmapClient.class);
         RestaurantMetricSnapshotRepository snapshotRepository = mock(RestaurantMetricSnapshotRepository.class);
         SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
-        RestaurantQueryApplicationService service = new RestaurantQueryApplicationService(
-                amapClient,
-                snapshotRepository,
-                meterRegistry,
-                snapshotCache);
+        RestaurantQueryApplicationService service = service(amapClient, snapshotRepository, meterRegistry);
         AmapPoi poi = new AmapPoi("id-1", "沙县小吃", "学林街", 120.35, 30.31, "餐饮", 180);
         when(snapshotRepository.findAllById(anyIterable())).thenReturn(List.of());
         when(amapClient.searchNearby(120.35, 30.31, 1000, 2, 10))
@@ -96,15 +84,33 @@ class RestaurantQueryApplicationServiceTest {
     }
 
     @Test
+    void nearbyShouldFetchMultipleAmapPagesWhenRequestedSizeExceedsSingleAmapPage() {
+        AmapClient amapClient = mock(AmapClient.class);
+        RestaurantMetricSnapshotRepository snapshotRepository = mock(RestaurantMetricSnapshotRepository.class);
+        RestaurantQueryApplicationService service = service(amapClient, snapshotRepository);
+        when(snapshotRepository.findAllById(anyIterable())).thenReturn(List.of());
+        when(amapClient.searchNearby(120.35, 30.31, 3000, 1, 75))
+                .thenReturn(new AmapClient.AmapSearchResult(pois(1, 50), 120));
+        when(amapClient.searchNearby(120.35, 30.31, 3000, 1, 50))
+                .thenReturn(new AmapClient.AmapSearchResult(pois(1, 50), 120));
+        when(amapClient.searchNearby(120.35, 30.31, 3000, 2, 50))
+                .thenReturn(new AmapClient.AmapSearchResult(pois(51, 50), 120));
+
+        RestaurantQueryApplicationService.RestaurantPage page =
+                service.nearby(120.35, 30.31, 3000, 1, 75);
+
+        assertEquals(75, page.items().size());
+        assertEquals(120, page.total());
+        assertEquals("poi-1", page.items().get(0).poiId());
+        assertEquals("poi-75", page.items().get(74).poiId());
+    }
+
+    @Test
     void searchShouldRecordNoResultMetricBeforeThrowing() {
         AmapClient amapClient = mock(AmapClient.class);
         RestaurantMetricSnapshotRepository snapshotRepository = mock(RestaurantMetricSnapshotRepository.class);
         SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
-        RestaurantQueryApplicationService service = new RestaurantQueryApplicationService(
-                amapClient,
-                snapshotRepository,
-                meterRegistry,
-                snapshotCache);
+        RestaurantQueryApplicationService service = service(amapClient, snapshotRepository, meterRegistry);
         when(amapClient.searchByKeyword("拉面", 120.36, 30.32, 1500, 1, 10))
                 .thenReturn(new AmapClient.AmapSearchResult(List.of(), 0));
 
@@ -123,10 +129,7 @@ class RestaurantQueryApplicationServiceTest {
     void nearbyShouldMergeSnapshotFieldsAndSortByAvgRating() {
         AmapClient amapClient = mock(AmapClient.class);
         RestaurantMetricSnapshotRepository snapshotRepository = mock(RestaurantMetricSnapshotRepository.class);
-        RestaurantQueryApplicationService service = new RestaurantQueryApplicationService(
-                amapClient,
-                snapshotRepository,
-                new SimpleMeterRegistry(), snapshotCache);
+        RestaurantQueryApplicationService service = service(amapClient, snapshotRepository);
         AmapPoi lowerRated = new AmapPoi("id-1", "沙县小吃", "学林街", 120.35, 30.31, "餐饮", 180);
         AmapPoi higherRated = new AmapPoi("id-2", "兰州拉面", "文泽路", 120.36, 30.32, "餐饮", 220);
         when(amapClient.searchNearby(120.35, 30.31, 1000, 1, 50))
@@ -150,10 +153,7 @@ class RestaurantQueryApplicationServiceTest {
     void nearbyShouldHideAiTagsWhenSnapshotIsNotReady() {
         AmapClient amapClient = mock(AmapClient.class);
         RestaurantMetricSnapshotRepository snapshotRepository = mock(RestaurantMetricSnapshotRepository.class);
-        RestaurantQueryApplicationService service = new RestaurantQueryApplicationService(
-                amapClient,
-                snapshotRepository,
-                new SimpleMeterRegistry(), snapshotCache);
+        RestaurantQueryApplicationService service = service(amapClient, snapshotRepository);
         AmapPoi poi = new AmapPoi("id-1", "沙县小吃", "学林街", 120.35, 30.31, "餐饮", 180);
         when(amapClient.searchNearby(120.35, 30.31, 1000, 1, 10))
                 .thenReturn(new AmapClient.AmapSearchResult(List.of(poi), 1));
@@ -170,10 +170,7 @@ class RestaurantQueryApplicationServiceTest {
     void nearbyShouldFilterByCategoryAndPriceRange() {
         AmapClient amapClient = mock(AmapClient.class);
         RestaurantMetricSnapshotRepository snapshotRepository = mock(RestaurantMetricSnapshotRepository.class);
-        RestaurantQueryApplicationService service = new RestaurantQueryApplicationService(
-                amapClient,
-                snapshotRepository,
-                new SimpleMeterRegistry(), snapshotCache);
+        RestaurantQueryApplicationService service = service(amapClient, snapshotRepository);
         AmapPoi noodle = new AmapPoi("id-3", "兰州拉面", "文一路", 120.35, 30.31, "面馆", 180);
         AmapPoi rice = new AmapPoi("id-4", "黄焖鸡米饭", "文二路", 120.36, 30.32, "快餐", 220);
         when(amapClient.searchNearby(120.35, 30.31, 1000, 1, 50))
@@ -202,10 +199,7 @@ class RestaurantQueryApplicationServiceTest {
     void nearbyShouldExcludeNullPriceWhenPriceBoundsPresent() {
         AmapClient amapClient = mock(AmapClient.class);
         RestaurantMetricSnapshotRepository snapshotRepository = mock(RestaurantMetricSnapshotRepository.class);
-        RestaurantQueryApplicationService service = new RestaurantQueryApplicationService(
-                amapClient,
-                snapshotRepository,
-                new SimpleMeterRegistry(), snapshotCache);
+        RestaurantQueryApplicationService service = service(amapClient, snapshotRepository);
         AmapPoi noodle = new AmapPoi("id-5", "素面馆", "文三路", 120.35, 30.31, "面馆", 180);
         AmapPoi rice = new AmapPoi("id-6", "拌饭铺子", "文四路", 120.36, 30.32, "快餐", 220);
         when(amapClient.searchNearby(120.35, 30.31, 1000, 1, 50))
@@ -233,10 +227,7 @@ class RestaurantQueryApplicationServiceTest {
     void nearbyShouldRejectPriceRangeWhenMinGreaterThanMax() {
         AmapClient amapClient = mock(AmapClient.class);
         RestaurantMetricSnapshotRepository snapshotRepository = mock(RestaurantMetricSnapshotRepository.class);
-        RestaurantQueryApplicationService service = new RestaurantQueryApplicationService(
-                amapClient,
-                snapshotRepository,
-                new SimpleMeterRegistry(), snapshotCache);
+        RestaurantQueryApplicationService service = service(amapClient, snapshotRepository);
 
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> service.nearby(120.35, 30.31, 1000, 1, 10, "distance", null, 50, 20));
@@ -273,5 +264,34 @@ class RestaurantQueryApplicationServiceTest {
         entity.setAiTag2(aiTag2);
         entity.setAiStatus(aiStatus);
         return entity;
+    }
+
+    private List<AmapPoi> pois(int startInclusive, int count) {
+        return java.util.stream.IntStream.range(startInclusive, startInclusive + count)
+                .mapToObj(index -> new AmapPoi(
+                        "poi-" + index,
+                        "餐厅 " + index,
+                        "学林街 " + index + " 号",
+                        120.35 + index * 0.0001,
+                        30.31 + index * 0.0001,
+                        "餐饮",
+                        index))
+                .toList();
+    }
+
+    private RestaurantQueryApplicationService service(
+            AmapClient amapClient,
+            RestaurantMetricSnapshotRepository snapshotRepository) {
+        return service(amapClient, snapshotRepository, new SimpleMeterRegistry());
+    }
+
+    private RestaurantQueryApplicationService service(
+            AmapClient amapClient,
+            RestaurantMetricSnapshotRepository snapshotRepository,
+            SimpleMeterRegistry meterRegistry) {
+        return new RestaurantQueryApplicationService(
+                amapClient,
+                meterRegistry,
+                new RestaurantMetricSnapshotLookup(snapshotRepository, snapshotCache));
     }
 }

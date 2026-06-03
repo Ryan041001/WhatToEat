@@ -56,7 +56,7 @@ class StructuredModelClient(ABC):
 
 
 class OpenAICompatibleClient(StructuredModelClient):
-    TEXT_RESPONSE_MAX_TOKENS = 180
+    TEXT_RESPONSE_MAX_TOKENS = 512
 
     def __init__(self, settings: AISettings) -> None:
         self.settings = settings

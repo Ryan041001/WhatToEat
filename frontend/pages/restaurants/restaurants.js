@@ -21,6 +21,7 @@ const SORT_OPTIONS = {
   avgPriceDesc: '人均从高到低',
   smart: '智能推荐'
 };
+const NEARBY_LIST_SIZE = 100;
 
 function enrichRestaurant(restaurant = {}) {
   return {
@@ -145,7 +146,7 @@ Page({
         latitude: location.latitude,
         radius: 3000,
         page: 1,
-        size: 30,
+        size: NEARBY_LIST_SIZE,
         sort: this.data.selectedSort
       };
 

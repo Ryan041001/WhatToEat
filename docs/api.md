@@ -213,7 +213,7 @@ Authorization: Bearer <token>
 - `latitude`：纬度，必填，坐标系 GCJ-02
 - `radius`：搜索半径（米），默认 `1000`
 - `page`：页码，默认 `1`
-- `size`：每页条数，默认 `10`
+- `size`：每页条数，默认 `10`，最大 `100`
 - `sort`：排序方式，可选；支持 `distance`、`avgRating`、`reviewCount`、`avgPriceAsc`、`avgPriceDesc`、`smart`
 - `category`：可选；按真实分类筛选，支持传完整分类路径或前端展示用的末级分类名
 - `minAvgPerCapitaPrice`：可选；最低人均价格（元）
@@ -234,6 +234,7 @@ curl 'http://127.0.0.1:8080/api/v1/restaurants/nearby?longitude=120.35&latitude=
 - 当 `total == 0` 时，返回 `404 Not Found`，业务码 `3003`（高德无结果）
 - 当 `total > 0` 且当前页 `items` 为空时，返回 `200 OK`，`items: []`
 - 返回项除基础 POI 字段外，还会补充本地聚合增强字段：`avgRating`、`reviewCount`、`avgPerCapitaPrice`、`aiTags`
+- 当 `size` 超过高德单页返回上限时，后端会自动跨高德页拼接候选，尽量返回接近请求 `size` 的结果数
 - `sort` 为空时默认按 `distance`；如果传入未支持值，返回 `400 Bad Request` / `1001`
 - 当传入 `minAvgPerCapitaPrice` / `maxAvgPerCapitaPrice` 时，`avgPerCapitaPrice = null` 的餐厅不会落入任何明确价格区间
 - 分类与价格筛选在后端执行，前端不再对当前缓存做假筛选
@@ -275,7 +276,7 @@ curl 'http://127.0.0.1:8080/api/v1/restaurants/nearby?longitude=120.35&latitude=
 - `latitude`：纬度，必填，坐标系 GCJ-02
 - `radius`：搜索半径，默认 `1000`
 - `page`：页码
-- `size`：每页条数
+- `size`：每页条数，默认 `10`，最大 `100`
 - `sort`：排序方式，可选；支持 `distance`、`avgRating`、`reviewCount`、`avgPriceAsc`、`avgPriceDesc`、`smart`
 - `category`：可选；按真实分类筛选，支持完整分类路径或末级分类名
 - `minAvgPerCapitaPrice`：可选；最低人均价格（元）
@@ -291,6 +292,7 @@ curl 'http://127.0.0.1:8080/api/v1/restaurants/search?keyword=拉面&longitude=1
 - 当 `total == 0` 时，返回 `404 Not Found`，业务码 `3003`（高德无结果）
 - 当 `total > 0` 且当前页 `items` 为空时，返回 `200 OK`，`items: []`
 - 返回项除基础 POI 字段外，还会补充本地聚合增强字段：`avgRating`、`reviewCount`、`avgPerCapitaPrice`、`aiTags`
+- 当 `size` 超过高德单页返回上限时，后端会自动跨高德页拼接候选，尽量返回接近请求 `size` 的结果数
 - `sort` 为空时默认按 `distance`；如果传入未支持值，返回 `400 Bad Request` / `1001`
 - 当传入价格区间时，`avgPerCapitaPrice = null` 的餐厅不会落入明确价格范围
 

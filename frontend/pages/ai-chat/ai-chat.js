@@ -7,6 +7,7 @@ import {
 } from '../../api/user-signals';
 import {
   AI_CHAT_SESSION_KEY,
+  buildClearedAiChatState,
   buildPersistedAiChatState,
   shouldRestoreAiChatState
 } from '../../utils/ai-chat-session';
@@ -162,15 +163,21 @@ function cloneCards(cards = []) {
 
 function cloneMessages(messages = []) {
   return Array.isArray(messages)
-    ? messages.map((message) => ({
-        id: message.id,
-        role: message.role,
-        rawText: String(message.rawText || ''),
-        cards: cloneCards(message.cards),
-        isStreaming: Boolean(message.isStreaming),
-        progressText: String(message.progressText || ''),
-        hasStartedAnswer: Boolean(message.hasStartedAnswer)
-      }))
+    ? messages.map((message) => {
+        const role = message.role || 'assistant';
+        const rawText = String(message.rawText || '');
+        const hasStartedAnswer = Boolean(message.hasStartedAnswer);
+        return {
+          id: message.id,
+          role,
+          rawText,
+          contentHtml: role === 'assistant' && hasStartedAnswer ? markdownToRichText(rawText) : '',
+          cards: cloneCards(message.cards),
+          isStreaming: Boolean(message.isStreaming),
+          progressText: String(message.progressText || ''),
+          hasStartedAnswer
+        };
+      })
     : [];
 }
 
@@ -244,6 +251,9 @@ function emitActiveStreamState(options = {}) {
 
 function commitActiveStreamState(updater, options = {}) {
   const baseState = activeStreamState ? buildConversationSnapshot(activeStreamState) : null;
+  if (!baseState && typeof updater === 'function') {
+    return;
+  }
   const nextState = typeof updater === 'function' ? updater(baseState) : updater;
   if (!nextState) {
     return;
@@ -520,6 +530,22 @@ Page({
       activeStreamTask.abort();
     }
     clearActiveStreamTask();
+  },
+
+  clearConversation() {
+    abortActiveStream({ keepState: false });
+    clearTimeout(persistTimer);
+    wx.removeStorageSync(AI_CHAT_SESSION_KEY);
+
+    const cleared = buildClearedAiChatState(this.data);
+    this.setData({
+      ...cleared,
+      presetQuestion: INITIAL_QUESTION,
+      scrollIntoView: ''
+    }, () => {
+      this.scheduleScrollToAnchor();
+    });
+    wx.showToast({ title: '已清空本地聊天', icon: 'none' });
   },
 
   updateAssistantMessage(messageId, updater, extraData = {}, options = {}) {

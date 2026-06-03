@@ -187,6 +187,15 @@ def test_stream_text_should_merge_list_and_object_deltas(monkeypatch):
     assert completions.calls[0]["stream"] is True
 
 
+def test_stream_text_should_budget_enough_tokens_for_three_short_recommendations(monkeypatch):
+    client, completions = make_client(monkeypatch)
+    completions.responses.append([make_stream_chunk("清淡近一点可以选三沐茶苑、小何木薯羹和瑞幸咖啡。")])
+
+    list(client.stream_text("system", "user"))
+
+    assert completions.calls[0]["max_tokens"] >= 480
+
+
 def test_stream_text_should_map_timeout_and_connection_errors(monkeypatch):
     client, completions = make_client(monkeypatch)
     request = httpx.Request("POST", "https://example.com/v1/chat/completions")
