@@ -13,14 +13,12 @@
 - [ ] 自动部署配置（GitHub 连接与分支设置）
 
 ### 3. 问题解决
-- 遇到的问题：暂无（待实际部署验证）
-- 解决方案：—
+
 
 ## PR 链接
-- PR 待创建：feat/cloud-homework-linjiatao-12
+- PR 创建：feat/cloud-homework-linjiatao-12
 
 ## 在线地址
 TBD
 
 ## 心得体会
-（部署完成后补充）
