@@ -2,7 +2,11 @@ FROM node:20-alpine AS build
 WORKDIR /app
 COPY . .
 
-FROM nginxinc/nginx-unprivileged:1.27-alpine
+FROM nginxinc/nginx-unprivileged:1.29-alpine
+USER root
+RUN apk add --no-cache --upgrade libxml2
+USER 101
+
 COPY --from=build /app /usr/share/nginx/html/miniprogram
 COPY docker/index.html /usr/share/nginx/html/index.html
 
