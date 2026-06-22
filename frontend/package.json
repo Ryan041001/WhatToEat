@@ -8,7 +8,7 @@
     "test:ci": "jest --ci --coverage"
   },
   "devDependencies": {
-    "@babel/core": "^7.27.1",
+    "@babel/core": "^8.0.1",
     "@babel/preset-env": "^7.27.2",
     "babel-jest": "^29.7.0",
     "eslint": "^8.57.1",
